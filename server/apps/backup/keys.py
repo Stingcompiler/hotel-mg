@@ -16,7 +16,7 @@ def identity_path() -> Path:
     return settings.RUNTIME.home / "keys" / "owner.age-identity"
 
 
-def _protect(data: bytes) -> bytes:
+def protect(data: bytes) -> bytes:
     if sys.platform == "win32":  # pragma: no cover - Windows only
         import win32crypt
 
@@ -24,7 +24,7 @@ def _protect(data: bytes) -> bytes:
     return data
 
 
-def _unprotect(data: bytes) -> bytes:
+def unprotect(data: bytes) -> bytes:
     if sys.platform == "win32":  # pragma: no cover - Windows only
         import win32crypt
 
@@ -39,13 +39,13 @@ def generate(path: Path | None = None) -> str:
         return str(load(path).to_public())
     identity = x25519.Identity.generate()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(_protect(str(identity).encode("ascii")))
+    path.write_bytes(protect(str(identity).encode("ascii")))
     return str(identity.to_public())
 
 
 def load(path: Path | None = None) -> x25519.Identity:
     path = path or identity_path()
-    return x25519.Identity.from_str(_unprotect(path.read_bytes()).decode("ascii"))
+    return x25519.Identity.from_str(unprotect(path.read_bytes()).decode("ascii"))
 
 
 def recipient(public_key: str) -> x25519.Recipient:
