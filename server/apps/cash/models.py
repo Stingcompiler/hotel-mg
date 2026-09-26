@@ -67,13 +67,21 @@ class Expense(AppendOnlyModel):
     spent_at = models.DateTimeField()
     reverses = models.OneToOneField("self", null=True, blank=True, on_delete=models.PROTECT, related_name="reversed_by")
     reason = models.CharField(max_length=300, blank=True, help_text="Required on reversals.")
+    number = models.PositiveIntegerField(null=True, help_text="Gap-free per hotel; printed as EXP-000123.")
 
     class Meta:
         ordering = ["-spent_at"]
-        constraints = [models.CheckConstraint(condition=~models.Q(amount=0), name="expense_amount_not_zero")]
+        constraints = [
+            models.CheckConstraint(condition=~models.Q(amount=0), name="expense_amount_not_zero"),
+            models.UniqueConstraint(fields=["hotel_id", "number"], name="expense_number_per_hotel"),
+        ]
 
     def __str__(self):
         return f"{self.get_category_display()} {self.amount}"
+
+    @property
+    def label(self) -> str:
+        return f"EXP-{self.number:06d}" if self.number else ""
 
 
 class ExpenseAttachment(AppendOnlyModel):
