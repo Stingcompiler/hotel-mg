@@ -7,8 +7,22 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 SERVER = Path(SPECPATH).resolve().parent.parent / "server"
 
-hidden = []
-for package in ("apps", "config", "service", "rest_framework", "drf_spectacular", "django.contrib"):
+
+def source_modules(package):
+    """Every module of our own packages, read from the source tree. Django loads settings, apps and
+    migrations by name, so PyInstaller cannot see them; collect_submodules() imports them at build time
+    and silently drops what fails there (it lost config.settings on windows-latest)."""
+    for path in sorted((SERVER / package).rglob("*.py")):
+        parts = list(path.relative_to(SERVER).with_suffix("").parts)
+        if "tests" in parts:
+            continue
+        if parts[-1] == "__init__":
+            parts = parts[:-1]
+        yield ".".join(parts)
+
+
+hidden = [name for package in ("apps", "config", "service") for name in source_modules(package)]
+for package in ("rest_framework", "drf_spectacular", "django.contrib"):
     hidden += collect_submodules(package)
 hidden += ["win32timezone", "waitress", "openpyxl", "pyrage", "googleapiclient", "google_auth_oauthlib"]
 
