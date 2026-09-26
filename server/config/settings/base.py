@@ -134,6 +134,7 @@ SPECTACULAR_SETTINGS = {
         "UserRoleEnum": "apps.accounts.models.Role",
         "DeviceRoleEnum": ["reception", "owner"],
         "RoomStatusEnum": "apps.rooms.models.RoomStatus",
+        "RoomDisplayStatusEnum": "apps.stays.serializers.DISPLAY_STATUS",
         "DurationKindEnum": "apps.stays.models.DurationKind",
         "BookingDurationKindEnum": "apps.stays.serializers.BOOKING_KINDS",
         "AfterRoomStatusEnum": "apps.stays.serializers.AFTER_ROOM_STATUS",

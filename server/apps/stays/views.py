@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from apps.rooms.models import RoomType
 
 from . import rules, services, stay_services
+from .board import board
 from .models import Reservation, Stay
 from .serializers import (
     AssignRoomSerializer,
@@ -28,6 +29,7 @@ from .serializers import (
     QuoteSerializer,
     ReservationCreateSerializer,
     ReservationSerializer,
+    RoomBoardSerializer,
     StaySerializer,
     VersionSerializer,
 )
@@ -278,3 +280,15 @@ class CancelStayView(APIView):
         data.is_valid(raise_exception=True)
         stay_services.cancel_stay(request.user, pk, **data.validated_data)
         return _stay_response(pk)
+
+
+class RoomBoardView(APIView):
+    """Room board 6.2 (spec §10.4 ``rooms?view=board``, typed): every room with its state, current stay, next
+    booking and the summary tiles. Polled every 15 s. Served at ``rooms/board``; lives here because the board
+    reads stays (rooms must not depend on stays)."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=RoomBoardSerializer, operation_id="rooms_board")
+    def get(self, request):
+        return Response(RoomBoardSerializer(board()).data)

@@ -7,6 +7,7 @@ import { useHotelSettings, useSystemStatus } from "@/api/queries";
 import { session } from "@/api/session";
 import { LoginPage } from "@/features/login/LoginPage";
 import { Placeholder } from "@/features/placeholder/Placeholder";
+import { RoomBoardPage } from "@/features/rooms/RoomBoardPage";
 import { setDigits } from "@/i18n/digits";
 import { setMoneyDecimals } from "@/i18n/money";
 import { t } from "@/i18n/t";
@@ -52,7 +53,7 @@ const router = createBrowserRouter([
   {
     element: <Root />,
     children: [
-      screen("/", "rooms"),
+      { path: "/", element: <RoomBoardPage /> },
       screen("/reservations", "reservations"),
       screen("/reservations/new", "reservations"),
       screen("/stays/:id", "rooms"),

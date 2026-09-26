@@ -2245,6 +2245,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/Room'
           description: ''
+  /api/v1/rooms/board:
+    get:
+      operationId: rooms_board
+      description: |-
+        Room board 6.2 (spec §10.4 ``rooms?view=board``, typed): every room with its state, current stay, next
+        booking and the summary tiles. Polled every 15 s. Served at ``rooms/board``; lives here because the board
+        reads stays (rooms must not depend on stays).
+      tags:
+      - rooms
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomBoard'
+          description: ''
   /api/v1/shifts/:
     get:
       operationId: shifts_list
@@ -5889,6 +5908,185 @@ components:
       - in_service
       - note
       - version
+    RoomBoard:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        summary:
+          $ref: '#/components/schemas/RoomBoardSummary'
+        rooms:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoomBoardRoom'
+      required:
+      - date
+      - summary
+      - rooms
+    RoomBoardNext:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        guest_name:
+          type: string
+        check_in_date:
+          type: string
+          format: date
+        duration_kind:
+          $ref: '#/components/schemas/DurationKindEnum'
+        duration_label:
+          type: string
+      required:
+      - id
+      - guest_name
+      - check_in_date
+      - duration_kind
+      - duration_label
+    RoomBoardRoom:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        floor:
+          type: integer
+        room_type:
+          type: string
+          format: uuid
+        room_type_name:
+          type: string
+        status:
+          $ref: '#/components/schemas/RoomStatusEnum'
+        display_status:
+          allOf:
+          - $ref: '#/components/schemas/RoomDisplayStatusEnum'
+          description: |-
+            status, or «overdue» when occupied past the end date
+
+            * `ready` - ready
+            * `occupied` - occupied
+            * `cleaning` - cleaning
+            * `maintenance` - maintenance
+            * `overdue` - overdue
+        status_changed_at:
+          type: string
+          format: date-time
+          nullable: true
+        maintenance_reason:
+          type: string
+        in_service:
+          type: boolean
+        manual_targets:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoomStatusEnum'
+          description: Statuses staff may set from the board (rooms/{id}/set-status);
+            maintenance needs a reason.
+        version:
+          type: integer
+        stay:
+          allOf:
+          - $ref: '#/components/schemas/RoomBoardStay'
+          nullable: true
+        next_reservation:
+          allOf:
+          - $ref: '#/components/schemas/RoomBoardNext'
+          nullable: true
+      required:
+      - id
+      - number
+      - floor
+      - room_type
+      - room_type_name
+      - status
+      - display_status
+      - status_changed_at
+      - maintenance_reason
+      - in_service
+      - manual_targets
+      - version
+      - stay
+      - next_reservation
+    RoomBoardStay:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        reservation:
+          type: string
+          format: uuid
+        guest_name:
+          type: string
+        guest_phone:
+          type: string
+        check_in_date:
+          type: string
+          format: date
+        check_out_date:
+          type: string
+          format: date
+        last_night:
+          type: string
+          format: date
+        days_left:
+          type: integer
+          description: 0 = ends today; negative = overdue by that many days
+        duration_kind:
+          $ref: '#/components/schemas/DurationKindEnum'
+        duration_label:
+          type: string
+        balance:
+          type: integer
+          nullable: true
+        invoice:
+          type: string
+          nullable: true
+      required:
+      - id
+      - reservation
+      - guest_name
+      - guest_phone
+      - check_in_date
+      - check_out_date
+      - last_night
+      - days_left
+      - duration_kind
+      - duration_label
+      - balance
+      - invoice
+    RoomBoardSummary:
+      type: object
+      properties:
+        rooms:
+          type: integer
+        occupied:
+          type: integer
+        occupancy_percent:
+          type: integer
+        arrivals_today:
+          type: integer
+        departures_today:
+          type: integer
+        overdue:
+          type: integer
+        by_status:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - rooms
+      - occupied
+      - occupancy_percent
+      - arrivals_today
+      - departures_today
+      - overdue
+      - by_status
     RoomCreateRequest:
       type: object
       properties:
@@ -5911,6 +6109,20 @@ components:
       - floor
       - number
       - room_type
+    RoomDisplayStatusEnum:
+      enum:
+      - ready
+      - occupied
+      - cleaning
+      - maintenance
+      - overdue
+      type: string
+      description: |-
+        * `ready` - ready
+        * `occupied` - occupied
+        * `cleaning` - cleaning
+        * `maintenance` - maintenance
+        * `overdue` - overdue
     RoomStatusEnum:
       enum:
       - ready

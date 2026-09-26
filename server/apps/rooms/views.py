@@ -86,9 +86,9 @@ class RoomListView(ListAPIView):
     def list(self, request, *args, **kwargs):
         if request.query_params.get("view") == "board":
             from apps.stays.board import board  # stays depends on rooms, not the reverse
-            from apps.stays.serializers import BoardSerializer
+            from apps.stays.serializers import RoomBoardSerializer
 
-            return Response(BoardSerializer(board()).data)
+            return Response(RoomBoardSerializer(board()).data)
         return super().list(request, *args, **kwargs)
 
     def get_queryset(self):

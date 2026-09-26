@@ -11,6 +11,7 @@ import { PIN_LENGTH, PinDots, PinPad } from "@/components/ui/PinPad";
 import { formatDayDate, formatTime } from "@/i18n/dates";
 import { digits, toWestern } from "@/i18n/digits";
 import { t } from "@/i18n/t";
+import { useNow } from "@/lib/useNow";
 
 const LAST_USER = "skytowers.lastUser";
 
@@ -28,16 +29,6 @@ function remember(userId: string) {
   } catch {
     // private mode
   }
-}
-
-/** Re-renders every second while `active` (lock countdown, footer clock). */
-function useNow(intervalMs: number) {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), intervalMs);
-    return () => window.clearInterval(id);
-  }, [intervalMs]);
-  return now;
 }
 
 function countdown(until: Date, now: Date): string {

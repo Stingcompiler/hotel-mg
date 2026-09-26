@@ -18,6 +18,8 @@ function* files(dir) {
 }
 
 const HEX = /#[0-9a-fA-F]{3,8}\b/;
+// Room-state colours are semantic only: the stateColor() helper in design/state.ts is their one user (§10.2).
+const STATE_COLOUR = /\b(?:bg|text|border|outline|ring|fill|stroke)-state-/;
 const PHYSICAL =
   /(?<![\w-])(?:-?(?:ml|mr|pl|pr|left|right|border-l|border-r|rounded-l|rounded-r|rounded-tl|rounded-tr|rounded-bl|rounded-br|scroll-ml|scroll-mr|scroll-pl|scroll-pr)-[\w[]|text-(?:left|right)\b|float-(?:left|right)\b)/;
 // JSX text between tags, and user-facing attributes, containing Latin letters.
@@ -34,6 +36,8 @@ for (const path of files(src)) {
       const where = `web/${rel}:${i + 1}`;
       const code = line.replace(/\/\/.*$/, "").replace(/\/\*.*?\*\//g, "");
       if (!rel.endsWith("design/tokens.css") && HEX.test(code)) problems.push(`${where}: hex colour — use a token`);
+      if (/\.tsx?$/.test(path) && !rel.endsWith("design/state.ts") && STATE_COLOUR.test(code))
+        problems.push(`${where}: room-state colour outside stateColor() — use design/state.ts`);
       if (/\.tsx?$/.test(path) && PHYSICAL.test(code))
         problems.push(`${where}: physical direction utility — use ms/me/ps/pe/start/end`);
       if (path.endsWith(".tsx") && !isTest) {

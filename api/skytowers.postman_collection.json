@@ -2512,6 +2512,28 @@
           }
         },
         {
+          "name": "rooms_board",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/rooms/board",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rooms",
+                "board"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Room board 6.2 (spec §10.4 ``rooms?view=board``, typed): every room with its state, current stay, next\nbooking and the summary tiles. Polled every 15 s. Served at ``rooms/board``; lives here because the board\nreads stays (rooms must not depend on stays)."
+          }
+        },
+        {
           "name": "rooms_retrieve",
           "request": {
             "method": "GET",
