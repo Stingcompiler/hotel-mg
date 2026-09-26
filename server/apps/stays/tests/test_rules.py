@@ -97,3 +97,42 @@ def test_blocking_until_keeps_overdue_room_held():
 def test_override_needs_reason():
     assert rules.override_needs_reason(11_300_000, 10_500_000)
     assert not rules.override_needs_reason(11_300_000, 11_300_000)
+
+
+# --- Stays ---
+
+
+def test_can_check_in_from_arrival_until_last_night():
+    arrive, leave = date(2026, 9, 26), date(2026, 9, 29)
+    assert rules.can_check_in(arrive, leave, date(2026, 9, 26))
+    assert rules.can_check_in(arrive, leave, date(2026, 9, 28))  # late arrival
+    assert not rules.can_check_in(arrive, leave, date(2026, 9, 25))
+    assert not rules.can_check_in(arrive, leave, date(2026, 9, 29))
+
+
+def test_remaining_and_consumed_nights():
+    assert rules.remaining_nights(date(2026, 10, 31), date(2026, 10, 13)) == 18
+    assert rules.remaining_nights(date(2026, 9, 25), date(2026, 9, 26)) == 0
+    assert rules.consumed_nights(date(2026, 10, 1), date(2026, 10, 13)) == 12  # V2 cancel modal: 12 nights
+    assert rules.consumed_nights(date(2026, 9, 26), date(2026, 9, 26)) == 1
+
+
+@pytest.mark.parametrize(("a", "b", "q"), [(7, 2, 4), (5, 2, 3), (-5, 2, -3), (-7, 2, -4), (4, 2, 2), (1, 3, 0)])
+def test_round_div_half_away_from_zero(a, b, q):
+    assert rules.round_div(a, b) == q
+
+
+def test_room_change_difference():
+    # Monthly double 300,000 → suite 520,000 with 22 of 30 nights left: 220,000 × 22/30 ≈ 161,333 → whole pounds
+    assert rules.room_change_difference(30_000_000, 52_000_000, 22, 30) == 16_133_300
+    assert rules.room_change_difference(30_000_000, 30_000_000, 22, 30) == 0
+    assert rules.room_change_difference(52_000_000, 30_000_000, 22, 30) == -16_133_300
+    assert rules.room_change_difference(30_000_000, 52_000_000, 0, 30) == 0
+    assert rules.room_change_difference(30_000_000, 52_000_000, 5, 0) == 0
+
+
+def test_after_room_statuses():
+    assert rules.after_room_statuses("cleaning") == ["cleaning"]
+    assert rules.after_room_statuses("maintenance") == ["cleaning", "maintenance"]
+    with pytest.raises(ValueError):
+        rules.after_room_statuses("ready")

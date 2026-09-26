@@ -28,9 +28,18 @@ class GuestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Guest
         fields = [
-            "id", "full_name", "phone", "nationality", "id_type", "id_number", "warning_note",
-            "companions", "documents", "version", "created_at",
-        ]  # fmt: skip
+            "id",
+            "full_name",
+            "phone",
+            "nationality",
+            "id_type",
+            "id_number",
+            "warning_note",
+            "companions",
+            "documents",
+            "version",
+            "created_at",
+        ]
 
     def get_companions(self, guest) -> list[dict]:
         return CompanionSerializer(guest.companions.filter(removed=False), many=True).data

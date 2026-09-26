@@ -186,8 +186,9 @@ class TestUserManagement:
     def test_cannot_deactivate_self(self, manager_api, confirm, manager):
         confirm(manager_api)
         manager.refresh_from_db()
-        res = manager_api.patch(f"/api/v1/users/{manager.pk}", {"version": manager.version, "is_active": False},
-                                format="json")  # fmt: skip
+        res = manager_api.patch(
+            f"/api/v1/users/{manager.pk}", {"version": manager.version, "is_active": False}, format="json"
+        )
         assert res.status_code == 403
 
     def test_reset_pin_and_unlock(self, manager_api, confirm, api, reception):

@@ -48,8 +48,10 @@ class GuestListView(ListAPIView):
         data = GuestWriteSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         guest = services.create_guest(request.user, **data.validated_data)
-        return Response(GuestSerializer(_guests().get(pk=guest.pk), context={"request": request}).data,
-                        status=status.HTTP_201_CREATED)  # fmt: skip
+        return Response(
+            GuestSerializer(_guests().get(pk=guest.pk), context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class GuestDetailView(APIView):

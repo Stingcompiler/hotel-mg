@@ -14,9 +14,16 @@ class RoomTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomType
         fields = [
-            "id", "name", "capacity", "nightly_price", "weekly_price", "monthly_price",
-            "is_active", "room_count", "version",
-        ]  # fmt: skip
+            "id",
+            "name",
+            "capacity",
+            "nightly_price",
+            "weekly_price",
+            "monthly_price",
+            "is_active",
+            "room_count",
+            "version",
+        ]
         read_only_fields = ["id", "version"]
 
     def validate_name(self, value):
@@ -47,9 +54,18 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = [
-            "id", "number", "floor", "room_type", "room_type_name", "status", "status_changed_at",
-            "maintenance_reason", "in_service", "note", "version",
-        ]  # fmt: skip
+            "id",
+            "number",
+            "floor",
+            "room_type",
+            "room_type_name",
+            "status",
+            "status_changed_at",
+            "maintenance_reason",
+            "in_service",
+            "note",
+            "version",
+        ]
         read_only_fields = ["id", "status", "status_changed_at", "maintenance_reason", "version"]
 
     def validate_number(self, value):

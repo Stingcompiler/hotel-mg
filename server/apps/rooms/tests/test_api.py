@@ -5,8 +5,13 @@ from apps.rooms.models import Room, RoomStatusHistory, RoomType
 
 pytestmark = pytest.mark.django_db
 
-DOUBLE = {"name": "مزدوجة", "capacity": 2, "nightly_price": 1_500_000, "weekly_price": 9_500_000,
-          "monthly_price": 30_000_000}  # fmt: skip
+DOUBLE = {
+    "name": "مزدوجة",
+    "capacity": 2,
+    "nightly_price": 1_500_000,
+    "weekly_price": 9_500_000,
+    "monthly_price": 30_000_000,
+}
 
 
 @pytest.fixture
@@ -58,20 +63,23 @@ class TestRoomTypes:
 
 class TestRooms:
     def test_create_and_list(self, manager_api, double):
-        res = manager_api.post("/api/v1/rooms/", {"number": "205", "floor": 2, "room_type": str(double.pk)},
-                               format="json")  # fmt: skip
+        res = manager_api.post(
+            "/api/v1/rooms/", {"number": "205", "floor": 2, "room_type": str(double.pk)}, format="json"
+        )
         assert res.status_code == 201
         assert res.json()["status"] == "ready"
-        res = manager_api.post("/api/v1/rooms/", {"number": "205", "floor": 2, "room_type": str(double.pk)},
-                               format="json")  # fmt: skip
+        res = manager_api.post(
+            "/api/v1/rooms/", {"number": "205", "floor": 2, "room_type": str(double.pk)}, format="json"
+        )
         assert res.json()["errors"]["number"] == ["يوجد غرفة بهذا الرقم."]
         rooms = manager_api.get("/api/v1/rooms/", {"floor": 2}).json()
         assert [r["number"] for r in rooms] == ["205"]
         assert rooms[0]["room_type_name"] == "مزدوجة"
 
     def test_reception_cannot_create(self, reception_api, double):
-        res = reception_api.post("/api/v1/rooms/", {"number": "1", "floor": 1, "room_type": str(double.pk)},
-                                 format="json")  # fmt: skip
+        res = reception_api.post(
+            "/api/v1/rooms/", {"number": "1", "floor": 1, "room_type": str(double.pk)}, format="json"
+        )
         assert res.status_code == 403
 
     def test_occupied_room_cannot_leave_service(self, manager_api, room):

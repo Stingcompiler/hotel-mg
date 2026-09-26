@@ -70,12 +70,26 @@ class RoomTypeDetailView(APIView):
     parameters=[
         OpenApiParameter("floor", int),
         OpenApiParameter("status", str, enum=["ready", "occupied", "cleaning", "maintenance"]),
+        OpenApiParameter(
+            "view",
+            str,
+            enum=["board"],
+            description="board: rooms with current stay, next booking and summary (shape: RoomBoard); poll every 15 s",
+        ),
     ]
 )
 class RoomListView(ListAPIView):
     permission_classes = [ManagerWrites]
     serializer_class = RoomSerializer
     pagination_class = None  # 15-60 rooms: always the full list
+
+    def list(self, request, *args, **kwargs):
+        if request.query_params.get("view") == "board":
+            from apps.stays.board import board  # stays depends on rooms, not the reverse
+            from apps.stays.serializers import BoardSerializer
+
+            return Response(BoardSerializer(board()).data)
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         qs = Room.objects.select_related("room_type").order_by("number")

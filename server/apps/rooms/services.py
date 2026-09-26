@@ -22,8 +22,13 @@ def _label(status: str) -> str:
 @transaction.atomic
 def create_room_type(actor, **fields) -> RoomType:
     room_type = RoomType.objects.create(created_by=actor, **fields)
-    audit.record(actor=actor, action="room_type.create", entity="room_type", entity_id=room_type.pk,
-                 after=audit.snapshot(room_type))  # fmt: skip
+    audit.record(
+        actor=actor,
+        action="room_type.create",
+        entity="room_type",
+        entity_id=room_type.pk,
+        after=audit.snapshot(room_type),
+    )
     return room_type
 
 
@@ -36,8 +41,14 @@ def update_room_type(actor, room_type_id, *, version: int, **changes) -> RoomTyp
         setattr(room_type, field, value)
     room_type.save()
     action = "room_type.update_prices" if PRICE_FIELDS & changes.keys() else "room_type.update"
-    audit.record(actor=actor, action=action, entity="room_type", entity_id=room_type.pk,
-                 before=before, after=audit.snapshot(room_type))  # fmt: skip
+    audit.record(
+        actor=actor,
+        action=action,
+        entity="room_type",
+        entity_id=room_type.pk,
+        before=before,
+        after=audit.snapshot(room_type),
+    )
     return room_type
 
 
@@ -47,11 +58,16 @@ def update_room_type(actor, room_type_id, *, version: int, **changes) -> RoomTyp
 @transaction.atomic
 def create_room(actor, *, number, floor, room_type, note="") -> Room:
     room = Room.objects.create(
-        number=number, floor=floor, room_type=room_type, note=note,
-        status_changed_at=timezone.now(), created_by=actor,
-    )  # fmt: skip
-    audit.record(actor=actor, action="room.create", entity="room", entity_id=room.pk,
-                 after=audit.snapshot(room, ROOM_FIELDS))  # fmt: skip
+        number=number,
+        floor=floor,
+        room_type=room_type,
+        note=note,
+        status_changed_at=timezone.now(),
+        created_by=actor,
+    )
+    audit.record(
+        actor=actor, action="room.create", entity="room", entity_id=room.pk, after=audit.snapshot(room, ROOM_FIELDS)
+    )
     return room
 
 
@@ -65,8 +81,14 @@ def update_room(actor, room_id, *, version: int, **changes) -> Room:
     for field, value in changes.items():
         setattr(room, field, value)
     room.save()
-    audit.record(actor=actor, action="room.update", entity="room", entity_id=room.pk,
-                 before=before, after=audit.snapshot(room, ROOM_FIELDS))  # fmt: skip
+    audit.record(
+        actor=actor,
+        action="room.update",
+        entity="room",
+        entity_id=room.pk,
+        before=before,
+        after=audit.snapshot(room, ROOM_FIELDS),
+    )
     return room
 
 
@@ -74,10 +96,11 @@ def transition(room: Room, to_status: str, *, trigger: str, actor, reason: str =
     """Move a locked room along the state machine; writes history. Caller owns the transaction and audit."""
     if not rules.can_transition(room.status, to_status, trigger):
         raise ApiError(
-            "invalid_room_transition", 409,
+            "invalid_room_transition",
+            409,
             detail=f"لا يمكن نقل الغرفة {room.number} من «{_label(room.status)}» إلى «{_label(to_status)}».",
             allowed=rules.manual_targets(room.status),
-        )  # fmt: skip
+        )
     reason = reason.strip()
     if rules.reason_required(to_status) and not reason:
         raise ApiError("reason_required", 400)
@@ -98,6 +121,12 @@ def set_status(actor, room_id, to_status: str, *, reason: str = "", version: int
     room = get_for_update(Room.objects, room_id, version)
     before = audit.snapshot(room, ["status", "maintenance_reason"])
     transition(room, to_status, trigger="manual", actor=actor, reason=reason)
-    audit.record(actor=actor, action="room.set_status", entity="room", entity_id=room.pk,
-                 before=before, after=audit.snapshot(room, ["status", "maintenance_reason"]))  # fmt: skip
+    audit.record(
+        actor=actor,
+        action="room.set_status",
+        entity="room",
+        entity_id=room.pk,
+        before=before,
+        after=audit.snapshot(room, ["status", "maintenance_reason"]),
+    )
     return room

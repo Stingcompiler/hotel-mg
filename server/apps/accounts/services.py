@@ -50,9 +50,13 @@ def _check_credential(user: User | None, credential_ok, kind: str | None) -> Log
         LoginEvent.objects.create(user=user, at=now, kind=LoginEvent.Kind.FAILED, created_by=user)
         if user.locked_until:
             audit.record(
-                actor=user, action="auth.locked", entity="user", entity_id=user.pk,
-                before=before, after=audit.snapshot(user, USER_FIELDS),
-            )  # fmt: skip
+                actor=user,
+                action="auth.locked",
+                entity="user",
+                entity_id=user.pk,
+                before=before,
+                after=audit.snapshot(user, USER_FIELDS),
+            )
             return LoginResult(user=user, locked_until=user.locked_until)
         return LoginResult(user=user, attempts_left=rules.attempts_left(user.failed_attempts))
 
@@ -135,11 +139,17 @@ def _ensure_can_manage(actor: User, target_role: str) -> None:
 def create_user(actor: User, *, username, full_name, role, pin, password=None) -> User:
     _ensure_can_manage(actor, role)
     user = User.objects.create_user(
-        username, full_name, role=role, pin=pin, password=password,
-        is_staff=rules.is_manager(role), created_by=actor,
-    )  # fmt: skip
-    audit.record(actor=actor, action="user.create", entity="user", entity_id=user.pk,
-                 after=audit.snapshot(user, USER_FIELDS))  # fmt: skip
+        username,
+        full_name,
+        role=role,
+        pin=pin,
+        password=password,
+        is_staff=rules.is_manager(role),
+        created_by=actor,
+    )
+    audit.record(
+        actor=actor, action="user.create", entity="user", entity_id=user.pk, after=audit.snapshot(user, USER_FIELDS)
+    )
     return user
 
 
@@ -163,8 +173,14 @@ def update_user(actor: User, user_id, *, version: int, **changes) -> User:
     user.save()
     if changes.get("is_active") is False:
         Token.objects.filter(user=user).delete()
-    audit.record(actor=actor, action="user.update", entity="user", entity_id=user.pk,
-                 before=before, after=audit.snapshot(user, USER_FIELDS))  # fmt: skip
+    audit.record(
+        actor=actor,
+        action="user.update",
+        entity="user",
+        entity_id=user.pk,
+        before=before,
+        after=audit.snapshot(user, USER_FIELDS),
+    )
     return user
 
 
@@ -186,6 +202,28 @@ def unlock_user(actor: User, user_id) -> User:
     before = audit.snapshot(user, USER_FIELDS)
     user.failed_attempts, user.locked_until = 0, None
     user.save(update_fields=["failed_attempts", "locked_until"])
-    audit.record(actor=actor, action="user.unlock", entity="user", entity_id=user.pk,
-                 before=before, after=audit.snapshot(user, USER_FIELDS))  # fmt: skip
+    audit.record(
+        actor=actor,
+        action="user.unlock",
+        entity="user",
+        entity_id=user.pk,
+        before=before,
+        after=audit.snapshot(user, USER_FIELDS),
+    )
     return user
+
+
+# --- Manager override on another user's session (spec §6.4 checkout with debt) --------------------
+
+
+def verify_manager_override(password: str, reason: str) -> User:
+    """Return the manager/owner whose password was typed on the reception screen, or raise.
+
+    Used where the design asks for «كلمة مرور المدير» plus a reason. The approver is recorded in audit.
+    """
+    if not reason or not reason.strip():
+        raise ApiError("reason_required", 400)
+    for manager in User.objects.filter(role__in=rules.MANAGER_ROLES, is_active=True):
+        if not rules.is_locked(manager.locked_until, timezone.now()) and manager.check_password(password or ""):
+            return manager
+    raise ApiError("override_invalid", 403)

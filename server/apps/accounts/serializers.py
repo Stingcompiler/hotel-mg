@@ -22,9 +22,17 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "id", "username", "full_name", "role", "is_active",
-            "last_login", "locked_until", "version", "created_at", "updated_at",
-        ]  # fmt: skip
+            "id",
+            "username",
+            "full_name",
+            "role",
+            "is_active",
+            "last_login",
+            "locked_until",
+            "version",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = fields
 
 

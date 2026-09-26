@@ -14,8 +14,14 @@ pytestmark = pytest.mark.django_db
 
 
 def book(api, guest, room_type, room=None, **extra):
-    payload = {"guest": str(guest.pk), "room_type": str(room_type.pk), "check_in_date": "2026-09-27",
-               "duration_kind": "daily", "count": 3, **extra}  # fmt: skip
+    payload = {
+        "guest": str(guest.pk),
+        "room_type": str(room_type.pk),
+        "check_in_date": "2026-09-27",
+        "duration_kind": "daily",
+        "count": 3,
+        **extra,
+    }
     if room is not None:
         payload["room"] = str(room.pk)
     return api.post("/api/v1/reservations/", payload, format="json")
@@ -67,8 +73,15 @@ class TestCreate:
     def test_price_override_needs_reason(self, reception_api, guest, single):
         res = book(reception_api, guest, single, count=10, option_key="m0w1d3", final_total=10_500_000)
         assert res.json()["code"] == "reason_required"
-        res = book(reception_api, guest, single, count=10, option_key="m0w1d3", final_total=10_500_000,
-                   override_reason="اتفاق مسبق مع المدير — شركة النيل للمقاولات")  # fmt: skip
+        res = book(
+            reception_api,
+            guest,
+            single,
+            count=10,
+            option_key="m0w1d3",
+            final_total=10_500_000,
+            override_reason="اتفاق مسبق مع المدير — شركة النيل للمقاولات",
+        )
         assert res.status_code == 201
         snap = res.json()["rate_snapshot"]
         assert (snap["base_total"], snap["override_total"]) == (11_300_000, 10_500_000)
@@ -101,8 +114,10 @@ class TestCreate:
 
 class TestAvailability:
     def query(self, api, room_type, date_from, date_to):
-        res = api.get("/api/v1/reservations/availability",
-                      {"room_type": str(room_type.pk), "date_from": date_from, "date_to": date_to})  # fmt: skip
+        res = api.get(
+            "/api/v1/reservations/availability",
+            {"room_type": str(room_type.pk), "date_from": date_from, "date_to": date_to},
+        )
         return [r["number"] for r in res.json()]
 
     def test_excludes_booked_and_out_of_service(self, reception_api, guest, single, rooms):
@@ -114,10 +129,17 @@ class TestAvailability:
 
     def test_overdue_guest_keeps_room_today(self, reception_api, guest, single, rooms):
         Reservation.objects.create(
-            guest=guest, room_type=single, room=rooms["101"], check_in_date=date(2026, 9, 17),
-            check_out_date=date(2026, 9, 24), duration_kind="weekly", duration_count=1, status="checked_in",
-            rate_snapshot={}, total=7_700_000,
-        )  # fmt: skip
+            guest=guest,
+            room_type=single,
+            room=rooms["101"],
+            check_in_date=date(2026, 9, 17),
+            check_out_date=date(2026, 9, 24),
+            duration_kind="weekly",
+            duration_count=1,
+            status="checked_in",
+            rate_snapshot={},
+            total=7_700_000,
+        )
         assert "101" not in self.query(reception_api, single, "2026-09-26", "2026-09-28")
         assert "101" in self.query(reception_api, single, "2026-09-27", "2026-09-28")
 
@@ -148,11 +170,13 @@ class TestLifecycle:
     def test_assign_room_later(self, reception_api, guest, single, rooms):
         rid = book(reception_api, guest, single).json()["id"]
         book(reception_api, guest, single, rooms["101"])
-        res = reception_api.post(f"/api/v1/reservations/{rid}/assign-room", {"room": str(rooms["101"].pk)},
-                                 format="json")  # fmt: skip
+        res = reception_api.post(
+            f"/api/v1/reservations/{rid}/assign-room", {"room": str(rooms["101"].pk)}, format="json"
+        )
         assert res.status_code == 409
-        res = reception_api.post(f"/api/v1/reservations/{rid}/assign-room", {"room": str(rooms["106"].pk)},
-                                 format="json")  # fmt: skip
+        res = reception_api.post(
+            f"/api/v1/reservations/{rid}/assign-room", {"room": str(rooms["106"].pk)}, format="json"
+        )
         assert res.json()["room_number"] == "106"
 
     def test_window_list(self, reception_api, guest, single, rooms):
@@ -173,9 +197,14 @@ def test_concurrent_bookings_of_one_room_admit_exactly_one(guest, single, rooms,
         try:
             barrier.wait()
             services.create_reservation(
-                reception, guest=guest, room_type=single, room=rooms["101"],
-                check_in_date=date(2026, 9, 27 + (i % 2)), duration_kind="daily", count=3,
-            )  # fmt: skip
+                reception,
+                guest=guest,
+                room_type=single,
+                room=rooms["101"],
+                check_in_date=date(2026, 9, 27 + (i % 2)),
+                duration_kind="daily",
+                count=3,
+            )
             outcomes.append("ok")
         except ApiError as exc:
             outcomes.append(exc.error_code)

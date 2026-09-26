@@ -73,8 +73,9 @@ def update_guest(actor, guest_id, *, version: int, companions=None, **fields) ->
     guest.save()
     if companions is not None:
         _replace_companions(guest, list(companions), actor)
-    audit.record(actor=actor, action="guest.update", entity="guest", entity_id=guest.pk,
-                 before=before, after=_snapshot(guest))  # fmt: skip
+    audit.record(
+        actor=actor, action="guest.update", entity="guest", entity_id=guest.pk, before=before, after=_snapshot(guest)
+    )
     return guest
 
 
@@ -104,9 +105,12 @@ def add_document(actor, guest_id, raw: bytes) -> GuestDocument:
             guest=guest, file_path=relative, size=len(data), sha256=hashlib.sha256(data).hexdigest(), created_by=actor
         )
         audit.record(
-            actor=actor, action="guest.add_document", entity="guest", entity_id=guest.pk,
+            actor=actor,
+            action="guest.add_document",
+            entity="guest",
+            entity_id=guest.pk,
             after={"document": str(document.pk), "size": document.size, "sha256": document.sha256},
-        )  # fmt: skip
+        )
     except Exception:
         target.unlink(missing_ok=True)  # no row, no file
         raise
@@ -118,6 +122,11 @@ def open_document(actor, document_id) -> tuple[GuestDocument, bytes]:
     """Full, unblurred ID image — manager/owner only, and every view is audited («عرض حساس»)."""
     document = GuestDocument.objects.select_related("guest").get(pk=document_id)
     data = document_path(document).read_bytes()
-    audit.record(actor=actor, action="guest.view_document", entity="guest", entity_id=document.guest_id,
-                 after={"document": str(document.pk)})  # fmt: skip
+    audit.record(
+        actor=actor,
+        action="guest.view_document",
+        entity="guest",
+        entity_id=document.guest_id,
+        after={"document": str(document.pk)},
+    )
     return document, data

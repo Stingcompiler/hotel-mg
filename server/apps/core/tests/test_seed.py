@@ -43,3 +43,21 @@ def test_seed_loads_rooms_idempotently():
     assert Room.objects.get(number="410").maintenance_reason.startswith("تسرب مياه")
     assert set(Room.objects.filter(status="cleaning").values_list("number", flat=True)) == {"104", "306"}
     assert RoomType.objects.get(name="مزدوجة").rooms.count() == 16
+
+
+def test_seed_matches_room_board():
+    from apps.stays.board import board
+
+    call_command("seed_demo", "--allow-non-debug")
+    call_command("seed_demo", "--allow-non-debug")
+    data = board()
+    rows = {r["number"]: r for r in data["rooms"]}
+    assert data["summary"]["occupied"] == 18  # «مشغولة 18/30»
+    assert data["summary"]["occupancy_percent"] == 60
+    assert data["summary"]["overdue"] == 2  # 207 and 305
+    assert data["summary"]["departures_today"] == 2  # 108 and 204 «تنتهي اليوم»
+    assert rows["305"]["display_status"] == "overdue" and rows["305"]["stay"]["days_left"] == -2
+    assert rows["203"]["stay"]["guest_name"] == "محمد عثمان الطيب" and rows["203"]["stay"]["days_left"] == 3
+    assert rows["411"]["stay"]["days_left"] == 18
+    assert rows["102"]["status"] == "ready" and rows["102"]["next_reservation"]["guest_name"] == "خالد إبراهيم عبدالله"
+    assert rows["410"]["status"] == "maintenance"

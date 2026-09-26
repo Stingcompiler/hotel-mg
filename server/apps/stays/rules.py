@@ -136,3 +136,45 @@ def blocking_until(status: str, check_out: date, today: date) -> date:
 
 def override_needs_reason(base_total: int, final_total: int) -> bool:
     return final_total != base_total
+
+
+# --- Stays ---------------------------------------------------------------------------
+
+
+def can_check_in(check_in: date, check_out: date, today: date) -> bool:
+    """From the arrival day (or a late arrival) until the last night."""
+    return check_in <= today < check_out
+
+
+def remaining_nights(check_out: date, today: date) -> int:
+    return max((check_out - today).days, 0)
+
+
+def consumed_nights(check_in: date, today: date) -> int:
+    """Nights used so far; a guest who checked in is charged at least one night."""
+    return max((today - check_in).days, 1)
+
+
+def round_div(numerator: int, denominator: int) -> int:
+    """Integer division rounded half away from zero (money stays integral, no floats)."""
+    sign = -1 if (numerator < 0) != (denominator < 0) else 1
+    q, r = divmod(abs(numerator), abs(denominator))
+    return sign * (q + (1 if 2 * r >= abs(denominator) else 0))
+
+
+def room_change_difference(old_total: int, new_total: int, remaining: int, nights: int) -> int:
+    """Price difference for moving to another room type for the remaining nights.
+
+    Pro-rates the difference between the booking priced at the old and at the new type,
+    rounded to whole pounds (100 minor units). Same type → 0.
+    """
+    if nights <= 0 or remaining <= 0:
+        return 0
+    return round_div((new_total - old_total) * remaining, nights * 100) * 100
+
+
+def after_room_statuses(choice: str) -> list[str]:
+    """Statuses the vacated room goes through: always cleaning first (spec §6.3), then maybe maintenance."""
+    if choice not in ("cleaning", "maintenance"):
+        raise ValueError(f"unknown room status after leaving: {choice!r}")
+    return ["cleaning"] if choice == "cleaning" else ["cleaning", "maintenance"]
