@@ -54,40 +54,70 @@ jobs:
         run: pyinstaller ../build/windows/skytowers-server.spec --distpath ../dist-server --workpath ../build-work --noconfirm
 
       - name: Smoke test the bundle in a console
+        env:
+          SKYTOWERS_HOME: ${{ runner.temp }}\skyt-console
         run: |
-          $exe = "dist-server\skytowers-server\skytowers-server.exe"
-          $env:SKYTOWERS_HOME = "$env:RUNNER_TEMP\skyt-console"
-          & $exe init --role reception
-          & $exe manage migrate -v0
-          & $exe manage seed_demo --allow-non-debug
-          $server = Start-Process -FilePath $exe -ArgumentList "run" -PassThru -NoNewWindow
-          $status = $null
-          foreach ($i in 1..40) {
-            try { $status = Invoke-RestMethod http://127.0.0.1:8471/api/v1/system/status; break } catch { Start-Sleep -Seconds 1 }
+          $exe = (Resolve-Path "dist-server\skytowers-server\skytowers-server.exe").Path
+          $out = "$env:RUNNER_TEMP\server-out.txt"; $err = "$env:RUNNER_TEMP\server-err.txt"
+          function Fail([string]$message) {
+            $log = Get-Content "$env:SKYTOWERS_HOME\logs\server.log" -Tail 40 -ErrorAction SilentlyContinue | Out-String
+            $console = Get-Content $out, $err -Tail 40 -ErrorAction SilentlyContinue | Out-String
+            $text = "$message`n--- server.log`n$log`n--- console`n$console"
+            Write-Output ("::error title=Smoke test::" + ($text -replace '%', '%25' -replace "`r", '' -replace "`n", '%0A'))
+            exit 1
           }
-          if (-not $status) { throw "service did not answer" }
-          "role=$($status.role) version=$($status.version)"
-          $page = Invoke-WebRequest http://127.0.0.1:8471/reservations -UseBasicParsing
-          if ($page.Content -notmatch 'id="root"') { throw "SPA not served" }
-          $login = Invoke-RestMethod -Method Post http://127.0.0.1:8471/api/v1/auth/password -ContentType "application/json" -Body '{"username":"manager","password":"skytowers-dev"}'
-          $board = Invoke-RestMethod http://127.0.0.1:8471/api/v1/rooms/board -Headers @{ Authorization = "Token $($login.token)" }
-          if ($board.rooms.Count -ne 30) { throw "room board: $($board.rooms.Count) rooms" }
-          $xlsx = Invoke-WebRequest "http://127.0.0.1:8471/api/v1/reports/debts/export?format=xlsx" -Headers @{ Authorization = "Token $($login.token)" } -UseBasicParsing
-          if ($xlsx.StatusCode -ne 200) { throw "Excel export failed" }
-          Stop-Process -Id $server.Id -Force
+          function Run([string[]]$arguments) {
+            $output = & $exe @arguments 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) { Fail "skytowers-server $($arguments -join ' ') exited $LASTEXITCODE`n$output" }
+            $output
+          }
+          Run @("init", "--role", "reception")
+          Run @("manage", "migrate", "-v0")
+          Run @("manage", "seed_demo", "--allow-non-debug")
+          $server = Start-Process -FilePath $exe -ArgumentList "run" -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
+          try {
+            $status = $null
+            foreach ($i in 1..60) {
+              try { $status = Invoke-RestMethod http://127.0.0.1:8471/api/v1/system/status; break } catch { Start-Sleep -Seconds 1 }
+            }
+            if (-not $status) { Fail "the service did not answer on 127.0.0.1:8471" }
+            "role=$($status.role) version=$($status.version)"
+            $page = Invoke-WebRequest http://127.0.0.1:8471/reservations -UseBasicParsing
+            if ($page.Content -notmatch 'id="root"') { Fail "the SPA is not served" }
+            $login = Invoke-RestMethod -Method Post http://127.0.0.1:8471/api/v1/auth/password -ContentType "application/json" -Body '{"username":"manager","password":"skytowers-dev"}'
+            $auth = @{ Authorization = "Token $($login.token)" }
+            $board = Invoke-RestMethod http://127.0.0.1:8471/api/v1/rooms/board -Headers $auth
+            if ($board.rooms.Count -ne 30) { Fail "room board has $($board.rooms.Count) rooms" }
+            $xlsx = Invoke-WebRequest "http://127.0.0.1:8471/api/v1/reports/debts/export?format=xlsx" -Headers $auth -UseBasicParsing
+            if ($xlsx.StatusCode -ne 200) { Fail "Excel export answered $($xlsx.StatusCode)" }
+            "smoke test passed"
+          } catch {
+            Fail "request failed: $($_.Exception.Message)"
+          } finally {
+            Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+          }
 
       - name: Install, start and remove the Windows service
         run: |
           $exe = (Resolve-Path "dist-server\skytowers-server\skytowers-server.exe").Path
-          & $exe init --role reception          # %ProgramData%\SkyTowers\config.json, as the installer does
-          & $exe --startup auto install
+          function Fail([string]$message) {
+            $log = Get-Content "$env:ProgramData\SkyTowers\logs\server.log" -Tail 40 -ErrorAction SilentlyContinue | Out-String
+            $query = sc.exe query SkyTowersServer | Out-String
+            $events = Get-WinEvent -LogName Application -MaxEvents 15 -ErrorAction SilentlyContinue | Where-Object { $_.ProviderName -match "SkyTowers|Python" } | Format-List TimeCreated, Message | Out-String
+            $text = "$message`n--- sc query`n$query`n--- server.log`n$log`n--- events`n$events"
+            Write-Output ("::error title=Windows service::" + ($text -replace '%', '%25' -replace "`r", '' -replace "`n", '%0A'))
+            exit 1
+          }
+          & $exe init --role reception   # %ProgramData%\SkyTowers\config.json, as the installer does
+          $install = & $exe --startup auto install 2>&1 | Out-String
+          if ($LASTEXITCODE -ne 0) { Fail "install exited $LASTEXITCODE`n$install" }
           sc.exe start SkyTowersServer
           $ok = $false
-          foreach ($i in 1..60) {
+          foreach ($i in 1..90) {
             try { Invoke-RestMethod http://127.0.0.1:8471/api/v1/system/status | Out-Null; $ok = $true; break } catch { Start-Sleep -Seconds 1 }
           }
-          sc.exe query SkyTowersServer
-          if (-not $ok) { Get-Content "$env:ProgramData\SkyTowers\logs\server.log" -ErrorAction SilentlyContinue; throw "service did not answer" }
+          if (-not $ok) { Fail "the service did not answer on 127.0.0.1:8471" }
+          "service answered"
           sc.exe stop SkyTowersServer
           Start-Sleep -Seconds 5
           & $exe remove

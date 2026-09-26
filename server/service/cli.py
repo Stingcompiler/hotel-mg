@@ -22,7 +22,15 @@ def _django_manage(args: list[str]) -> None:
     execute_from_command_line(["skytowers-server", *args])
 
 
+def _utf8_console() -> None:
+    """Arabic messages must not crash a cp1252 console or the installer's captured output."""
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv: list[str] | None = None) -> int:
+    _utf8_console()
     argv = list(sys.argv[1:] if argv is None else argv)
     command = argv[0] if argv else ""
 
