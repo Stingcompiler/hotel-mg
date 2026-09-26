@@ -17,3 +17,5 @@ def test_guest_list_carries_history_numbers_and_filters(api_as_manager):
     history = api_as_manager.get(f"/api/v1/guests/{guest['id']}/history").json()
     assert history[0]["room"] == guest["last_stay"]["room"] and history[0]["balance"] == guest["debt"]
     assert history[0]["status_label"] == "مسكّن"
+    assert history[0]["total"] - history[0]["paid"] == history[0]["balance"]
+    assert history[0]["stay"] and history[0]["duration_label"]

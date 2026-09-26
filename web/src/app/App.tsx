@@ -8,6 +8,7 @@ import { session } from "@/api/session";
 import { CashPage } from "@/features/cash/CashPage";
 import { ExpensesPage } from "@/features/expenses/ExpensesPage";
 import { FollowupsPage } from "@/features/followups/FollowupsPage";
+import { GuestsPage } from "@/features/guests/GuestsPage";
 import { LoginPage } from "@/features/login/LoginPage";
 import { Placeholder } from "@/features/placeholder/Placeholder";
 import { NewReservationPage } from "@/features/reservations/NewReservationPage";
@@ -65,7 +66,7 @@ const router = createBrowserRouter([
       { path: "/followups", element: <FollowupsPage /> },
       { path: "/cash", element: <CashPage /> },
       { path: "/expenses", element: <ExpensesPage /> },
-      screen("/guests", "guests"),
+      { path: "/guests", element: <GuestsPage /> },
       screen("/reports", "reports"),
       screen("/reports/:name", "reports"),
       screen("/settings/*", "settings"),

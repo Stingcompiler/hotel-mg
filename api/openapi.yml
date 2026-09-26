@@ -4190,23 +4190,45 @@ components:
         check_out_date:
           type: string
           format: date
+          description: Exclusive.
+        last_night:
+          type: string
+          format: date
         nights:
           type: integer
         status:
           type: string
         status_label:
           type: string
+        duration_label:
+          type: string
+        total:
+          type: integer
+          description: Charges after discounts (minor units).
+        paid:
+          type: integer
+          description: Payments net of refunds and reversals.
         balance:
           type: integer
+        stay:
+          type: string
+          format: uuid
+          nullable: true
+          description: Stay id once checked in (link to the stay detail).
       required:
       - reservation_id
       - room
       - check_in_date
       - check_out_date
+      - last_night
       - nights
       - status
       - status_label
+      - duration_label
+      - total
+      - paid
       - balance
+      - stay
     GuestListItem:
       type: object
       description: 'Guest list row (artboard 6.8): history numbers come from ``context["stats"]``

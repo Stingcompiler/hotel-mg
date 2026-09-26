@@ -85,11 +85,16 @@ class GuestHistoryItemSerializer(serializers.Serializer):
     reservation_id = serializers.UUIDField()
     room = serializers.CharField(allow_null=True)
     check_in_date = serializers.DateField()
-    check_out_date = serializers.DateField()
+    check_out_date = serializers.DateField(help_text="Exclusive.")
+    last_night = serializers.DateField()
     nights = serializers.IntegerField()
     status = serializers.CharField()
     status_label = serializers.CharField()
+    duration_label = serializers.CharField()
+    total = serializers.IntegerField(help_text="Charges after discounts (minor units).")
+    paid = serializers.IntegerField(help_text="Payments net of refunds and reversals.")
     balance = serializers.IntegerField()
+    stay = serializers.UUIDField(allow_null=True, help_text="Stay id once checked in (link to the stay detail).")
 
 
 class GuestWriteSerializer(serializers.Serializer):

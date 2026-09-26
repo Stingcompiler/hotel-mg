@@ -2080,12 +2080,27 @@ export interface components {
             room: string | null;
             /** Format: date */
             check_in_date: string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description Exclusive.
+             */
             check_out_date: string;
+            /** Format: date */
+            last_night: string;
             nights: number;
             status: string;
             status_label: string;
+            duration_label: string;
+            /** @description Charges after discounts (minor units). */
+            total: number;
+            /** @description Payments net of refunds and reversals. */
+            paid: number;
             balance: number;
+            /**
+             * Format: uuid
+             * @description Stay id once checked in (link to the stay detail).
+             */
+            stay: string | null;
         };
         /** @description Guest list row (artboard 6.8): history numbers come from ``context["stats"]`` (see ``stats.for_guests``). */
         GuestListItem: {
