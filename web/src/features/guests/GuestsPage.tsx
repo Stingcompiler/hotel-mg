@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, EyeOff, ImageUp, Search, TriangleAlert, UserPlus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import type { components } from "@api/schema";
 
@@ -38,13 +38,24 @@ const guestList = (query: Record<string, string | number>) =>
 export function GuestsPage() {
   const offline = useSystemStatus().isError;
   const queryClient = useQueryClient();
-  const [q, setQ] = useState("");
+  // The top-bar search lands here with `?q=…&select=<guest id>`.
+  const [params] = useSearchParams();
+  const [q, setQ] = useState(params.get("q") ?? "");
   const term = useDebounced(q.trim(), 250);
   const [filter, setFilter] = useState<Filter>("all");
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(params.get("select"));
   const [form, setForm] = useState<null | { guest?: Guest; note?: boolean }>(null);
   useEffect(() => setPage(1), [term, filter]);
+  useEffect(() => {
+    const id = params.get("select");
+    if (id) {
+      setSelected(id);
+      setQ(params.get("q") ?? "");
+    }
+  }, [params]);
+  // The owner PC only reads (spec §10.4): no new guest, edit, note or booking there.
+  const canWrite = session.role !== "owner";
 
   const query = { ...(term ? { q: term } : {}), ...(filter !== "all" ? { [filter === "warning" ? "warning" : filter]: 1 } : {}), page };
   const list = useQuery({ queryKey: ["guests", "list", query], queryFn: () => guestList(query) });
@@ -81,10 +92,12 @@ export function GuestsPage() {
           ]}
         />
         <div className="flex-1" />
-        <button type="button" disabled={offline} onClick={() => setForm({})} className={`${buttons.secondary} h-9 px-4`}>
-          <UserPlus className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
-          {t("guests.new")}
-        </button>
+        {canWrite && (
+          <button type="button" disabled={offline} onClick={() => setForm({})} className={`${buttons.secondary} h-9 px-4`}>
+            <UserPlus className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
+            {t("guests.new")}
+          </button>
+        )}
       </div>
 
       <section className="flex min-h-0 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
@@ -142,7 +155,7 @@ export function GuestsPage() {
 
       <aside className="flex min-h-0 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
         {selected ? (
-          <GuestProfile id={selected} offline={offline} onEdit={(guest, note) => setForm({ guest, note })} />
+          <GuestProfile id={selected} offline={offline} canWrite={canWrite} onEdit={(guest, note) => setForm({ guest, note })} />
         ) : (
           <div className="flex flex-1 items-center justify-center p-8 text-center text-body text-text-secondary">{t("guests.pick")}</div>
         )}
@@ -164,7 +177,7 @@ export function GuestsPage() {
   );
 }
 
-function GuestProfile({ id, offline, onEdit }: { id: string; offline: boolean; onEdit: (g: Guest, note?: boolean) => void }) {
+function GuestProfile({ id, offline, canWrite, onEdit }: { id: string; offline: boolean; canWrite: boolean; onEdit: (g: Guest, note?: boolean) => void }) {
   const navigate = useNavigate();
   const [tab, setTab] = useState<"stays" | "companions" | "id">("stays");
   const guest = useQuery({ queryKey: ["guests", id], queryFn: () => data(api.GET("/api/v1/guests/{id}", { params: { path: { id } } })) }).data;
@@ -199,9 +212,11 @@ function GuestProfile({ id, offline, onEdit }: { id: string; offline: boolean; o
               })}
             </div>
           </div>
-          <button type="button" disabled={offline} onClick={() => onEdit(guest)} className={`${buttons.secondary} h-8 px-2.5 text-label`}>
-            {t("guests.edit")}
-          </button>
+          {canWrite && (
+            <button type="button" disabled={offline} onClick={() => onEdit(guest)} className={`${buttons.secondary} h-9 px-3 text-label`}>
+              {t("guests.edit")}
+            </button>
+          )}
         </div>
         {guest.warning_note && (
           <div className="flex gap-3 rounded-control bg-warning-soft px-3 py-2.5 text-warning-text">
@@ -297,14 +312,16 @@ function GuestProfile({ id, offline, onEdit }: { id: string; offline: boolean; o
         {tab === "id" && <IdTab guest={guest} offline={offline} />}
       </div>
 
-      <div className="flex flex-none gap-2 border-t border-border px-5 py-3">
-        <button type="button" disabled={offline} onClick={() => navigate(`/reservations/new?guest=${guest.id}`)} className={`${buttons.primary} h-9 px-4`}>
-          {t("guests.newBooking")}
-        </button>
-        <button type="button" disabled={offline} onClick={() => onEdit(guest, true)} className={`${buttons.secondary} h-9 px-3`}>
-          {t("guests.addNote")}
-        </button>
-      </div>
+      {canWrite && (
+        <div className="flex flex-none gap-2 border-t border-border px-5 py-3">
+          <button type="button" disabled={offline} onClick={() => navigate(`/reservations/new?guest=${guest.id}`)} className={`${buttons.primary} h-9 px-4`}>
+            {t("guests.newBooking")}
+          </button>
+          <button type="button" disabled={offline} onClick={() => onEdit(guest, true)} className={`${buttons.secondary} h-9 px-3`}>
+            {t("guests.addNote")}
+          </button>
+        </div>
+      )}
     </>
   );
 }
@@ -377,7 +394,7 @@ function IdTab({ guest, offline }: { guest: Guest; offline: boolean }) {
           )}
         </div>
       ) : (
-        <button type="button" disabled={offline} onClick={() => input.current?.click()} className="flex h-16 items-center justify-center gap-2 rounded-control border border-dashed border-border-strong bg-bg-page font-sans text-body text-text-secondary">
+        <button type="button" disabled={offline || session.role === "owner"} onClick={() => input.current?.click()} className="flex h-16 items-center justify-center gap-2 rounded-control border border-dashed border-border-strong bg-bg-page font-sans text-body text-text-secondary disabled:text-text-disabled">
           <ImageUp className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
           {t("guests.upload")}
         </button>

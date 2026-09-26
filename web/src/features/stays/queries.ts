@@ -27,5 +27,9 @@ export function useRefreshStay(stayId: string, folioId: string | undefined) {
     void queryClient.invalidateQueries({ queryKey: keys.roomBoard });
     void queryClient.invalidateQueries({ queryKey: keys.currentShift });
     void queryClient.invalidateQueries({ queryKey: keys.taskCount });
+    // Alerts are re-planned and the timeline/list show the new dates or room.
+    void queryClient.invalidateQueries({ queryKey: ["followups"] });
+    void queryClient.invalidateQueries({ queryKey: ["reservations"] });
+    void queryClient.invalidateQueries({ queryKey: ["guests"] });
   };
 }

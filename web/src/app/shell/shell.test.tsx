@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import { setDigits } from "@/i18n/digits";
@@ -10,7 +11,12 @@ import { TopBar } from "./TopBar";
 
 afterEach(() => setDigits("western"));
 
-const inRouter = (ui: React.ReactNode, path = "/") => render(<MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>);
+const inRouter = (ui: React.ReactNode, path = "/") =>
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>
+    </QueryClientProvider>,
+  );
 
 test("reception sidebar: artboard order, active item, follow-up badge", () => {
   inRouter(
@@ -39,7 +45,7 @@ test("owner sidebar and collapsed rail keep the badge-less owner menu", () => {
 test("top bar chips: open shift, stale backup, alert count in the hotel's digits", () => {
   setDigits("arabic");
   inRouter(
-    <TopBar userName="أحمد علي" shift={{ userName: "أحمد علي", since: "08:00" }} backup={{ kind: "stale", hours: 26 }} alerts={5} />,
+    <TopBar userName="أحمد علي" roleName="موظف استقبال" onLogout={() => {}} shift={{ userName: "أحمد علي", since: "08:00" }} backup={{ kind: "stale", hours: 26 }} alerts={5} />,
   );
   expect(screen.getByText("وردية مفتوحة · أحمد · منذ 08:00")).toBeInTheDocument();
   expect(screen.getByText("لم تُنشأ نسخة منذ ٢٦ ساعة")).toBeInTheDocument();
@@ -47,10 +53,26 @@ test("top bar chips: open shift, stale backup, alert count in the hotel's digits
 });
 
 test("top bar without a shift or backups", () => {
-  inRouter(<TopBar userName="سلمى حسن" shift={null} backup={{ kind: "never" }} alerts={0} />);
+  const logout = vi.fn();
+  inRouter(<TopBar userName="سلمى حسن" roleName="موظف استقبال" onLogout={logout} shift={null} backup={{ kind: "never" }} alerts={0} />);
   expect(screen.getByText("لا توجد وردية مفتوحة")).toBeInTheDocument();
   expect(screen.getByText("لم تُنشأ نسخة بعد")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "التنبيهات" })).toHaveTextContent("");
+  // The user button opens a menu with the role and «تسجيل الخروج».
+  fireEvent.click(screen.getByRole("button", { name: /سلمى حسن/ }));
+  expect(screen.getByRole("menu")).toHaveTextContent("موظف استقبال");
+  fireEvent.click(screen.getByRole("menuitem", { name: "تسجيل الخروج" }));
+  expect(logout).toHaveBeenCalled();
+});
+
+test("top bar search: typing a room number lists rooms from the board; Esc clears", () => {
+  inRouter(<TopBar userName="سلمى حسن" roleName="موظف استقبال" onLogout={() => {}} shift={null} backup={{ kind: "never" }} alerts={0} />);
+  const box = screen.getByRole("combobox", { name: "ابحث برقم الغرفة أو الاسم أو الهاتف" });
+  fireEvent.change(box, { target: { value: "2" } });
+  expect(screen.getByRole("listbox")).toBeInTheDocument(); // no board loaded in the test → «لا نتائج»
+  fireEvent.keyDown(box, { key: "Escape" });
+  expect(box).toHaveValue("");
+  expect(screen.queryByRole("listbox")).toBeNull();
 });
 
 test("owner banner shows the data date and the imported copy", () => {

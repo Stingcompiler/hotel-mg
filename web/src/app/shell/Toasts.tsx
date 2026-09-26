@@ -54,7 +54,7 @@ export function Toasts() {
             type="button"
             onClick={() => {
               setShown((s) => s.filter((x) => x.seq !== toast.seq));
-              navigate("/followups");
+              navigate(`/followups?task=${toast.task}`);
             }}
             className="min-w-0 flex-1 border-0 bg-transparent p-0 text-start font-sans"
           >
@@ -65,7 +65,7 @@ export function Toasts() {
             type="button"
             aria-label={t("common.close")}
             onClick={() => setShown((s) => s.filter((x) => x.seq !== toast.seq))}
-            className="flex h-6 w-6 flex-none items-center justify-center rounded-control border-0 bg-transparent text-text-secondary hover:bg-bg-surface-2"
+            className="-me-1 -mt-1 flex h-9 w-9 flex-none items-center justify-center rounded-control border-0 bg-transparent text-text-secondary hover:bg-bg-surface-2"
           >
             <X className="h-4 w-4" strokeWidth={1.75} aria-hidden />
           </button>

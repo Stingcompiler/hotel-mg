@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import type { components } from "@api/schema";
 
@@ -18,7 +19,12 @@ const GRID = "grid grid-cols-[130px_80px_110px_1fr_90px_110px] items-center gap-
 
 /** 6.13 B owner PC «النسخ والاستيراد»: the card with import as the primary action, import log, Drive files, data state. */
 export function BackupImportPage() {
-  const [importing, setImporting] = useState<{ candidate?: Candidate } | null>(null);
+  // «استيراد نسخة» on the settings tab lands here with `?import=1` and opens the dialog at once.
+  const [params, setParams] = useSearchParams();
+  const [importing, setImporting] = useState<{ candidate?: Candidate } | null>(params.has("import") ? {} : null);
+  useEffect(() => {
+    if (params.has("import")) setParams({}, { replace: true });
+  }, [params, setParams]);
   const runs = useQuery({ queryKey: ["owner", "import", "runs", "all"], queryFn: () => data(api.GET("/api/v1/owner/import/runs")) });
   const status = useQuery({ queryKey: ["owner", "status"], queryFn: () => data(api.GET("/api/v1/owner/status")), retry: false }).data;
   const candidates = useQuery({

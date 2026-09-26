@@ -52,6 +52,14 @@ export function RoomBoardPage() {
   useEffect(() => {
     if (params.get("filter") === "overdue") setFilterState("overdue");
   }, [params]);
+  // The top-bar search opens a room with `?room=<id>`; the parameter is consumed once.
+  useEffect(() => {
+    const id = params.get("room");
+    if (id && board.data?.rooms.some((r) => r.id === id)) {
+      setOpenId(id);
+      setParams({}, { replace: true });
+    }
+  }, [params, board.data]);
   const setFilter = (next: Filter) => {
     setFilterState(next);
     if (params.has("filter")) setParams({}, { replace: true });

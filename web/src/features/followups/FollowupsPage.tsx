@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, Clock, TriangleAlert } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate , useSearchParams } from "react-router-dom";
 
 import type { components } from "@api/schema";
 
@@ -172,6 +172,12 @@ function GuestCell({ guest, kind, title }: { guest: string; kind: string; title?
 function TaskLine({ row, late = false, offline }: { row: TaskRow; late?: boolean; offline: boolean }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [params] = useSearchParams();
+  const focused = params.get("task") === row.id;
+  const line = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (focused) line.current?.scrollIntoView({ block: "center" });
+  }, [focused]);
   const [pop, setPop] = useState<null | "snooze" | "waiting">(null);
   const [error, setError] = useState<string | null>(null);
   const act = useMutation({
@@ -190,7 +196,7 @@ function TaskLine({ row, late = false, offline }: { row: TaskRow; late?: boolean
   const neglected = row.status === "neglected";
 
   return (
-    <div className={`${LINE} min-h-16 py-2 ${late ? "bg-danger-soft" : ""}`}>
+    <div ref={line} className={`${LINE} min-h-16 py-2 ${late ? "bg-danger-soft" : ""} ${focused ? "outline outline-2 -outline-offset-2 outline-primary" : ""}`}>
       <RoomChip room={row.room} state={row.room_state} />
       <GuestCell guest={row.guest} kind={row.kind} title={row.title} />
       <div className="flex min-w-0 flex-col gap-0.5">

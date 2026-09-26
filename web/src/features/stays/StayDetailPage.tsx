@@ -283,9 +283,9 @@ function InvoiceTab({ ledger, balance }: { ledger: Ledger; balance: number }) {
       <div className={`${GRID} h-10 flex-none border-b border-border bg-bg-surface-2 text-label text-text-secondary`}>
         <div>{t("stay.colDate")}</div>
         <div>{t("stay.colText")}</div>
-        <div>{t("stay.colDebit")}</div>
-        <div>{t("stay.colCredit")}</div>
-        <div>{t("stay.colBalance")}</div>
+        <div className="text-end">{t("stay.colDebit")}</div>
+        <div className="text-end">{t("stay.colCredit")}</div>
+        <div className="text-end">{t("stay.colBalance")}</div>
         <div>{t("stay.colBy")}</div>
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
@@ -294,14 +294,21 @@ function InvoiceTab({ ledger, balance }: { ledger: Ledger; balance: number }) {
           return (
             <div
               key={`${e.type}-${e.id}`}
-              className={`${GRID} h-10 border-b border-border text-table-cell ${reversal ? "bg-danger-soft text-danger-text" : "hover:bg-bg-page"}`}
+              id={`entry-${e.id}`}
+              className={`${GRID} h-10 scroll-mt-12 border-b border-border text-table-cell ${reversal ? "bg-danger-soft text-danger-text" : "hover:bg-bg-page"}`}
             >
               <div className="text-label font-normal text-text-secondary">{when(e.at)}</div>
               <div className="flex min-w-0 items-center gap-2">
                 {reversal && <Undo2 className="h-icon-inline w-icon-inline flex-none text-danger" strokeWidth={1.75} aria-hidden />}
                 <span className="truncate">{e.text}</span>
                 {reversal && index.has(e.reverses!) && (
-                  <span className="whitespace-nowrap text-label text-primary">{t("stay.entryLink", { n: digits(String(index.get(e.reverses!))) })}</span>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById(`entry-${e.reverses}`)?.scrollIntoView({ block: "center" })}
+                    className="whitespace-nowrap border-0 bg-transparent p-0 font-sans text-label font-medium text-primary underline-offset-2 hover:underline"
+                  >
+                    {t("stay.entryLink", { n: digits(String(index.get(e.reverses!))) })}
+                  </button>
                 )}
                 {e.reference && (
                   <span dir="ltr" className="text-label font-normal text-text-secondary">
@@ -309,9 +316,9 @@ function InvoiceTab({ ledger, balance }: { ledger: Ledger; balance: number }) {
                   </span>
                 )}
               </div>
-              <div className={e.debit ? "font-semibold" : ""}>{e.debit ? money(e.debit) : "—"}</div>
-              <div className={e.credit ? "font-semibold" : ""}>{e.credit ? money(e.credit) : "—"}</div>
-              <div className="font-semibold">{money(e.balance)}</div>
+              <div className={`text-end ${e.debit ? "font-semibold" : ""}`}>{e.debit ? money(e.debit) : "—"}</div>
+              <div className={`text-end ${e.credit ? "font-semibold" : ""}`}>{e.credit ? money(e.credit) : "—"}</div>
+              <div className="text-end font-semibold">{money(e.balance)}</div>
               <div className="text-text-secondary">{e.by}</div>
             </div>
           );
@@ -320,9 +327,9 @@ function InvoiceTab({ ledger, balance }: { ledger: Ledger; balance: number }) {
       <div className={`${GRID} h-11 flex-none border-t border-border bg-bg-surface text-body`}>
         <div />
         <div className="font-semibold">{t("stay.total")}</div>
-        <div className="font-semibold">{money(debit)}</div>
-        <div className="font-semibold">{money(credit)}</div>
-        <div className={`font-bold ${balance > 0 ? "text-danger" : ""}`}>
+        <div className="text-end font-semibold">{money(debit)}</div>
+        <div className="text-end font-semibold">{money(credit)}</div>
+        <div className={`text-end font-bold ${balance > 0 ? "text-danger" : ""}`}>
           {money(balance)} {t("money.currency")}
         </div>
         <div className="text-label font-normal text-text-secondary">
@@ -342,7 +349,7 @@ function PaymentsTab({ ledger }: { ledger: Ledger }) {
       <div className={`${PAY_GRID} h-10 flex-none border-b border-border bg-bg-surface-2 text-label text-text-secondary`}>
         <div>{t("stay.colDate")}</div>
         <div>{t("stay.colText")}</div>
-        <div>{t("stay.colAmount")}</div>
+        <div className="text-end">{t("stay.colAmount")}</div>
         <div>{t("stay.colReference")}</div>
         <div>{t("stay.colBy")}</div>
         <div />
@@ -352,7 +359,7 @@ function PaymentsTab({ ledger }: { ledger: Ledger }) {
           <div key={e.id} className={`${PAY_GRID} h-10 border-b border-border text-table-cell ${e.reverses ? "text-danger-text" : ""} ${i % 2 ? "bg-bg-surface-2" : ""}`}>
             <div className="text-label font-normal text-text-secondary">{when(e.at)}</div>
             <div className="truncate">{e.text}</div>
-            <div className="font-semibold">
+            <div className="text-end font-semibold">
               {money(e.credit || e.debit)} {t("money.currency")}
             </div>
             <div dir="ltr" className="text-end text-text-secondary">
@@ -363,7 +370,7 @@ function PaymentsTab({ ledger }: { ledger: Ledger }) {
               <button
                 type="button"
                 onClick={() => openPrint("receipt", e.id)}
-                className="inline-flex items-center gap-1 border-0 bg-transparent p-0 font-sans text-label font-medium text-primary hover:text-primary-hover"
+                className="inline-flex h-9 items-center gap-1 rounded-control border-0 bg-transparent px-2 font-sans text-label font-medium text-primary hover:bg-bg-surface-2 hover:text-primary-hover"
               >
                 <Printer className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
                 {t("print.printReceipt")}

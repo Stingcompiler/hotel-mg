@@ -45,6 +45,8 @@ export function ReceptionShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
           userName={userName}
+          roleName={me ? t(`roles.${me.role}`) : ""}
+          onLogout={logout}
           shift={shift ? { userName: shift.opened_by, since: formatTime(shift.opened_at) } : null}
           backup={backup}
           alerts={alerts}
