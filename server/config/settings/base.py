@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework.authtoken",
     "drf_spectacular",
     "apps.core",
     "apps.accounts",
@@ -105,7 +106,8 @@ STATIC_ROOT = BASE_DIR / "static_collected"
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        # Token auth (PIN/password login, spec §6.8) arrives in phase B1.
+        "apps.accounts.authentication.ExpiringTokenAuthentication",
+        # Session auth serves the browsable API / Swagger for staff during the backend phases.
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
@@ -121,6 +123,10 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "COMPONENT_SPLIT_REQUEST": True,
+    "ENUM_NAME_OVERRIDES": {
+        "UserRoleEnum": "apps.accounts.models.Role",
+        "DeviceRoleEnum": ["reception", "owner"],
+    },
 }
 
 APP_VERSION = "0.1.0"

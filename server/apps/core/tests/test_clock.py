@@ -48,6 +48,6 @@ class TestObserveClock:
         # Moving the clock forward again does not lift the block.
         assert observe_clock(T0 + timedelta(hours=1)) is True
 
-        approve_clock(T0 - timedelta(hours=1))
+        approve_clock(now=T0 - timedelta(hours=1))
         assert not is_clock_blocked()
         assert observe_clock(T0 - timedelta(minutes=30)) is False

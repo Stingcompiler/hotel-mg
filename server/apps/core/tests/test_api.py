@@ -57,7 +57,8 @@ def test_clock_guard_refuses_writes_with_423(api):
 
 def test_clock_guard_lets_approval_path_through(api):
     _block_clock()
-    assert api.post("/api/v1/system/clock/approve").status_code == 404  # endpoint arrives in B3
+    res = api.post("/api/v1/system/clock/approve")
+    assert res.status_code == 401  # reaches the view (auth required) instead of the 423 guard
 
 
 def test_handler_shapes_api_error():

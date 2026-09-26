@@ -6,6 +6,9 @@ api_v1 = [
     path("schema", SpectacularAPIView.as_view(), name="schema"),
     path("schema/swagger/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("system/", include("apps.core.urls")),
+    path("auth/", include("apps.accounts.urls")),
+    path("users/", include("apps.accounts.urls_users")),
+    path("audit/", include("apps.audit.urls")),
 ]
 
 urlpatterns = [
