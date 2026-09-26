@@ -15,6 +15,7 @@ import { formatDayMonth, formatTime } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
 import { formatMoney, parseMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
+import { notice } from "@/lib/notices";
 
 type Expense = components["schemas"]["Expense"];
 type Category = components["schemas"]["ExpenseCategoryEnum"];
@@ -71,7 +72,7 @@ export function ExpensesPage() {
           </Select>
         </div>
         <div className="flex-1" />
-        <button type="button" disabled={offline} onClick={() => setCreating(true)} className={`${buttons.primary} h-9 px-4`}>
+        <button type="button" disabled={offline} title={offline ? t("common.offlineHint") : undefined} onClick={() => setCreating(true)} className={`${buttons.primary} h-9 px-4`}>
           <Plus className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
           {t("expenses.new")}
         </button>
@@ -309,6 +310,7 @@ function NewExpenseDrawer({ threshold, onClose, onDone }: { threshold: number; o
       );
       if (file) await upload(created.id, file);
       if (print) openPrint("expense", created.id);
+      notice(t("expenses.saved", { amount: money(minor!) }));
     },
     onSuccess: onDone,
     onError: (e) => setError(e instanceof ApiError ? e.message : t("errors.error")),

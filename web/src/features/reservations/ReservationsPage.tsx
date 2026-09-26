@@ -69,7 +69,7 @@ function NewButton() {
   const navigate = useNavigate();
   const offline = useSystemStatus().isError;
   return (
-    <button type="button" disabled={offline} onClick={() => navigate("/reservations/new")} className={`${buttons.primary} h-9 px-4`}>
+    <button type="button" disabled={offline} title={offline ? t("common.offlineHint") : t("reservations.newHint")} onClick={() => navigate("/reservations/new")} className={`${buttons.primary} h-9 px-4`}>
       <Plus className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
       {t("reservations.new")}
     </button>

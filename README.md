@@ -7,6 +7,9 @@ A reception PC records every operation; an owner PC imports encrypted backups an
 - `docs/spec/SkyTowers-System-Build-Spec.md` — system build specification (source of truth for architecture, rules, phases).
 - `design-package/` — UI design package exported from Claude Design. **Read-only**: never edit in place.
 - `docs/decisions.md` — decisions log; `docs/design-gaps.md` — where the design package and the spec disagree, and what was built.
+- `docs/user-guide.ar.md` — Arabic user guide (reception, manager, owner) and the policies the program enforces.
+- `docs/rtl-notes.md` — the RTL rules and declared exceptions, each pointing to the code; `docs/screens/` — screenshots of every screen.
+- `docs/audit-2026-09-26.md` — the audit against the spec and the brief, the fix plan (batches A/B/C) and the UI/UX study.
 
 ## Layout
 

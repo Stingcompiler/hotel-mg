@@ -5,6 +5,7 @@ import { t } from "@/i18n/t";
 import { useMediaQuery } from "@/lib/useMediaQuery";
 
 import { OWNER_NAV } from "../nav";
+import { Notices } from "./Notices";
 import { OwnerBanner } from "./OwnerBanner";
 import { ClockGuard } from "./ClockGuard";
 import { SessionLock } from "./SessionLock";
@@ -40,6 +41,7 @@ export function OwnerShell() {
           <Outlet />
         </main>
       </div>
+      <Notices />
       <ClockGuard />
       <SessionLock />
     </div>

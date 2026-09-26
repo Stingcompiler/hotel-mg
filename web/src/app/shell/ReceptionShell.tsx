@@ -8,6 +8,7 @@ import { useMediaQuery } from "@/lib/useMediaQuery";
 import { RECEPTION_NAV } from "../nav";
 import { ClockGuard } from "./ClockGuard";
 import { DesktopBridge } from "./DesktopBridge";
+import { Notices } from "./Notices";
 import { SessionLock } from "./SessionLock";
 import { Sidebar } from "./Sidebar";
 import { SystemBars } from "./SystemBars";
@@ -57,6 +58,7 @@ export function ReceptionShell() {
         </main>
       </div>
       <Toasts />
+      <Notices />
       <DesktopBridge />
       <ClockGuard />
       <SessionLock />

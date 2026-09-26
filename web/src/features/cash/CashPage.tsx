@@ -7,7 +7,7 @@ import type { components } from "@api/schema";
 import { api, ApiError, data } from "@/api/client";
 import { keys, useCurrentShift, useSystemStatus } from "@/api/queries";
 import { ErrorBanner, Segmented, Select } from "@/components/ui/form";
-import { buttons } from "@/components/ui/Modal";
+import { buttons, Modal } from "@/components/ui/Modal";
 import { stateColor } from "@/design/state";
 import { openPrint } from "@/features/print/PrintPage";
 import { elapsed } from "@/i18n/counts";
@@ -15,6 +15,7 @@ import { formatDayDate, formatDayMonth, formatTime } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
 import { formatMoney, parseMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
+import { notice } from "@/lib/notices";
 
 type Current = components["schemas"]["CurrentShift"];
 const money = (v: number) => formatMoney(v);
@@ -79,17 +80,24 @@ function OpenShift({ current }: { current: Current }) {
     mutationFn: () =>
       data(api.POST("/api/v1/shifts/close", { body: { counted: countedMinor!, difference_reason: reason.trim(), version: shift.version } })),
     onSuccess: () => {
+      setConfirming(false);
+      notice(t("cash.closedNotice", { counted: money(countedMinor!), diff: signed(diff ?? 0) }));
       setCounted("");
       setReason("");
       refresh();
     },
-    onError: (e) => setError(e instanceof ApiError ? e.message : t("errors.error")),
+    onError: (e) => {
+      setConfirming(false);
+      setError(e instanceof ApiError ? e.message : t("errors.error"));
+    },
   });
+  // Closing is irreversible: a confirmation step repeats expected, counted and the difference first.
+  const [confirming, setConfirming] = useState(false);
   const submit = () => {
     if (countedMinor === null) return setError(t("cash.errCounted"));
     if (diff !== 0 && !reason.trim()) return setError(t("cash.errReason"));
     setError(null);
-    close.mutate();
+    setConfirming(true);
   };
 
   const line = "flex justify-between border-b border-border py-2.5";
@@ -184,6 +192,48 @@ function OpenShift({ current }: { current: Current }) {
           </div>
         </div>
       </section>
+      {confirming && (
+        <Modal
+          title={t("cash.confirmTitle")}
+          width={480}
+          onClose={() => setConfirming(false)}
+          footer={
+            <>
+              <button type="button" disabled={close.isPending} onClick={() => close.mutate()} className={buttons.primary}>
+                <Lock className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
+                {t("cash.confirmClose")}
+              </button>
+              <div className="flex-1" />
+              <button type="button" onClick={() => setConfirming(false)} className={buttons.ghost}>
+                {t("common.cancel")}
+              </button>
+            </>
+          }
+        >
+          <div className="flex flex-col divide-y divide-border">
+            <div className="flex justify-between py-2.5 text-body">
+              <span className="text-text-secondary">{t("cash.expected")}</span>
+              <span className="font-semibold">{money(totals.expected)} {t("money.currency")}</span>
+            </div>
+            <div className="flex justify-between py-2.5 text-body">
+              <span className="text-text-secondary">{t("cash.counted")}</span>
+              <span className="font-semibold">{money(countedMinor ?? 0)} {t("money.currency")}</span>
+            </div>
+            <div className={`flex justify-between py-2.5 text-body ${diff ? "text-danger" : "text-success-text"}`}>
+              <span>{t("cash.difference")}</span>
+              <span className="font-bold" dir="ltr">
+                {signed(diff ?? 0)}
+              </span>
+            </div>
+          </div>
+          {reason.trim() && (
+            <div className="text-body text-text-secondary">
+              {t("cash.reason")}: {reason.trim()}
+            </div>
+          )}
+          <div className="text-label font-normal text-text-secondary">{t("cash.confirmText")}</div>
+        </Modal>
+      )}
       <Movements current={current} />
     </>
   );

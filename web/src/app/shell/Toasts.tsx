@@ -20,6 +20,8 @@ export function Toasts() {
   const navigate = useNavigate();
   const cursor = useRef<number | null>(null);
   const [shown, setShown] = useState<Toast[]>([]);
+  // Hovering the stack pauses the countdown so a toast can be read or clicked in time.
+  const [paused, setPaused] = useState(false);
   const poll = useQuery({
     queryKey: ["followups", "toasts"],
     queryFn: () => data(api.GET("/api/v1/followups/toasts", { params: { query: { after: cursor.current ?? 0 } } })),
@@ -39,14 +41,19 @@ export function Toasts() {
   }, [poll.data]);
 
   useEffect(() => {
-    if (!shown.length) return;
+    if (!shown.length || paused) return;
     const id = window.setTimeout(() => setShown((s) => s.slice(0, -1)), SHOW_MS);
     return () => window.clearTimeout(id);
-  }, [shown]);
+  }, [shown, paused]);
 
   if (!shown.length) return null;
   return (
-    <div className="fixed bottom-6 start-6 z-40 flex w-[360px] flex-col gap-2" aria-live="polite">
+    <div
+      className="fixed bottom-6 start-6 z-40 flex w-[360px] flex-col gap-2"
+      aria-live="polite"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
       {shown.map((toast) => (
         <div key={toast.seq} className="flex items-start gap-3 rounded-card border border-border bg-bg-surface p-3 shadow-elevated">
           <Bell className="mt-0.5 h-icon w-icon flex-none text-primary" strokeWidth={1.75} aria-hidden />

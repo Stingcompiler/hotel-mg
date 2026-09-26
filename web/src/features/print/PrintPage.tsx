@@ -78,6 +78,27 @@ export function PrintPage() {
   const d = doc.data;
   return (
     <div className="print-root bg-bg-surface text-text-primary">
+      {/* Screen-only toolbar: the page prints itself once, and this reprints it if the dialog was cancelled. */}
+      <div className="no-print sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-bg-surface px-4 py-2">
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="inline-flex h-9 items-center gap-2 rounded-control border-0 bg-primary px-4 font-sans text-body font-semibold text-primary-text-on hover:bg-primary-hover"
+        >
+          {t("print.print")}
+        </button>
+        <span className="text-label font-normal text-text-secondary">{t("print.previewHint")}</span>
+        <div className="flex-1" />
+        {window.opener && (
+          <button
+            type="button"
+            onClick={() => window.close()}
+            className="inline-flex h-9 items-center rounded-control border border-border-strong bg-bg-surface px-4 font-sans text-body font-medium text-text-primary hover:bg-bg-surface-2"
+          >
+            {t("common.close")}
+          </button>
+        )}
+      </div>
       {d.kind === "invoice" && <InvoiceA4 doc={d.doc} version={version} />}
       {d.kind === "receipt" && <PaymentReceipt doc={d.doc} version={version} />}
       {d.kind === "expense" && <ExpenseSlip doc={d.doc} />}
