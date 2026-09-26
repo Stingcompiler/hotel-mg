@@ -3,4 +3,5 @@ Django==5.2.17
 djangorestframework==3.18.1
 drf-spectacular==0.30.0
 waitress==3.0.2
+Pillow==12.3.0
 pywin32==311; sys_platform == "win32"

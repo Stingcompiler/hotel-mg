@@ -28,6 +28,7 @@ Windows-only work (service wrapper, PyInstaller, NSIS installer, WebView2 print,
 
 - **Business logic lives only in Django.** Each app: `models.py`, `rules.py` (pure functions, no ORM, 100 % covered), `services.py` (one function per use case, one `transaction.atomic()`, writes one `AuditLog` row), `serializers.py`, `views.py`, `tests/`.
 - Every hotel model inherits `apps.core.models.BaseModel` (UUID pk, `hotel_id`, `created_at`, `updated_at`, `version`, `created_by`). Append-only tables (§5) inherit `AppendOnlyModel`: corrections are new rows, never updates/deletes.
+- **Never delete rows** of hotel models. The owner PC's merge import is additive and cannot see deletions: use a flag (`removed`, `is_active`, a status) and let `updated_at` carry the change.
 - **Money** is `apps.core.fields.MoneyField` (int, minor units = piasters ×100). API uses `MoneyMinorField`. Never `float` or `Decimal` for money. Formatting is the frontend's job.
 - **Dates**: stay periods are date-only in `Africa/Khartoum`; `check_out_date` is exclusive. Timestamps are UTC.
 - **Portability**: ORM only, no SQLite-specific SQL; switching `DATABASES` to PostgreSQL must be the only change.

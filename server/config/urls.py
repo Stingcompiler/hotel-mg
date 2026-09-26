@@ -13,6 +13,7 @@ api_v1 = [
     path("audit/", include("apps.audit.urls")),
     path("room-types/", include(room_type_urls)),
     path("rooms/", include("apps.rooms.urls")),
+    path("guests/", include("apps.guests.urls")),
 ]
 
 urlpatterns = [
