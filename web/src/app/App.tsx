@@ -9,6 +9,7 @@ import { LoginPage } from "@/features/login/LoginPage";
 import { Placeholder } from "@/features/placeholder/Placeholder";
 import { NewReservationPage } from "@/features/reservations/NewReservationPage";
 import { RoomBoardPage } from "@/features/rooms/RoomBoardPage";
+import { StayDetailPage } from "@/features/stays/StayDetailPage";
 import { setDigits } from "@/i18n/digits";
 import { setMoneyDecimals } from "@/i18n/money";
 import { t } from "@/i18n/t";
@@ -57,7 +58,7 @@ const router = createBrowserRouter([
       { path: "/", element: <RoomBoardPage /> },
       screen("/reservations", "reservations"),
       { path: "/reservations/new", element: <NewReservationPage /> },
-      screen("/stays/:id", "rooms"),
+      { path: "/stays/:id", element: <StayDetailPage /> },
       screen("/followups", "followups"),
       screen("/cash", "cash"),
       screen("/expenses", "expenses"),

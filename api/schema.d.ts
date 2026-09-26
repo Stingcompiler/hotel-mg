@@ -3093,6 +3093,59 @@ export interface components {
             maintenance_reason?: string;
             override_password?: string;
         };
+        /** @description Stay detail 6.5: the stay plus the guest card, the room line, days left and the activity log. */
+        StayDetail: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly reservation: components["schemas"]["Reservation"];
+            /** Format: date-time */
+            checked_in_at: string;
+            /** Format: date-time */
+            checked_out_at: string | null;
+            /** Format: date */
+            readonly last_night: string;
+            readonly segments: components["schemas"]["StaySegment"][];
+            readonly override_by_name: string;
+            override_reason: string;
+            /** Format: int64 */
+            version: number;
+            readonly guest: components["schemas"]["StayGuest"];
+            readonly room: components["schemas"]["StayRoom"] | null;
+            /** @description 0 = ends today; negative = overdue; null once closed */
+            readonly days_left: number | null;
+            /** @description Audit rows of this stay, its reservation and folio; newest first */
+            readonly log: components["schemas"]["StayLogEntry"][];
+        };
+        StayGuest: {
+            /** Format: uuid */
+            id: string;
+            full_name: string;
+            phone: string;
+            nationality: string;
+            id_type_label: string;
+            /** @description Full for manager/owner; last 4 characters otherwise. */
+            id_number: string;
+            warning_note: string;
+            companions: {
+                [key: string]: string;
+            }[];
+        };
+        StayLogEntry: {
+            /** Format: date-time */
+            at: string;
+            action: string;
+            label: string;
+            by: string | null;
+        };
+        StayRoom: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            floor: number;
+            room_type_name: string;
+            status: components["schemas"]["RoomStatusEnum"];
+            display_status: components["schemas"]["RoomDisplayStatusEnum"];
+        };
         StaySegment: {
             /** Format: uuid */
             readonly id: string;
@@ -5377,7 +5430,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Stay"];
+                    "application/json": components["schemas"]["StayDetail"];
                 };
             };
         };

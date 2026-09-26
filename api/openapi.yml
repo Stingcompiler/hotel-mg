@@ -2451,7 +2451,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Stay'
+                $ref: '#/components/schemas/StayDetail'
           description: ''
   /api/v1/stays/{id}/cancel:
     get:
@@ -6552,6 +6552,156 @@ components:
         override_password:
           type: string
           maxLength: 128
+    StayDetail:
+      type: object
+      description: 'Stay detail 6.5: the stay plus the guest card, the room line,
+        days left and the activity log.'
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        reservation:
+          allOf:
+          - $ref: '#/components/schemas/Reservation'
+          readOnly: true
+        checked_in_at:
+          type: string
+          format: date-time
+        checked_out_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_night:
+          type: string
+          format: date
+          readOnly: true
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaySegment'
+          readOnly: true
+        override_by_name:
+          type: string
+          readOnly: true
+        override_reason:
+          type: string
+          maxLength: 300
+        version:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        guest:
+          allOf:
+          - $ref: '#/components/schemas/StayGuest'
+          readOnly: true
+        room:
+          allOf:
+          - $ref: '#/components/schemas/StayRoom'
+          nullable: true
+          readOnly: true
+        days_left:
+          type: integer
+          nullable: true
+          readOnly: true
+          description: 0 = ends today; negative = overdue; null once closed
+        log:
+          type: array
+          items:
+            $ref: '#/components/schemas/StayLogEntry'
+          readOnly: true
+          description: Audit rows of this stay, its reservation and folio; newest
+            first
+      required:
+      - id
+      - reservation
+      - checked_in_at
+      - checked_out_at
+      - last_night
+      - segments
+      - override_by_name
+      - override_reason
+      - version
+      - guest
+      - room
+      - days_left
+      - log
+    StayGuest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        full_name:
+          type: string
+        phone:
+          type: string
+        nationality:
+          type: string
+        id_type_label:
+          type: string
+        id_number:
+          type: string
+          description: Full for manager/owner; last 4 characters otherwise.
+        warning_note:
+          type: string
+        companions:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: string
+      required:
+      - id
+      - full_name
+      - phone
+      - nationality
+      - id_type_label
+      - id_number
+      - warning_note
+      - companions
+    StayLogEntry:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        action:
+          type: string
+        label:
+          type: string
+        by:
+          type: string
+          nullable: true
+      required:
+      - at
+      - action
+      - label
+      - by
+    StayRoom:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        floor:
+          type: integer
+        room_type_name:
+          type: string
+        status:
+          $ref: '#/components/schemas/RoomStatusEnum'
+        display_status:
+          $ref: '#/components/schemas/RoomDisplayStatusEnum'
+      required:
+      - id
+      - number
+      - floor
+      - room_type_name
+      - status
+      - display_status
     StaySegment:
       type: object
       properties:
