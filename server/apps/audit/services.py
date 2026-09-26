@@ -1,6 +1,7 @@
 import json
 from datetime import UTC
 
+from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 from django.forms.models import model_to_dict
@@ -32,8 +33,13 @@ def _json_roundtrip(value):
     return None if value is None else json.loads(json.dumps(value, cls=DjangoJSONEncoder))
 
 
-def record(*, actor, action: str, entity: str, entity_id="", before=None, after=None) -> AuditLog:
-    """Append one row to this hotel's chain. Call inside the service's transaction."""
+def record(*, actor, action: str, entity: str, entity_id="", before=None, after=None) -> AuditLog | None:
+    """Append one row to this hotel's chain. Call inside the service's transaction.
+
+    The chain is written on the reception PC only; the owner PC receives it by import and must not fork it.
+    """
+    if settings.SKYTOWERS_ROLE == "owner":
+        return None
     if not transaction.get_connection().in_atomic_block:
         raise RuntimeError("audit.record() must run inside the service transaction")
     hotel_id = current_hotel_id()
@@ -69,7 +75,7 @@ def record(*, actor, action: str, entity: str, entity_id="", before=None, after=
     )
 
 
-def verify_chain(hotel_id=None) -> int | None:
+def verify_chain(hotel_id=None, using: str = "default") -> int | None:
     """Return the seq of the first broken row of the hotel's chain, or None when intact."""
     hotel_id = hotel_id or current_hotel_id()
     rows = (
@@ -86,6 +92,6 @@ def verify_chain(hotel_id=None) -> int | None:
             "prev_hash": r.prev_hash,
             "hash": r.hash,
         }
-        for r in AuditLog.objects.filter(hotel_id=hotel_id).order_by("seq").iterator()
+        for r in AuditLog.objects.using(using).filter(hotel_id=hotel_id).order_by("seq").iterator()
     )
     return rules.first_broken(rows)

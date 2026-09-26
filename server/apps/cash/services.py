@@ -108,6 +108,9 @@ def close_shift(actor, *, counted: int, difference_reason: str = "", version: in
     shift.counted = counted
     shift.difference_reason = reason
     shift.save()
+    from apps.backup.services import after_shift_close  # backup depends on cash, not the reverse
+
+    after_shift_close()
     audit.record(
         actor=actor,
         action="shift.close",

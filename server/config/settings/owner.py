@@ -4,4 +4,4 @@ from .base import RUNTIME
 
 SKYTOWERS_ROLE = "owner"
 check_role(RUNTIME, SKYTOWERS_ROLE)
-# The owner read-only middleware (spec §2) is added in phase B4.
+# apps.core.middleware.OwnerReadOnlyMiddleware refuses every write outside auth/ and owner/ (spec §2).
