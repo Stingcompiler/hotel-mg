@@ -41,3 +41,11 @@ Append-only. Newest last. Each entry: date, phase, decision, reason.
 26. **Price edits** (any of nightly/weekly/monthly, and creating a room type) need a password confirmation; renames do not. Audit action `room_type.update_prices` separates price changes in the trail.
 27. **Room type capacity** assumed 1 / 2 / 3 (single / double / suite) until the design answers gap #1; editable in settings.
 28. **Seed** follows the Room Board artboard for non-occupied states (104 and 306 cleaning, 410 maintenance) and the Settings artboard for room types (singles 101–108). Occupied rooms appear when the stays loader checks guests in.
+
+## 2026-09-26 — B1.3 Guests
+
+29. **Search** (`GET guests?q=`) matches a normalized name key (diacritics and tatweel removed; أ/إ/آ→ا, ة→ه, ى→ي folded), phone digits (a local `09…` matches the stored `+2499…`), or the exact ID number. Arabic-Indic digits are accepted everywhere and stored as ASCII.
+30. **ID number** is returned in full to manager/owner and masked to the last 4 characters for reception (who can still enter it and search by the exact value).
+31. **ID images**: any Pillow-readable image up to 10 MB is re-encoded server-side as JPEG ≤ 300 KB (orientation fixed, metadata stripped) under `attachments/guests/<guest>/`; `GuestDocument` is append-only with size and SHA-256. The unblurred image is served only to manager/owner with `Cache-Control: no-store`, and every view is audited (`guest.view_document`, the design's «عرض حساس»).
+32. **No deletes for mutable hotel rows**: replaced companions are flagged `removed` so the owner PC's additive import stays correct. Rule added to `CLAUDE.md`.
+33. Full name needs at least two words (the forms use full names for invoices and reports).
