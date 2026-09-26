@@ -126,6 +126,7 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "UserRoleEnum": "apps.accounts.models.Role",
         "DeviceRoleEnum": ["reception", "owner"],
+        "RoomStatusEnum": "apps.rooms.models.RoomStatus",
     },
 }
 

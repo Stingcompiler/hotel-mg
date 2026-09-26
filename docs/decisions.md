@@ -32,3 +32,12 @@ Append-only. Newest last. Each entry: date, phase, decision, reason.
 20. **Roles**: managers manage reception and manager accounts; only the owner manages owner accounts. Nobody can deactivate themselves or change their own role. Deactivating a user revokes their session. Manager and owner accounts need a password; reception accounts may be PIN-only.
 21. **Clock guard**: detection and approval are audited (`system.clock_rollback`, `system.clock_approve`); `POST system/clock/approve` needs manager + confirmation. `/api/v1/auth/*` stays reachable while blocked so a manager can sign in.
 22. **Coverage gate**: CI fails if any `apps/*/rules.py` is below 100 % line coverage.
+
+## 2026-09-26 — B1.2 Rooms
+
+23. **State machine** as a transition table keyed by (from, to) → the only trigger allowed: `check_in` (ready→occupied), `checkout` (occupied→cleaning), `manual` for the rest (cleaning→ready, ready⇄maintenance, cleaning⇄maintenance). Occupied is never changed by hand. Refusals return 409 `invalid_room_transition` with the Arabic detail naming the room and the `allowed` manual targets for the UI.
+24. **Maintenance needs a reason** (400 `reason_required`); the reason is kept on the room while in maintenance and in the history row.
+25. **Out of service** (`Room.in_service`, from the V2 Settings → Rooms artboard) is separate from status: it blocks booking and occupancy counts; an occupied room cannot be taken out (409 `room_occupied`).
+26. **Price edits** (any of nightly/weekly/monthly, and creating a room type) need a password confirmation; renames do not. Audit action `room_type.update_prices` separates price changes in the trail.
+27. **Room type capacity** assumed 1 / 2 / 3 (single / double / suite) until the design answers gap #1; editable in settings.
+28. **Seed** follows the Room Board artboard for non-occupied states (104 and 306 cleaning, 410 maintenance) and the Settings artboard for room types (singles 101–108). Occupied rooms appear when the stays loader checks guests in.
