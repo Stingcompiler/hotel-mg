@@ -173,3 +173,8 @@ Append-only. Newest last. Each entry: date, phase, decision, reason.
 ## 2026-09-26 — F2 Change room and cancel stay (V2)
 
 115. **Change room** (V2 «نافذة تغيير الغرفة»): rooms free for the remaining nights, same type first; the price difference for the remaining nights comes from the API; a negative difference asks for the manager password; the old room goes to cleaning or maintenance (with reason). **Cancel stay**: always a manager password (API rule); three ways to settle the nights used (the two quoted options and a manual amount); the preview shows new total, paid and the refund (or what stays owed); the danger button names the refund amount.
+
+## 2026-09-26 — F2 Follow-ups (6.6)
+
+116. **Follow-ups page** reads `followups/board` (polled every 30 s): متأخرة (danger rows), اليوم, تنبيهات النظام (tasks without a stay: «تم» + snooze), القادمة (extend only, with «سيُنبَّه …»). The wording of «when» and «rule» comes from the API. «تمديد» and «تأكيد المغادرة» open the stay's extend / check-out dialogs; the engine supersedes the task when the stay changes. «بانتظار الرد» and «تأجيل (n من 3)» open a popover (in an hour, in 3 hours, tomorrow 09:00, a set time; waiting takes an optional note); the snooze button is disabled when the limit is reached (server `can_snooze`). With the server down the list stays from the last refresh with «آخر تحديث» and actions disabled.
+117. Times are shown in the browser's time zone; on the hotel PCs that is Khartoum time, the same as the server's (spec §5).
