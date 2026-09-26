@@ -5,6 +5,7 @@ import time_machine
 from django.db import transaction
 from django.utils import timezone
 
+from apps.audit import rules as audit_rules
 from apps.audit.models import AuditLog
 from apps.billing.models import Folio, Payment
 from apps.billing.services import FolioTotals, next_number
@@ -97,9 +98,13 @@ class TestBooking:
             discount=9_000_000,
             discount_reason="شركة",
             manager_password=PASSWORD,
+            check_in_now=True,
         )
-        assert res.status_code == 201
+        assert res.status_code == 201, res.json()
         assert res.json()["rate_snapshot"]["discount"]["approved_by"] == str(manager.pk)
+        row = AuditLog.objects.filter(action="folio.discount").latest("seq")
+        assert row.after["approved_by"] == str(manager.pk)
+        assert audit_rules.category(row.action, row.after) == "override"
 
     def test_non_cash_needs_reference(self, reception_api, guest, double, rooms, shift):
         res = book(reception_api, guest, double, rooms["202"], deposit=1_000_000, deposit_method="bankak")

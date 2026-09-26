@@ -2,31 +2,13 @@ import csv
 import io
 
 import pytest
-from django.core.management import call_command
 from openpyxl import load_workbook
 
 from apps.billing.models import Folio, Payment
 from apps.cash.models import Expense, Shift
-from apps.core.seed import demo_data
 from apps.stays.models import Reservation
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def seeded(db):
-    call_command("seed_demo", "--allow-non-debug")
-
-
-@pytest.fixture
-def api_as_manager(seeded):
-    from rest_framework.test import APIClient
-
-    from apps.accounts.services import login_with_password
-
-    client = APIClient()
-    client.credentials(HTTP_AUTHORIZATION=f"Token {login_with_password('manager', demo_data.DEMO_PASSWORD).token}")
-    return client
 
 
 def get(api, name, **params):

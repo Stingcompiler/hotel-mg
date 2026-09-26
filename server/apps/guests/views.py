@@ -9,12 +9,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsManager
+from apps.stays.models import ReservationStatus
 
-from . import services
+from . import services, stats
 from .models import Guest, GuestDocument
 from .serializers import (
     DocumentUploadSerializer,
     GuestDocumentSerializer,
+    GuestHistoryItemSerializer,
+    GuestListItemSerializer,
     GuestSerializer,
     GuestUpdateSerializer,
     GuestWriteSerializer,
@@ -29,19 +32,35 @@ def _guests():
     parameters=[
         OpenApiParameter("q", str, description="Name (letter variants folded), phone digits, or exact ID number"),
         OpenApiParameter("warning", bool, description="Only guests with a warning note"),
+        OpenApiParameter("debt", bool, description="Only guests with an open balance"),
+        OpenApiParameter("in_house", bool, description="Only guests staying now"),
     ]
 )
 class GuestListView(ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = GuestSerializer
+    serializer_class = GuestListItemSerializer
+
+    def _flag(self, name) -> bool:
+        return self.request.query_params.get(name) in ("1", "true")
 
     def get_queryset(self):
         qs = services.search(self.request.query_params.get("q", "")).prefetch_related(
             "companions", "documents__created_by"
         )
-        if self.request.query_params.get("warning") in ("1", "true"):
+        if self._flag("warning"):
             qs = qs.exclude(warning_note="")
+        if self._flag("in_house"):
+            qs = qs.filter(reservations__status=ReservationStatus.CHECKED_IN).distinct()
+        if self._flag("debt"):
+            qs = qs.filter(pk__in=stats.debtor_ids())
         return qs
+
+    def get_serializer(self, *args, **kwargs):
+        if args and kwargs.get("many"):
+            guests = list(args[0])
+            kwargs["context"] = {**self.get_serializer_context(), "stats": stats.for_guests([g.pk for g in guests])}
+            return self.serializer_class(guests, *args[1:], **kwargs)
+        return super().get_serializer(*args, **kwargs)
 
     @extend_schema(request=GuestWriteSerializer, responses={201: GuestSerializer})
     def post(self, request):
@@ -68,6 +87,17 @@ class GuestDetailView(APIView):
         data.is_valid(raise_exception=True)
         services.update_guest(request.user, pk, **data.validated_data)
         return Response(GuestSerializer(_guests().get(pk=pk), context={"request": request}).data)
+
+
+class GuestHistoryView(APIView):
+    """Guest profile «سجل الإقامات»: every reservation, newest first, with its balance."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=GuestHistoryItemSerializer(many=True))
+    def get(self, request, pk):
+        get_object_or_404(Guest, pk=pk)
+        return Response(GuestHistoryItemSerializer(stats.history(pk), many=True).data)
 
 
 class GuestDocumentUploadView(APIView):

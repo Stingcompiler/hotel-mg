@@ -4,6 +4,7 @@ from . import views
 
 report_urls = [
     path("", views.ReportIndexView.as_view(), name="report-index"),
+    path("owner-dashboard", views.OwnerDashboardView.as_view(), name="owner-dashboard"),
     path("<slug:name>", views.ReportView.as_view(), name="report"),
     path("<slug:name>/export", views.ReportExportView.as_view(), name="report-export"),
 ]

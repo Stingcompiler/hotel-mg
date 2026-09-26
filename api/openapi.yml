@@ -1,0 +1,6635 @@
+openapi: 3.0.3
+info:
+  title: Sky Towers API
+  version: 1.0.0
+  description: Local API of the Sky Towers hotel management system.
+paths:
+  /api/v1/audit/:
+    get:
+      operationId: audit_list
+      description: Read-only audit trail, newest first (Settings → سجل التدقيق).
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          enum:
+          - login
+          - other
+          - override
+          - payment
+          - reversal
+          - sensitive
+          - settings
+          - stay
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD inclusive
+      - in: query
+        name: entity
+        schema:
+          type: string
+        description: e.g. user, room, stay
+      - in: query
+        name: id
+        schema:
+          type: string
+        description: Entity id
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: User name, action, entity or exact id
+      tags:
+      - audit
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogList'
+          description: ''
+  /api/v1/audit/verify:
+    get:
+      operationId: audit_verify_retrieve
+      tags:
+      - audit
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditVerify'
+          description: ''
+  /api/v1/auth/confirm:
+    post:
+      operationId: auth_confirm_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConfirmRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmToken'
+          description: ''
+  /api/v1/auth/logout:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/me:
+    get:
+      operationId: auth_me_retrieve
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/auth/password:
+    post:
+      operationId: auth_password_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordLoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordLoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordLoginRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: ''
+  /api/v1/auth/pin:
+    post:
+      operationId: auth_pin_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinLoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PinLoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PinLoginRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: ''
+  /api/v1/auth/users:
+    get:
+      operationId: auth_users_list
+      description: Active users for the login screen's picker (names and roles only).
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LoginUser'
+          description: ''
+  /api/v1/backup/drive/auth-url:
+    post:
+      operationId: backup_drive_auth_url_create
+      description: '«ربط حساب» (manager): opens Google''s consent page; Google returns
+        to ``…/drive/callback``.'
+      tags:
+      - backup
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUrl'
+          description: ''
+  /api/v1/backup/drive/status:
+    get:
+      operationId: backup_drive_status_retrieve
+      tags:
+      - backup
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriveStatus'
+          description: ''
+  /api/v1/backup/drive/sync:
+    post:
+      operationId: backup_drive_sync_create
+      description: '«مزامنة مع Drive»: reception uploads pending backups; the owner
+        PC downloads newer ones.'
+      tags:
+      - backup
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResult'
+          description: ''
+  /api/v1/backup/drive/unlink:
+    post:
+      operationId: backup_drive_unlink_create
+      description: «فصل الحساب» (manager).
+      tags:
+      - backup
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriveStatus'
+          description: ''
+  /api/v1/backup/run:
+    post:
+      operationId: backup_run_create
+      description: '«نسخة احتياطية الآن» (artboard 6.13): writes the encrypted file
+        now; the result line shows it.'
+      tags:
+      - backup
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupRun'
+          description: ''
+  /api/v1/backup/runs:
+    get:
+      operationId: backup_runs_list
+      description: '«سجل التشغيل»: backup runs, newest first.'
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      tags:
+      - backup
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBackupRunList'
+          description: ''
+  /api/v1/backup/settings:
+    get:
+      operationId: backup_settings_retrieve
+      tags:
+      - backup
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupSettings'
+          description: ''
+    patch:
+      operationId: backup_settings_partial_update
+      tags:
+      - backup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBackupSettingsUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBackupSettingsUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBackupSettingsUpdateRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupSettings'
+          description: ''
+  /api/v1/expenses/:
+    get:
+      operationId: expenses_list
+      description: 'Artboard 6.8: «هذه الوردية / اليوم / هذا الشهر» and a category
+        filter.'
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - in: query
+        name: scope
+        schema:
+          type: string
+          enum:
+          - month
+          - shift
+          - today
+        description: 'Default: month'
+      tags:
+      - expenses
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedExpenseList'
+          description: ''
+    post:
+      operationId: expenses_create
+      description: 'Artboard 6.8: «هذه الوردية / اليوم / هذا الشهر» and a category
+        filter.'
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: scope
+        schema:
+          type: string
+          enum:
+          - month
+          - shift
+          - today
+        description: 'Default: month'
+      tags:
+      - expenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExpenseCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExpenseCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+          description: ''
+  /api/v1/expenses/{id}/attachments:
+    post:
+      operationId: expenses_attachments_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - expenses
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+          description: ''
+  /api/v1/expenses/{id}/attachments/{att_pk}:
+    get:
+      operationId: expenses_attachments_retrieve
+      parameters:
+      - in: path
+        name: att_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - expenses
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/expenses/{id}/receipt:
+    get:
+      operationId: expenses_receipt_retrieve
+      description: Data for the 80 mm expense slip (artboard 7.2).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - expenses
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/expenses/{id}/reverse:
+    post:
+      operationId: expenses_reverse_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - expenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+          description: ''
+  /api/v1/expenses/summary:
+    get:
+      operationId: expenses_summary_retrieve
+      tags:
+      - expenses
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpenseSummary'
+          description: ''
+  /api/v1/folios/{id}:
+    get:
+      operationId: folios_retrieve
+      description: Totals and the ledger with running balance (artboard 6.5 «الفاتورة»).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - folios
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Folio'
+          description: ''
+  /api/v1/folios/{id}/invoice:
+    get:
+      operationId: folios_invoice_retrieve
+      description: Data for the A4 invoice (artboard 7.1).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - folios
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/folios/{id}/lines:
+    post:
+      operationId: folios_lines_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - folios
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LineCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LineCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LineCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Folio'
+          description: ''
+  /api/v1/folios/{id}/lines/{line_pk}/reverse:
+    post:
+      operationId: folios_lines_reverse_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: line_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - folios
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Folio'
+          description: ''
+  /api/v1/folios/{id}/payments:
+    post:
+      operationId: folios_payments_create
+      description: Needs an open shift on this device (409 ``no_open_shift``).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - folios
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+  /api/v1/folios/{id}/refunds:
+    post:
+      operationId: folios_refunds_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - folios
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RefundRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RefundRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+  /api/v1/followups/board:
+    get:
+      operationId: followups_board_retrieve
+      description: 'Follow-ups screen (artboard 6.6): متأخرة / اليوم / القادمة and
+        system tasks. Poll every 30 s.'
+      tags:
+      - followups
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Board'
+          description: ''
+  /api/v1/followups/rules:
+    get:
+      operationId: followups_rules_list
+      tags:
+      - followups
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlertRule'
+          description: ''
+    post:
+      operationId: followups_rules_create
+      tags:
+      - followups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+  /api/v1/followups/rules/{id}:
+    patch:
+      operationId: followups_rules_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - followups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAlertRuleUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAlertRuleUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAlertRuleUpdateRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+  /api/v1/followups/rules/preview:
+    post:
+      operationId: followups_rules_preview_create
+      description: 'Live preview while editing a rule (artboard 6.11: «معاينة — إقامة
+        شهرية تنتهي …»).'
+      tags:
+      - followups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreviewRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PreviewRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PreviewRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preview'
+          description: ''
+  /api/v1/followups/tasks:
+    get:
+      operationId: followups_tasks_list
+      description: 'Spec §10.4: ``tasks?status=open`` (open, snoozed, waiting, neglected)
+        and ``&count`` for badges.'
+      parameters:
+      - in: query
+        name: count
+        schema:
+          type: boolean
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - all
+          - open
+      tags:
+      - followups
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskRow'
+          description: ''
+  /api/v1/followups/tasks/{id}:
+    get:
+      operationId: followups_task_history
+      description: The task's action history.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - followups
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskAction'
+          description: ''
+  /api/v1/followups/tasks/{id}/actions:
+    post:
+      operationId: followups_tasks_actions_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - followups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ActionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ActionRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRow'
+          description: ''
+  /api/v1/followups/toasts:
+    get:
+      operationId: followups_toasts_retrieve
+      description: 'Tray poll (every 30 s): notifications newer than ``after``.'
+      parameters:
+      - in: query
+        name: after
+        schema:
+          type: integer
+      tags:
+      - followups
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToastBatch'
+          description: ''
+  /api/v1/guests/:
+    get:
+      operationId: guests_list
+      parameters:
+      - in: query
+        name: debt
+        schema:
+          type: boolean
+        description: Only guests with an open balance
+      - in: query
+        name: in_house
+        schema:
+          type: boolean
+        description: Only guests staying now
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Name (letter variants folded), phone digits, or exact ID number
+      - in: query
+        name: warning
+        schema:
+          type: boolean
+        description: Only guests with a warning note
+      tags:
+      - guests
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGuestListItemList'
+          description: ''
+    post:
+      operationId: guests_create
+      parameters:
+      - in: query
+        name: debt
+        schema:
+          type: boolean
+        description: Only guests with an open balance
+      - in: query
+        name: in_house
+        schema:
+          type: boolean
+        description: Only guests staying now
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Name (letter variants folded), phone digits, or exact ID number
+      - in: query
+        name: warning
+        schema:
+          type: boolean
+        description: Only guests with a warning note
+      tags:
+      - guests
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GuestWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GuestWriteRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guest'
+          description: ''
+  /api/v1/guests/{id}:
+    get:
+      operationId: guests_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - guests
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guest'
+          description: ''
+    patch:
+      operationId: guests_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - guests
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedGuestUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedGuestUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedGuestUpdateRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guest'
+          description: ''
+  /api/v1/guests/{id}/documents:
+    post:
+      operationId: guests_documents_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - guests
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentUploadRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuestDocument'
+          description: ''
+  /api/v1/guests/{id}/documents/{doc_pk}:
+    get:
+      operationId: guests_documents_retrieve
+      description: The unblurred ID image. Manager/owner only; every view is audited.
+      parameters:
+      - in: path
+        name: doc_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - guests
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/guests/{id}/history:
+    get:
+      operationId: guests_history_list
+      description: 'Guest profile «سجل الإقامات»: every reservation, newest first,
+        with its balance.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - guests
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GuestHistoryItem'
+          description: ''
+  /api/v1/owner/backup/run:
+    post:
+      operationId: owner_backup_run_create
+      description: The owner PC's own backup of its (imported) data, encrypted to
+        the owner key.
+      tags:
+      - owner
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupRun'
+          description: ''
+  /api/v1/owner/drive/auth-url:
+    post:
+      operationId: owner_drive_auth_url_create
+      description: '«ربط حساب» (manager): opens Google''s consent page; Google returns
+        to ``…/drive/callback``.'
+      tags:
+      - owner
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUrl'
+          description: ''
+  /api/v1/owner/drive/status:
+    get:
+      operationId: owner_drive_status_retrieve
+      tags:
+      - owner
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriveStatus'
+          description: ''
+  /api/v1/owner/drive/sync:
+    post:
+      operationId: owner_drive_sync_create
+      description: '«مزامنة مع Drive»: reception uploads pending backups; the owner
+        PC downloads newer ones.'
+      tags:
+      - owner
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResult'
+          description: ''
+  /api/v1/owner/drive/unlink:
+    post:
+      operationId: owner_drive_unlink_create
+      description: «فصل الحساب» (manager).
+      tags:
+      - owner
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriveStatus'
+          description: ''
+  /api/v1/owner/import/candidates:
+    get:
+      operationId: owner_import_candidates_list
+      description: 'Import dialog step 1 (artboard 6.13 C): files in ``incoming/``
+        and on Drive, tagged new / imported / older.'
+      tags:
+      - owner
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Candidate'
+          description: ''
+  /api/v1/owner/import/drive:
+    post:
+      operationId: owner_import_drive_create
+      description: 'Import a candidate by Drive id or by name in ``incoming/`` (spec
+        §7: import/run with drive_file_id).'
+      tags:
+      - owner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriveImportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DriveImportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DriveImportRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportRun'
+          description: ''
+  /api/v1/owner/import/run:
+    post:
+      operationId: owner_import_run_create
+      description: Import a backup file (USB). Runs the five checks; merges only if
+        all pass (artboard 6.13 C).
+      tags:
+      - owner
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportRun'
+          description: ''
+  /api/v1/owner/import/runs:
+    get:
+      operationId: owner_import_runs_list
+      description: «سجل الاستيراد».
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      tags:
+      - owner
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedImportRunList'
+          description: ''
+  /api/v1/owner/status:
+    get:
+      operationId: owner_status_retrieve
+      tags:
+      - owner
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerStatus'
+          description: ''
+  /api/v1/payments/{id}:
+    get:
+      operationId: payments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+  /api/v1/payments/{id}/receipt:
+    get:
+      operationId: payments_receipt_retrieve
+      description: Data for the 80 mm payment receipt (artboard 7.2).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/payments/{id}/reverse:
+    post:
+      operationId: payments_reverse_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+  /api/v1/reports/:
+    get:
+      operationId: reports_list
+      tags:
+      - reports
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportIndexItem'
+          description: ''
+  /api/v1/reports/{name}:
+    get:
+      operationId: reports_retrieve
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          enum:
+          - login
+          - other
+          - override
+          - payment
+          - reversal
+          - sensitive
+          - settings
+          - stay
+        description: audit_log
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD inclusive
+      - in: query
+        name: days
+        schema:
+          type: integer
+        description: ending_soon window (default 3)
+      - in: path
+        name: name
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: 'audit_log: user, action, entity or id'
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - all
+          - due
+          - late
+        description: debts
+      - in: query
+        name: when
+        schema:
+          type: string
+          enum:
+          - today
+          - tomorrow
+          - week
+        description: arrivals_departures
+      tags:
+      - reports
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+          description: ''
+  /api/v1/reports/{name}/export:
+    get:
+      operationId: reports_export_retrieve
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          enum:
+          - login
+          - other
+          - override
+          - payment
+          - reversal
+          - sensitive
+          - settings
+          - stay
+        description: audit_log
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD inclusive
+      - in: query
+        name: days
+        schema:
+          type: integer
+        description: ending_soon window (default 3)
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - csv
+          - xlsx
+        required: true
+      - in: path
+        name: name
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: 'audit_log: user, action, entity or id'
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - all
+          - due
+          - late
+        description: debts
+      - in: query
+        name: when
+        schema:
+          type: string
+          enum:
+          - today
+          - tomorrow
+          - week
+        description: arrivals_departures
+      tags:
+      - reports
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/reports/owner-dashboard:
+    get:
+      operationId: reports_owner_dashboard_retrieve
+      description: |-
+        Artboard 6.12 (spec §10.4 ``reports/owner-dashboard``): KPIs, 30-day occupancy, weekly revenue vs
+        collected, «يحتاج انتباهك», and alert response per employee. Manager or owner only.
+      parameters:
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - 90days
+          - month
+          - previous
+      tags:
+      - reports
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerDashboard'
+          description: ''
+  /api/v1/reservations/:
+    get:
+      operationId: reservations_list
+      description: Reservations touching the window (timeline and list views).
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD; default today
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD exclusive; default date_from + 14 days
+      - in: query
+        name: status
+        schema:
+          type: array
+          items:
+            type: string
+      tags:
+      - reservations
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reservation'
+          description: ''
+    post:
+      operationId: reservations_create
+      description: Reservations touching the window (timeline and list views).
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD; default today
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD exclusive; default date_from + 14 days
+      - in: query
+        name: status
+        schema:
+          type: array
+          items:
+            type: string
+      tags:
+      - reservations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReservationCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReservationCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+          description: ''
+  /api/v1/reservations/{id}:
+    get:
+      operationId: reservations_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - reservations
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+          description: ''
+  /api/v1/reservations/{id}/assign-room:
+    post:
+      operationId: reservations_assign_room_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - reservations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignRoomRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssignRoomRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignRoomRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+          description: ''
+  /api/v1/reservations/{id}/cancel:
+    post:
+      operationId: reservations_cancel_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - reservations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelReservationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancelReservationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancelReservationRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+          description: ''
+  /api/v1/reservations/{id}/no-show:
+    post:
+      operationId: reservations_no_show_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - reservations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VersionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VersionRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+          description: ''
+  /api/v1/reservations/availability:
+    get:
+      operationId: reservations_availability_list
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        required: true
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: Exclusive (the check-out date).
+        required: true
+      - in: query
+        name: room_type
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - reservations
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AvailableRoom'
+          description: ''
+  /api/v1/reservations/quote:
+    post:
+      operationId: reservations_quote_create
+      description: Nights, end date and pricing options (e.g. 1 week + 3 nights vs
+        10 nights) for the booking form.
+      tags:
+      - reservations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/QuoteRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/QuoteRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+          description: ''
+  /api/v1/room-types/:
+    get:
+      operationId: room_types_list
+      tags:
+      - room-types
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoomType'
+          description: ''
+    post:
+      operationId: room_types_create
+      tags:
+      - room-types
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomTypeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RoomTypeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoomTypeRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomType'
+          description: ''
+  /api/v1/room-types/{id}:
+    patch:
+      operationId: room_types_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - room-types
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRoomTypeUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRoomTypeUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRoomTypeUpdateRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomType'
+          description: ''
+  /api/v1/rooms/:
+    get:
+      operationId: rooms_list
+      parameters:
+      - in: query
+        name: floor
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cleaning
+          - maintenance
+          - occupied
+          - ready
+      - in: query
+        name: view
+        schema:
+          type: string
+          enum:
+          - board
+        description: 'board: rooms with current stay, next booking and summary (shape:
+          RoomBoard); poll every 15 s'
+      tags:
+      - rooms
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Room'
+          description: ''
+    post:
+      operationId: rooms_create
+      parameters:
+      - in: query
+        name: floor
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cleaning
+          - maintenance
+          - occupied
+          - ready
+      - in: query
+        name: view
+        schema:
+          type: string
+          enum:
+          - board
+        description: 'board: rooms with current stay, next booking and summary (shape:
+          RoomBoard); poll every 15 s'
+      tags:
+      - rooms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RoomCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RoomCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+  /api/v1/rooms/{id}:
+    get:
+      operationId: rooms_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - rooms
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+    patch:
+      operationId: rooms_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - rooms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRoomUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRoomUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRoomUpdateRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+  /api/v1/rooms/{id}/history:
+    get:
+      operationId: rooms_history_list
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      tags:
+      - rooms
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRoomStatusHistoryList'
+          description: ''
+  /api/v1/rooms/{id}/set-status:
+    post:
+      operationId: rooms_set_status_create
+      description: 'Room board actions: confirm cleaned, start or end maintenance
+        (any signed-in staff).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - rooms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetStatusRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SetStatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SetStatusRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+          description: ''
+  /api/v1/shifts/:
+    get:
+      operationId: shifts_list
+      description: «سجل الورديات» (artboard 6.7 C) with the week's summary.
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+        description: YYYY-MM-DD; default 7 days ago
+      - in: query
+        name: date_to
+        schema:
+          type: string
+        description: YYYY-MM-DD inclusive; default today
+      - in: query
+        name: user
+        schema:
+          type: string
+        description: User id
+      tags:
+      - shifts
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftHistory'
+          description: ''
+  /api/v1/shifts/{id}:
+    get:
+      operationId: shifts_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - shifts
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftDetail'
+          description: ''
+  /api/v1/shifts/{id}/statement:
+    get:
+      operationId: shifts_statement_retrieve
+      description: Data for the A4 shift statement (artboard 7.3).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - shifts
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/shifts/close:
+    post:
+      operationId: shifts_close_create
+      tags:
+      - shifts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseShiftRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CloseShiftRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CloseShiftRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+          description: ''
+  /api/v1/shifts/current:
+    get:
+      operationId: shifts_current_retrieve
+      description: 'Shift card of artboard 6.7 A/B: the open shift with totals and
+        movements, or the last closed one.'
+      tags:
+      - shifts
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentShift'
+          description: ''
+  /api/v1/shifts/open:
+    post:
+      operationId: shifts_open_create
+      tags:
+      - shifts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenShiftRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OpenShiftRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OpenShiftRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+          description: ''
+  /api/v1/stays/:
+    get:
+      operationId: stays_list
+      description: Guests in house now.
+      tags:
+      - stays
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Stay'
+          description: ''
+  /api/v1/stays/{id}:
+    get:
+      operationId: stays_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stays
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stay'
+          description: ''
+  /api/v1/stays/{id}/cancel:
+    get:
+      operationId: stays_cancel_retrieve
+      description: Settlement choices for the nights already used.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stays
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelOptions'
+          description: ''
+    post:
+      operationId: stays_cancel_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stays
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelStayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancelStayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancelStayRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stay'
+          description: ''
+  /api/v1/stays/{id}/change-room:
+    get:
+      operationId: stays_change_room_list
+      description: Rooms the guest can move to, same type first, with the price difference.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stays
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChangeRoomOption'
+          description: ''
+    post:
+      operationId: stays_change_room_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stays
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeRoomRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangeRoomRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangeRoomRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stay'
+          description: ''
+  /api/v1/stays/{id}/checkout:
+    post:
+      operationId: stays_checkout_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stays
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stay'
+          description: ''
+  /api/v1/stays/{id}/extend:
+    post:
+      operationId: stays_extend_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stays
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtendRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExtendRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExtendRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stay'
+          description: ''
+  /api/v1/stays/{id}/extend/quote:
+    post:
+      operationId: stays_extend_quote_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stays
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtendQuoteRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExtendQuoteRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExtendQuoteRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendQuote'
+          description: ''
+  /api/v1/stays/check-in:
+    post:
+      operationId: stays_check_in_create
+      tags:
+      - stays
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckInRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckInRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckInRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stay'
+          description: ''
+  /api/v1/system/clock/approve:
+    post:
+      operationId: system_clock_approve_create
+      description: Manager accepts the device clock after a rollback block (spec §6.7).
+        Needs X-Confirm-Token.
+      tags:
+      - system
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/system/settings:
+    get:
+      operationId: system_settings_retrieve
+      description: Settings → بيانات الفندق (V2 artboard 6.11 D). Anyone signed in
+        reads (digits, names on prints).
+      tags:
+      - system
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HotelSettings'
+          description: ''
+    patch:
+      operationId: system_settings_partial_update
+      description: Settings → بيانات الفندق (V2 artboard 6.11 D). Anyone signed in
+        reads (digits, names on prints).
+      tags:
+      - system
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHotelSettingsUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHotelSettingsUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHotelSettingsUpdateRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HotelSettings'
+          description: ''
+  /api/v1/system/status:
+    get:
+      operationId: system_status_retrieve
+      description: 'Read before login: the SPA picks the reception or owner shell
+        from ``role`` (spec §10.4).'
+      tags:
+      - system
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatus'
+          description: ''
+  /api/v1/users/:
+    get:
+      operationId: users_list
+      tags:
+      - users
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: ''
+    post:
+      operationId: users_create
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/users/{id}:
+    get:
+      operationId: users_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: users_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/users/{id}/reset-pin:
+    post:
+      operationId: users_reset_pin_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPinRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResetPinRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResetPinRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/users/{id}/unlock:
+    post:
+      operationId: users_unlock_create
+      description: 'Manager lifts a PIN lockout (login design: «طلب المدير»).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+components:
+  schemas:
+    ActionEnum:
+      enum:
+      - extend
+      - confirm_checkout
+      - waiting
+      - snooze
+      - done
+      type: string
+      description: |-
+        * `extend` - تمديد
+        * `confirm_checkout` - تأكيد المغادرة
+        * `waiting` - بانتظار الرد
+        * `snooze` - تأجيل
+        * `done` - تم
+    ActionRequest:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+        note:
+          type: string
+          default: ''
+          maxLength: 300
+        until:
+          type: string
+          format: date-time
+          nullable: true
+          description: 'snooze / waiting: when it returns'
+        version:
+          type: integer
+          minimum: 1
+        stay:
+          allOf:
+          - $ref: '#/components/schemas/StayActionParamsRequest'
+          description: Parameters for extend / confirm_checkout.
+      required:
+      - action
+    AfterRoomStatusEnum:
+      enum:
+      - cleaning
+      - maintenance
+      type: string
+      description: |-
+        * `cleaning` - تحتاج تنظيف
+        * `maintenance` - صيانة
+    AlertRule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 80
+        trigger_kind:
+          $ref: '#/components/schemas/TriggerKindEnum'
+        duration_kind:
+          type: string
+          description: 'stay_ending: daily / weekly / monthly.'
+          maxLength: 10
+        days_before:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        second_days_before:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        at_time:
+          type: string
+          format: time
+        repeat_hours:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 0 = no repeat.
+        max_snoozes:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        escalate_after_hours:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Open this long → neglected.
+        threshold_hours:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: shift/room/backup triggers.
+        threshold:
+          type: integer
+          minimum: 0
+          nullable: true
+        windows_notification:
+          type: boolean
+        is_active:
+          type: boolean
+        version:
+          type: integer
+          readOnly: true
+      required:
+      - id
+      - name
+      - trigger_kind
+      - version
+    AlertRuleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        trigger_kind:
+          $ref: '#/components/schemas/TriggerKindEnum'
+        duration_kind:
+          type: string
+          description: 'stay_ending: daily / weekly / monthly.'
+          maxLength: 10
+        days_before:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        second_days_before:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        at_time:
+          type: string
+          format: time
+        repeat_hours:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 0 = no repeat.
+        max_snoozes:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        escalate_after_hours:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Open this long → neglected.
+        threshold_hours:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: shift/room/backup triggers.
+        threshold:
+          type: integer
+          minimum: 0
+          nullable: true
+        windows_notification:
+          type: boolean
+        is_active:
+          type: boolean
+      required:
+      - name
+      - trigger_kind
+    AssignRoomRequest:
+      type: object
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        room:
+          type: string
+          format: uuid
+      required:
+      - room
+    Attention:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/AttentionKindEnum'
+        label:
+          type: string
+        report:
+          type: string
+          description: Report name the row links to.
+        text:
+          type: string
+      required:
+      - kind
+      - label
+      - report
+      - text
+    AttentionKindEnum:
+      enum:
+      - overdue
+      - neglected
+      - debt
+      - shift
+      - maint
+      type: string
+      description: |-
+        * `overdue` - overdue
+        * `neglected` - neglected
+        * `debt` - debt
+        * `shift` - shift
+        * `maint` - maint
+    AuditCategoryEnum:
+      enum:
+      - payment
+      - stay
+      - reversal
+      - override
+      - settings
+      - login
+      - sensitive
+      - other
+      type: string
+      description: |-
+        * `payment` - payment
+        * `stay` - stay
+        * `reversal` - reversal
+        * `override` - override
+        * `settings` - settings
+        * `login` - login
+        * `sensitive` - sensitive
+        * `other` - other
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        seq:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        at:
+          type: string
+          format: date-time
+        actor:
+          type: string
+          format: uuid
+          nullable: true
+        actor_name:
+          type: string
+          readOnly: true
+        action:
+          type: string
+          maxLength: 64
+        category:
+          allOf:
+          - $ref: '#/components/schemas/AuditCategoryEnum'
+          readOnly: true
+        category_label:
+          type: string
+          readOnly: true
+        entity:
+          type: string
+          maxLength: 64
+        entity_id:
+          type: string
+          maxLength: 64
+        before:
+          nullable: true
+        after:
+          nullable: true
+        hash:
+          type: string
+          maxLength: 64
+      required:
+      - action
+      - actor_name
+      - at
+      - category
+      - category_label
+      - entity
+      - hash
+      - id
+      - seq
+    AuditVerify:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        first_broken_seq:
+          type: integer
+          nullable: true
+        rows:
+          type: integer
+      required:
+      - first_broken_seq
+      - ok
+      - rows
+    AuthUrl:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+      required:
+      - url
+    AvailableRoom:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        number:
+          type: string
+          maxLength: 10
+        floor:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        room_type:
+          type: string
+          format: uuid
+        room_type_name:
+          type: string
+        status:
+          $ref: '#/components/schemas/RoomStatusEnum'
+      required:
+      - floor
+      - id
+      - number
+      - room_type
+      - room_type_name
+    BackupRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+        kind:
+          $ref: '#/components/schemas/BackupRunKindEnum'
+        kind_label:
+          type: string
+        status:
+          $ref: '#/components/schemas/BackupRunStatusEnum'
+        status_label:
+          type: string
+        seq:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: Per-hotel backup number (ok runs only).
+        full:
+          type: boolean
+          description: All attachments (weekly), else changed ones only.
+        path:
+          type: string
+          maxLength: 300
+        second_path:
+          type: string
+          maxLength: 300
+        second_error:
+          type: string
+          maxLength: 300
+        size:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        message:
+          type: string
+          maxLength: 300
+        by:
+          type: string
+          readOnly: true
+        uploaded:
+          type: boolean
+          readOnly: true
+      required:
+      - by
+      - id
+      - kind
+      - kind_label
+      - status
+      - status_label
+      - uploaded
+    BackupRunKindEnum:
+      enum:
+      - manual
+      - scheduled
+      - shift_close
+      type: string
+      description: |-
+        * `manual` - يدوي
+        * `scheduled` - مجدول
+        * `shift_close` - عند الإغلاق
+    BackupRunStatusEnum:
+      enum:
+      - ok
+      - failed
+      - skipped
+      type: string
+      description: |-
+        * `ok` - تمت
+        * `failed` - فشلت
+        * `skipped` - تخطّي
+    BackupSettings:
+      type: object
+      properties:
+        owner_recipient:
+          type: string
+          description: Owner's age public key (age1…); backups are encrypted to it.
+          maxLength: 200
+        interval_hours:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        keep_count:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        on_shift_close:
+          type: boolean
+        auto_drive:
+          type: boolean
+        second_dir:
+          type: string
+          description: USB / external disk folder.
+          maxLength: 260
+        version:
+          type: integer
+          readOnly: true
+      required:
+      - version
+    BlankEnum:
+      enum:
+      - ''
+    Board:
+      type: object
+      properties:
+        counts:
+          $ref: '#/components/schemas/Counts'
+        late:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskRow'
+        today:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskRow'
+        upcoming:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpcomingRow'
+        system:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskRow'
+        last_action:
+          allOf:
+          - $ref: '#/components/schemas/LastAction'
+          nullable: true
+      required:
+      - counts
+      - last_action
+      - late
+      - system
+      - today
+      - upcoming
+    BookingDurationKindEnum:
+      enum:
+      - daily
+      - weekly
+      - monthly
+      type: string
+      description: |-
+        * `daily` - يومي
+        * `weekly` - أسبوعي
+        * `monthly` - شهري
+    CancelOption:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        total:
+          type: integer
+      required:
+      - key
+      - label
+      - total
+    CancelOptions:
+      type: object
+      properties:
+        nights_used:
+          type: integer
+        current_total:
+          type: integer
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/CancelOption'
+      required:
+      - current_total
+      - nights_used
+      - options
+    CancelReservationRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - reason
+    CancelStayRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+        option_key:
+          type: string
+          nullable: true
+          minLength: 1
+        manual_total:
+          type: integer
+          minimum: 0
+          nullable: true
+        override_password:
+          type: string
+          minLength: 1
+          maxLength: 128
+        override_reason:
+          type: string
+          default: ''
+          maxLength: 300
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - override_password
+      - reason
+    Candidate:
+      type: object
+      properties:
+        name:
+          type: string
+        seq:
+          type: integer
+        size:
+          type: integer
+        drive_file_id:
+          type: string
+          nullable: true
+        local:
+          type: boolean
+        state:
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          description: |-
+            جديدة / مستوردة / أقدم من بياناتك
+
+            * `new` - new
+            * `imported` - imported
+            * `older` - older
+      required:
+      - drive_file_id
+      - local
+      - name
+      - seq
+      - size
+      - state
+    ChangeRoomOption:
+      type: object
+      properties:
+        room:
+          $ref: '#/components/schemas/AvailableRoom'
+        difference:
+          type: integer
+          description: Price difference for the remaining nights; 0 for the same type.
+      required:
+      - difference
+      - room
+    ChangeRoomRequest:
+      type: object
+      properties:
+        override_password:
+          type: string
+          default: ''
+          maxLength: 128
+        override_reason:
+          type: string
+          default: ''
+          maxLength: 300
+        room:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+        old_room_status:
+          allOf:
+          - $ref: '#/components/schemas/AfterRoomStatusEnum'
+          default: cleaning
+        maintenance_reason:
+          type: string
+          default: ''
+          maxLength: 200
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - reason
+      - room
+    CheckInRequest:
+      type: object
+      properties:
+        reservation:
+          type: string
+          format: uuid
+        room:
+          type: string
+          format: uuid
+          nullable: true
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - reservation
+    CheckoutRequest:
+      type: object
+      properties:
+        override_password:
+          type: string
+          default: ''
+          maxLength: 128
+        override_reason:
+          type: string
+          default: ''
+          maxLength: 300
+        room_status:
+          allOf:
+          - $ref: '#/components/schemas/AfterRoomStatusEnum'
+          default: cleaning
+        maintenance_reason:
+          type: string
+          default: ''
+          maxLength: 200
+        version:
+          type: integer
+          minimum: 1
+    CloseShiftRequest:
+      type: object
+      properties:
+        counted:
+          type: integer
+          minimum: 0
+        difference_reason:
+          type: string
+          default: ''
+          maxLength: 300
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - counted
+    CollectedKpi:
+      type: object
+      properties:
+        value:
+          type: integer
+        of_revenue_percent:
+          type: integer
+      required:
+      - of_revenue_percent
+      - value
+    CompanionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        relation:
+          type: string
+          maxLength: 40
+      required:
+      - name
+    ConfirmRequest:
+      type: object
+      properties:
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+    ConfirmToken:
+      type: object
+      properties:
+        confirm_token:
+          type: string
+        expires_in:
+          type: integer
+          description: Seconds.
+      required:
+      - confirm_token
+      - expires_in
+    Counts:
+      type: object
+      properties:
+        late:
+          type: integer
+        today:
+          type: integer
+        upcoming:
+          type: integer
+        system:
+          type: integer
+      required:
+      - late
+      - system
+      - today
+      - upcoming
+    CurrentShift:
+      type: object
+      properties:
+        shift:
+          allOf:
+          - $ref: '#/components/schemas/Shift'
+          nullable: true
+        totals:
+          allOf:
+          - $ref: '#/components/schemas/ShiftTotals'
+          nullable: true
+        movements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movement'
+        last_closed:
+          allOf:
+          - $ref: '#/components/schemas/Shift'
+          nullable: true
+        suggested_opening:
+          type: integer
+      required:
+      - last_closed
+      - movements
+      - shift
+      - suggested_opening
+      - totals
+    DebtsKpi:
+      type: object
+      properties:
+        value:
+          type: integer
+        count:
+          type: integer
+        largest:
+          allOf:
+          - $ref: '#/components/schemas/LargestDebt'
+          nullable: true
+      required:
+      - count
+      - largest
+      - value
+    DeviceRoleEnum:
+      enum:
+      - reception
+      - owner
+      type: string
+      description: |-
+        * `reception` - reception
+        * `owner` - owner
+    DigitsEnum:
+      enum:
+      - western
+      - arabic
+      type: string
+      description: |-
+        * `western` - 123
+        * `arabic` - ١٢٣
+    DocumentUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+          description: Image of the ID; compressed on the server to ≤ 300 KB JPEG.
+      required:
+      - file
+    DriveImportRequest:
+      type: object
+      properties:
+        drive_file_id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+          description: A file already in incoming/.
+        allow_older:
+          type: boolean
+          default: false
+    DriveStatus:
+      type: object
+      properties:
+        configured:
+          type: boolean
+          description: client_secret.json installed on this PC
+        linked:
+          type: boolean
+        email:
+          type: string
+          nullable: true
+        pending_uploads:
+          type: integer
+        last_upload_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - configured
+      - email
+      - last_upload_at
+      - linked
+      - pending_uploads
+    DurationKindEnum:
+      enum:
+      - daily
+      - weekly
+      - monthly
+      - mixed
+      type: string
+      description: |-
+        * `daily` - يومي
+        * `weekly` - أسبوعي
+        * `monthly` - شهري
+        * `mixed` - مختلط
+    Expense:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        shift:
+          type: string
+          format: uuid
+        category:
+          $ref: '#/components/schemas/ExpenseCategoryEnum'
+        category_label:
+          type: string
+          readOnly: true
+        amount:
+          type: integer
+          readOnly: true
+        note:
+          type: string
+          maxLength: 300
+        method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        reference:
+          type: string
+          maxLength: 60
+        room:
+          type: string
+          format: uuid
+          nullable: true
+        room_number:
+          type: string
+          readOnly: true
+        spent_at:
+          type: string
+          format: date-time
+        reverses:
+          type: string
+          format: uuid
+          nullable: true
+        reason:
+          type: string
+          description: Required on reversals.
+          maxLength: 300
+        reversed:
+          type: boolean
+          readOnly: true
+        attachments:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        attachment_missing:
+          type: boolean
+          readOnly: true
+        by:
+          type: string
+          readOnly: true
+      required:
+      - amount
+      - attachment_missing
+      - attachments
+      - by
+      - category
+      - category_label
+      - id
+      - method
+      - note
+      - reversed
+      - room_number
+      - shift
+      - spent_at
+    ExpenseCategoryEnum:
+      enum:
+      - supplies
+      - purchases
+      - maintenance
+      - bills
+      - salaries
+      - other
+      type: string
+      description: |-
+        * `supplies` - مستلزمات
+        * `purchases` - مشتريات
+        * `maintenance` - صيانة
+        * `bills` - فواتير
+        * `salaries` - رواتب
+        * `other` - أخرى
+    ExpenseCreateRequest:
+      type: object
+      properties:
+        category:
+          $ref: '#/components/schemas/ExpenseCategoryEnum'
+        amount:
+          type: integer
+          minimum: 1
+        note:
+          type: string
+          minLength: 1
+          maxLength: 300
+        method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        reference:
+          type: string
+          default: ''
+          maxLength: 60
+        room:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - amount
+      - category
+      - method
+      - note
+    ExpenseSummary:
+      type: object
+      properties:
+        shift_total:
+          type: integer
+        shift_count:
+          type: integer
+        month_total:
+          type: integer
+        top_category:
+          type: string
+          nullable: true
+        top_category_total:
+          type: integer
+        awaiting_attachment:
+          type: integer
+      required:
+      - awaiting_attachment
+      - month_total
+      - shift_count
+      - shift_total
+      - top_category
+      - top_category_total
+    ExtendQuote:
+      type: object
+      properties:
+        current_check_out:
+          type: string
+          format: date
+        quote:
+          $ref: '#/components/schemas/Quote'
+        total_nights:
+          type: integer
+        room_available:
+          type: boolean
+      required:
+      - current_check_out
+      - quote
+      - room_available
+      - total_nights
+    ExtendQuoteRequestRequest:
+      type: object
+      properties:
+        duration_kind:
+          $ref: '#/components/schemas/BookingDurationKindEnum'
+        count:
+          type: integer
+          maximum: 366
+          minimum: 1
+      required:
+      - count
+      - duration_kind
+    ExtendRequest:
+      type: object
+      properties:
+        duration_kind:
+          $ref: '#/components/schemas/BookingDurationKindEnum'
+        count:
+          type: integer
+          maximum: 366
+          minimum: 1
+        option_key:
+          type: string
+          nullable: true
+          minLength: 1
+        final_total:
+          type: integer
+          minimum: 0
+          nullable: true
+        override_reason:
+          type: string
+          default: ''
+          maxLength: 300
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - count
+      - duration_kind
+    Folio:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        invoice:
+          type: string
+          readOnly: true
+        invoice_no:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        reservation:
+          type: string
+          format: uuid
+          readOnly: true
+        guest_name:
+          type: string
+          readOnly: true
+        room_number:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/FolioStatusEnum'
+        totals:
+          allOf:
+          - $ref: '#/components/schemas/FolioTotals'
+          readOnly: true
+        ledger:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerEntry'
+          readOnly: true
+      required:
+      - guest_name
+      - id
+      - invoice
+      - invoice_no
+      - ledger
+      - reservation
+      - room_number
+      - totals
+    FolioStatusEnum:
+      enum:
+      - open
+      - closed
+      type: string
+      description: |-
+        * `open` - مفتوحة
+        * `closed` - مغلقة
+    FolioTotals:
+      type: object
+      properties:
+        charges:
+          type: integer
+        discounts:
+          type: integer
+        total:
+          type: integer
+        paid:
+          type: integer
+        balance:
+          type: integer
+          description: '> 0 the guest owes; < 0 the hotel owes the guest.'
+      required:
+      - balance
+      - charges
+      - discounts
+      - paid
+      - total
+    Guest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        full_name:
+          type: string
+          maxLength: 120
+        phone:
+          type: string
+          description: 'Normalized: + and digits.'
+          maxLength: 20
+        nationality:
+          type: string
+          maxLength: 40
+        id_type:
+          oneOf:
+          - $ref: '#/components/schemas/IdTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        id_number:
+          type: string
+          readOnly: true
+          description: Full for manager/owner; last 4 characters otherwise.
+        warning_note:
+          type: string
+          maxLength: 300
+        companions:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuestDocument'
+          readOnly: true
+        version:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - companions
+      - documents
+      - full_name
+      - id
+      - id_number
+    GuestDocument:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        size:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        added_by:
+          type: string
+          readOnly: true
+      required:
+      - added_by
+      - id
+      - size
+    GuestHistoryItem:
+      type: object
+      properties:
+        reservation_id:
+          type: string
+          format: uuid
+        room:
+          type: string
+          nullable: true
+        check_in_date:
+          type: string
+          format: date
+        check_out_date:
+          type: string
+          format: date
+        nights:
+          type: integer
+        status:
+          type: string
+        status_label:
+          type: string
+        balance:
+          type: integer
+      required:
+      - balance
+      - check_in_date
+      - check_out_date
+      - nights
+      - reservation_id
+      - room
+      - status
+      - status_label
+    GuestListItem:
+      type: object
+      description: 'Guest list row (artboard 6.8): history numbers come from ``context["stats"]``
+        (see ``stats.for_guests``).'
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        full_name:
+          type: string
+          maxLength: 120
+        phone:
+          type: string
+          description: 'Normalized: + and digits.'
+          maxLength: 20
+        nationality:
+          type: string
+          maxLength: 40
+        id_type:
+          oneOf:
+          - $ref: '#/components/schemas/IdTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        id_number:
+          type: string
+          readOnly: true
+          description: Full for manager/owner; last 4 characters otherwise.
+        warning_note:
+          type: string
+          maxLength: 300
+        companions:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuestDocument'
+          readOnly: true
+        version:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        stays_count:
+          type: integer
+          readOnly: true
+        last_stay:
+          allOf:
+          - $ref: '#/components/schemas/LastStay'
+          nullable: true
+          readOnly: true
+        debt:
+          type: integer
+          readOnly: true
+          description: Open balance over all stays, minor units.
+        in_house:
+          type: boolean
+          readOnly: true
+      required:
+      - companions
+      - debt
+      - documents
+      - full_name
+      - id
+      - id_number
+      - in_house
+      - last_stay
+      - stays_count
+    GuestWriteRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        phone:
+          type: string
+          maxLength: 30
+        nationality:
+          type: string
+          maxLength: 40
+        id_type:
+          oneOf:
+          - $ref: '#/components/schemas/IdTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        id_number:
+          type: string
+          maxLength: 40
+        warning_note:
+          type: string
+          maxLength: 300
+        companions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompanionRequest'
+      required:
+      - full_name
+    HotelSettings:
+      type: object
+      properties:
+        name_ar:
+          type: string
+          maxLength: 120
+        name_latin:
+          type: string
+          maxLength: 120
+        address:
+          type: string
+          maxLength: 200
+        phone:
+          type: string
+          maxLength: 30
+        currency:
+          type: string
+          readOnly: true
+        digits:
+          $ref: '#/components/schemas/DigitsEnum'
+        money_decimals:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 0 or 2 decimals when showing money.
+        stay_day_end:
+          type: string
+          format: time
+          description: A stay becomes overdue after this time.
+        session_lock_minutes:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        expense_attachment_threshold:
+          type: integer
+          minimum: 0
+        max_discount_percent:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        debt_attention_threshold:
+          type: integer
+          minimum: 0
+        auto_print_receipt:
+          type: boolean
+        thermal_printer:
+          type: string
+          maxLength: 60
+        hotel_id:
+          type: string
+          format: uuid
+          readOnly: true
+        version:
+          type: integer
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - currency
+      - expense_attachment_threshold
+      - hotel_id
+      - updated_at
+      - version
+    IdTypeEnum:
+      enum:
+      - national_id
+      - passport
+      - driving_license
+      - other
+      type: string
+      description: |-
+        * `national_id` - بطاقة وطنية
+        * `passport` - جواز سفر
+        * `driving_license` - رخصة قيادة
+        * `other` - أخرى
+    ImportCheck:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        detail:
+          type: string
+        status:
+          $ref: '#/components/schemas/ImportCheckStatusEnum'
+      required:
+      - detail
+      - key
+      - label
+      - status
+    ImportCheckStatusEnum:
+      enum:
+      - ok
+      - warn
+      - fail
+      - run
+      type: string
+      description: |-
+        * `ok` - ok
+        * `warn` - warn
+        * `fail` - fail
+        * `run` - run
+    ImportRequestRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+          description: Encrypted backup (.age) from USB or the incoming folder.
+        allow_older:
+          type: boolean
+          default: false
+          description: «متابعة رغم ذلك» for an older file.
+      required:
+      - file
+    ImportRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+        source:
+          $ref: '#/components/schemas/SourceEnum'
+        file_name:
+          type: string
+          maxLength: 200
+        backup_seq:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        data_as_of:
+          type: string
+          format: date-time
+          nullable: true
+          description: created_at in the imported manifest.
+        status:
+          $ref: '#/components/schemas/ImportRunStatusEnum'
+        counts: {}
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportCheck'
+        audit_chain_ok:
+          type: boolean
+          nullable: true
+        error:
+          type: string
+          maxLength: 300
+        by:
+          type: string
+      required:
+      - checks
+      - file_name
+      - id
+      - source
+      - status
+    ImportRunStatusEnum:
+      enum:
+      - ok
+      - failed
+      type: string
+      description: |-
+        * `ok` - اكتمل
+        * `failed` - مرفوض
+    KeyEnum:
+      enum:
+      - month
+      - previous
+      - 90days
+      type: string
+      description: |-
+        * `month` - month
+        * `previous` - previous
+        * `90days` - 90days
+    Kpis:
+      type: object
+      properties:
+        occupancy_today:
+          $ref: '#/components/schemas/OccupancyToday'
+        revenue:
+          $ref: '#/components/schemas/RevenueKpi'
+        collected:
+          $ref: '#/components/schemas/CollectedKpi'
+        debts:
+          $ref: '#/components/schemas/DebtsKpi'
+        neglected_alerts:
+          $ref: '#/components/schemas/NeglectedKpi'
+      required:
+      - collected
+      - debts
+      - neglected_alerts
+      - occupancy_today
+      - revenue
+    LargestDebt:
+      type: object
+      properties:
+        room:
+          type: string
+        amount:
+          type: integer
+      required:
+      - amount
+      - room
+    LastAction:
+      type: object
+      properties:
+        text:
+          type: string
+        by:
+          type: string
+        at:
+          type: string
+          format: date-time
+      required:
+      - at
+      - by
+      - text
+    LastStay:
+      type: object
+      properties:
+        reservation_id:
+          type: string
+          format: uuid
+        check_in_date:
+          type: string
+          format: date
+        room:
+          type: string
+      required:
+      - check_in_date
+      - reservation_id
+      - room
+    LedgerEntry:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        type:
+          $ref: '#/components/schemas/LedgerEntryTypeEnum'
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+        text:
+          type: string
+        debit:
+          type: integer
+        credit:
+          type: integer
+        balance:
+          type: integer
+        reference:
+          type: string
+        reason:
+          type: string
+        reverses:
+          type: string
+          format: uuid
+          nullable: true
+        by:
+          type: string
+      required:
+      - at
+      - balance
+      - by
+      - credit
+      - debit
+      - id
+      - kind
+      - reason
+      - reference
+      - reverses
+      - text
+      - type
+    LedgerEntryTypeEnum:
+      enum:
+      - line
+      - payment
+      type: string
+      description: |-
+        * `line` - line
+        * `payment` - payment
+    LineCreateKindEnum:
+      enum:
+      - service
+      - discount
+      type: string
+      description: |-
+        * `service` - خدمة
+        * `discount` - خصم
+    LineCreateRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/LineCreateKindEnum'
+        description:
+          type: string
+          default: ''
+          maxLength: 200
+        amount:
+          type: integer
+          minimum: 1
+          description: Always positive; a discount is stored as a credit.
+        reason:
+          type: string
+          default: ''
+          maxLength: 300
+        manager_password:
+          type: string
+          default: ''
+          maxLength: 128
+        manager_reason:
+          type: string
+          default: ''
+          maxLength: 300
+      required:
+      - amount
+      - kind
+    LoginUser:
+      type: object
+      description: 'Shown on the login screen''s user picker: names only.'
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        full_name:
+          type: string
+          maxLength: 120
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+      required:
+      - full_name
+      - id
+      - role
+    MethodTotals:
+      type: object
+      properties:
+        cash:
+          type: integer
+        bankak:
+          type: integer
+        transfer:
+          type: integer
+        total:
+          type: integer
+      required:
+      - bankak
+      - cash
+      - total
+      - transfer
+    Movement:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        kind:
+          $ref: '#/components/schemas/MovementKindEnum'
+        text:
+          type: string
+        amount:
+          type: integer
+          description: 'Signed: money out is negative.'
+        method:
+          type: string
+        reference:
+          type: string
+        by:
+          type: string
+        ref_id:
+          type: string
+      required:
+      - amount
+      - at
+      - by
+      - kind
+      - method
+      - ref_id
+      - reference
+      - text
+    MovementKindEnum:
+      enum:
+      - open
+      - in
+      - out
+      type: string
+      description: |-
+        * `open` - open
+        * `in` - in
+        * `out` - out
+    NeglectedKpi:
+      type: object
+      properties:
+        value:
+          type: integer
+        latest_shift_user:
+          type: string
+          nullable: true
+        latest_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - latest_at
+      - latest_shift_user
+      - value
+    Occupancy:
+      type: object
+      properties:
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/OccupancyPoint'
+          description: Last 30 nights, oldest first.
+        average:
+          type: integer
+        peak:
+          $ref: '#/components/schemas/Peak'
+      required:
+      - average
+      - peak
+      - series
+    OccupancyPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        occupied:
+          type: integer
+        rooms:
+          type: integer
+        percent:
+          type: integer
+      required:
+      - date
+      - occupied
+      - percent
+      - rooms
+    OccupancyToday:
+      type: object
+      properties:
+        value:
+          type: integer
+          description: Percent tonight.
+        occupied:
+          type: integer
+        rooms:
+          type: integer
+        period_average:
+          type: integer
+      required:
+      - occupied
+      - period_average
+      - rooms
+      - value
+    OpenShiftRequest:
+      type: object
+      properties:
+        opening:
+          type: integer
+          minimum: 0
+      required:
+      - opening
+    OwnerDashboard:
+      type: object
+      properties:
+        period:
+          $ref: '#/components/schemas/Period'
+        rooms:
+          type: integer
+        kpis:
+          $ref: '#/components/schemas/Kpis'
+        occupancy:
+          $ref: '#/components/schemas/Occupancy'
+        weeks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Week'
+        attention:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attention'
+        staff:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffResponse'
+        overdue_stays:
+          type: integer
+      required:
+      - attention
+      - kpis
+      - occupancy
+      - overdue_stays
+      - period
+      - rooms
+      - staff
+      - weeks
+    OwnerStatus:
+      type: object
+      properties:
+        data_as_of:
+          type: string
+          format: date-time
+          nullable: true
+        last_import:
+          allOf:
+          - $ref: '#/components/schemas/ImportRun'
+          nullable: true
+        hours_old:
+          type: integer
+          nullable: true
+        public_key:
+          type: string
+          nullable: true
+          description: Enter it in the reception's backup settings.
+      required:
+      - data_as_of
+      - hours_old
+      - last_import
+      - public_key
+    PaginatedAuditLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLog'
+    PaginatedBackupRunList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BackupRun'
+    PaginatedExpenseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Expense'
+    PaginatedGuestListItemList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuestListItem'
+    PaginatedImportRunList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportRun'
+    PaginatedRoomStatusHistoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoomStatusHistory'
+    PasswordLoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 64
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+      - username
+    PatchedAlertRuleUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        trigger_kind:
+          $ref: '#/components/schemas/TriggerKindEnum'
+        duration_kind:
+          type: string
+          description: 'stay_ending: daily / weekly / monthly.'
+          maxLength: 10
+        days_before:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        second_days_before:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        at_time:
+          type: string
+          format: time
+        repeat_hours:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 0 = no repeat.
+        max_snoozes:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        escalate_after_hours:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Open this long → neglected.
+        threshold_hours:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: shift/room/backup triggers.
+        threshold:
+          type: integer
+          minimum: 0
+          nullable: true
+        windows_notification:
+          type: boolean
+        is_active:
+          type: boolean
+        version:
+          type: integer
+          minimum: 1
+    PatchedBackupSettingsUpdateRequest:
+      type: object
+      properties:
+        owner_recipient:
+          type: string
+          description: Owner's age public key (age1…); backups are encrypted to it.
+          maxLength: 200
+        interval_hours:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        keep_count:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        on_shift_close:
+          type: boolean
+        auto_drive:
+          type: boolean
+        second_dir:
+          type: string
+          description: USB / external disk folder.
+          maxLength: 260
+        version:
+          type: integer
+          minimum: 1
+    PatchedGuestUpdateRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        phone:
+          type: string
+          maxLength: 30
+        nationality:
+          type: string
+          maxLength: 40
+        id_type:
+          oneOf:
+          - $ref: '#/components/schemas/IdTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        id_number:
+          type: string
+          maxLength: 40
+        warning_note:
+          type: string
+          maxLength: 300
+        companions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompanionRequest'
+        version:
+          type: integer
+          minimum: 1
+    PatchedHotelSettingsUpdateRequest:
+      type: object
+      properties:
+        name_ar:
+          type: string
+          minLength: 1
+          maxLength: 120
+        name_latin:
+          type: string
+          minLength: 1
+          maxLength: 120
+        address:
+          type: string
+          maxLength: 200
+        phone:
+          type: string
+          maxLength: 30
+        digits:
+          $ref: '#/components/schemas/DigitsEnum'
+        money_decimals:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: 0 or 2 decimals when showing money.
+        stay_day_end:
+          type: string
+          format: time
+          description: A stay becomes overdue after this time.
+        session_lock_minutes:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        expense_attachment_threshold:
+          type: integer
+          minimum: 0
+        max_discount_percent:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        debt_attention_threshold:
+          type: integer
+          minimum: 0
+        auto_print_receipt:
+          type: boolean
+        thermal_printer:
+          type: string
+          maxLength: 60
+        version:
+          type: integer
+          minimum: 1
+    PatchedRoomTypeUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        nightly_price:
+          type: integer
+          minimum: 0
+        weekly_price:
+          type: integer
+          minimum: 0
+        monthly_price:
+          type: integer
+          minimum: 0
+        is_active:
+          type: boolean
+        version:
+          type: integer
+          minimum: 1
+    PatchedRoomUpdateRequest:
+      type: object
+      properties:
+        number:
+          type: string
+          minLength: 1
+          maxLength: 10
+        floor:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        room_type:
+          type: string
+          format: uuid
+        note:
+          type: string
+          maxLength: 200
+        in_service:
+          type: boolean
+        version:
+          type: integer
+          minimum: 1
+    PatchedUserUpdateRequest:
+      type: object
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+        is_active:
+          type: boolean
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        receipt:
+          type: string
+          readOnly: true
+        receipt_no:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        folio:
+          type: string
+          format: uuid
+        shift:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/PaymentKindEnum'
+        method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        amount:
+          type: integer
+          readOnly: true
+        reference:
+          type: string
+          description: Bankak / transfer reference.
+          maxLength: 60
+        reverses:
+          type: string
+          format: uuid
+          nullable: true
+        reason:
+          type: string
+          maxLength: 300
+        received_at:
+          type: string
+          format: date-time
+        by:
+          type: string
+          readOnly: true
+      required:
+      - amount
+      - by
+      - folio
+      - id
+      - kind
+      - method
+      - receipt
+      - receipt_no
+      - received_at
+      - shift
+    PaymentCreateRequest:
+      type: object
+      properties:
+        amount:
+          type: integer
+          minimum: 1
+        method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        reference:
+          type: string
+          default: ''
+          maxLength: 60
+      required:
+      - amount
+      - method
+    PaymentKindEnum:
+      enum:
+      - deposit
+      - payment
+      - refund
+      - reversal
+      type: string
+      description: |-
+        * `deposit` - عربون
+        * `payment` - دفعة
+        * `refund` - ردّ
+        * `reversal` - عكس دفعة
+    PaymentMethodEnum:
+      enum:
+      - cash
+      - bankak
+      - transfer
+      type: string
+      description: |-
+        * `cash` - نقدي
+        * `bankak` - بنكك
+        * `transfer` - تحويل
+    Peak:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        percent:
+          type: integer
+      required:
+      - date
+      - percent
+    Period:
+      type: object
+      properties:
+        key:
+          $ref: '#/components/schemas/KeyEnum'
+        label:
+          type: string
+        date_from:
+          type: string
+          format: date
+        date_to:
+          type: string
+          format: date
+      required:
+      - date_from
+      - date_to
+      - key
+      - label
+    PinLoginRequest:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        pin:
+          type: string
+          minLength: 1
+          maxLength: 6
+      required:
+      - pin
+      - user_id
+    Preview:
+      type: object
+      properties:
+        last_night:
+          type: string
+          format: date
+        first_at:
+          type: string
+          format: date-time
+        second_at:
+          type: string
+          format: date-time
+          nullable: true
+        repeat_hours:
+          type: integer
+        affected_stays:
+          type: integer
+      required:
+      - affected_stays
+      - first_at
+      - last_night
+      - repeat_hours
+      - second_at
+    PreviewRequestRequest:
+      type: object
+      properties:
+        last_night:
+          type: string
+          format: date
+        duration_kind:
+          $ref: '#/components/schemas/BookingDurationKindEnum'
+        days_before:
+          type: integer
+          maximum: 60
+          minimum: 0
+          default: 0
+        second_days_before:
+          type: integer
+          maximum: 60
+          minimum: 0
+          nullable: true
+        at_time:
+          type: string
+          format: time
+        repeat_hours:
+          type: integer
+          maximum: 168
+          minimum: 0
+          default: 0
+      required:
+      - last_night
+    Quote:
+      type: object
+      properties:
+        check_in_date:
+          type: string
+          format: date
+        check_out_date:
+          type: string
+          format: date
+          description: Exclusive.
+        last_night:
+          type: string
+          format: date
+          description: The stay ends at the end of this day.
+        nights:
+          type: integer
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuoteOption'
+          description: Cheapest first; the staff choose one when several.
+      required:
+      - check_in_date
+      - check_out_date
+      - last_night
+      - nights
+      - options
+    QuoteOption:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+          description: e.g. «أسبوع + 3 ليالٍ»
+        formula:
+          type: string
+          description: e.g. «77,000 + 3 × 12,000» (major units)
+        units:
+          type: object
+          additionalProperties:
+            type: integer
+        duration_kind:
+          $ref: '#/components/schemas/DurationKindEnum'
+        total:
+          type: integer
+      required:
+      - duration_kind
+      - formula
+      - key
+      - label
+      - total
+      - units
+    QuoteRequestRequest:
+      type: object
+      properties:
+        room_type:
+          type: string
+          format: uuid
+        check_in_date:
+          type: string
+          format: date
+        duration_kind:
+          $ref: '#/components/schemas/BookingDurationKindEnum'
+        count:
+          type: integer
+          maximum: 366
+          minimum: 1
+      required:
+      - check_in_date
+      - count
+      - duration_kind
+      - room_type
+    ReasonRequest:
+      type: object
+      description: Body of reversal/cancel actions that only need a reason.
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
+    RefundRequest:
+      type: object
+      properties:
+        amount:
+          type: integer
+          minimum: 1
+        method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        reference:
+          type: string
+          default: ''
+          maxLength: 60
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - amount
+      - method
+      - reason
+    Report:
+      type: object
+      properties:
+        name:
+          type: string
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportColumn'
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        meta:
+          type: object
+          additionalProperties: {}
+          description: title, as_of, date_from, date_to, formula, note, tiles, totals
+      required:
+      - columns
+      - meta
+      - name
+      - rows
+    ReportColumn:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        type:
+          $ref: '#/components/schemas/ReportColumnTypeEnum'
+      required:
+      - key
+      - label
+      - type
+    ReportColumnTypeEnum:
+      enum:
+      - text
+      - money
+      - int
+      - percent
+      - date
+      - datetime
+      type: string
+      description: |-
+        * `text` - text
+        * `money` - money
+        * `int` - int
+        * `percent` - percent
+        * `date` - date
+        * `datetime` - datetime
+    ReportIndexItem:
+      type: object
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+        badge:
+          type: integer
+          nullable: true
+          description: Items needing attention (red count in the index).
+      required:
+      - badge
+      - name
+      - title
+    Reservation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        guest:
+          type: string
+          format: uuid
+          readOnly: true
+        guest_name:
+          type: string
+          readOnly: true
+        room_type:
+          type: string
+          format: uuid
+          readOnly: true
+        room_type_name:
+          type: string
+          readOnly: true
+        room:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        room_number:
+          type: string
+          readOnly: true
+        check_in_date:
+          type: string
+          format: date
+          readOnly: true
+        check_out_date:
+          type: string
+          format: date
+          readOnly: true
+        nights:
+          type: integer
+          readOnly: true
+        duration_kind:
+          allOf:
+          - $ref: '#/components/schemas/DurationKindEnum'
+          readOnly: true
+        duration_count:
+          type: integer
+          readOnly: true
+          description: Units of duration_kind; nights when mixed.
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ReservationStatusEnum'
+          readOnly: true
+        total:
+          type: integer
+          readOnly: true
+        rate_snapshot:
+          readOnly: true
+        notes:
+          type: string
+          readOnly: true
+        status_reason:
+          type: string
+          readOnly: true
+          description: Why it was cancelled / no-show.
+        folio:
+          type: string
+          format: uuid
+          readOnly: true
+        invoice:
+          type: string
+          readOnly: true
+        balance:
+          type: integer
+          nullable: true
+          description: Folio balance in minor units (> 0 owed by the guest).
+          readOnly: true
+        version:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - balance
+      - check_in_date
+      - check_out_date
+      - created_at
+      - duration_count
+      - duration_kind
+      - folio
+      - guest
+      - guest_name
+      - id
+      - invoice
+      - nights
+      - notes
+      - rate_snapshot
+      - room
+      - room_number
+      - room_type
+      - room_type_name
+      - status
+      - status_reason
+      - total
+      - version
+    ReservationCreateRequest:
+      type: object
+      properties:
+        guest:
+          type: string
+          format: uuid
+        room_type:
+          type: string
+          format: uuid
+        room:
+          type: string
+          format: uuid
+          nullable: true
+        check_in_date:
+          type: string
+          format: date
+        duration_kind:
+          $ref: '#/components/schemas/BookingDurationKindEnum'
+        count:
+          type: integer
+          maximum: 366
+          minimum: 1
+        option_key:
+          type: string
+          nullable: true
+          minLength: 1
+          description: From the quote; needed if several.
+        final_total:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Price override.
+        override_reason:
+          type: string
+          default: ''
+          maxLength: 300
+        notes:
+          type: string
+          default: ''
+          maxLength: 300
+        check_in_now:
+          type: boolean
+          default: false
+          description: 'Walk-in «تسكين الآن»: book and check in at once.'
+        discount:
+          type: integer
+          minimum: 0
+          default: 0
+        discount_reason:
+          type: string
+          default: ''
+          maxLength: 300
+        deposit:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Taken in the open shift.
+        deposit_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          default: cash
+        deposit_reference:
+          type: string
+          default: ''
+          maxLength: 60
+        manager_password:
+          type: string
+          default: ''
+          description: Only for a discount above the hotel's limit.
+          maxLength: 128
+        manager_reason:
+          type: string
+          default: ''
+          maxLength: 300
+      required:
+      - check_in_date
+      - count
+      - duration_kind
+      - guest
+      - room_type
+    ReservationStatusEnum:
+      enum:
+      - confirmed
+      - checked_in
+      - checked_out
+      - cancelled
+      - no_show
+      type: string
+      description: |-
+        * `confirmed` - مؤكد
+        * `checked_in` - مسكّن
+        * `checked_out` - غادر
+        * `cancelled` - ملغى
+        * `no_show` - لم يحضر
+    ResetPinRequest:
+      type: object
+      properties:
+        pin:
+          type: string
+          minLength: 1
+          maxLength: 6
+      required:
+      - pin
+    RevenueKpi:
+      type: object
+      properties:
+        value:
+          type: integer
+        change_percent:
+          type: integer
+          nullable: true
+          description: Against the month before the period; null without data.
+      required:
+      - change_percent
+      - value
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        number:
+          type: string
+          maxLength: 10
+        floor:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        room_type:
+          type: string
+          format: uuid
+        room_type_name:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/RoomStatusEnum'
+          readOnly: true
+        status_changed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        maintenance_reason:
+          type: string
+          readOnly: true
+        in_service:
+          type: boolean
+        note:
+          type: string
+          maxLength: 200
+        version:
+          type: integer
+          readOnly: true
+      required:
+      - floor
+      - id
+      - maintenance_reason
+      - number
+      - room_type
+      - room_type_name
+      - status
+      - status_changed_at
+      - version
+    RoomCreateRequest:
+      type: object
+      properties:
+        number:
+          type: string
+          minLength: 1
+          maxLength: 10
+        floor:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        room_type:
+          type: string
+          format: uuid
+        note:
+          type: string
+          maxLength: 200
+      required:
+      - floor
+      - number
+      - room_type
+    RoomStatusEnum:
+      enum:
+      - ready
+      - occupied
+      - cleaning
+      - maintenance
+      type: string
+      description: |-
+        * `ready` - جاهزة
+        * `occupied` - مشغولة
+        * `cleaning` - تحتاج تنظيف
+        * `maintenance` - صيانة
+    RoomStatusHistory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        from_status:
+          $ref: '#/components/schemas/RoomStatusEnum'
+        to_status:
+          $ref: '#/components/schemas/RoomStatusEnum'
+        at:
+          type: string
+          format: date-time
+        reason:
+          type: string
+          maxLength: 200
+        by_name:
+          type: string
+          readOnly: true
+      required:
+      - at
+      - by_name
+      - from_status
+      - id
+      - to_status
+    RoomType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 40
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        nightly_price:
+          type: integer
+          minimum: 0
+        weekly_price:
+          type: integer
+          minimum: 0
+        monthly_price:
+          type: integer
+          minimum: 0
+        is_active:
+          type: boolean
+        room_count:
+          type: integer
+          readOnly: true
+        version:
+          type: integer
+          readOnly: true
+      required:
+      - id
+      - monthly_price
+      - name
+      - nightly_price
+      - room_count
+      - version
+      - weekly_price
+    RoomTypeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+        capacity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        nightly_price:
+          type: integer
+          minimum: 0
+        weekly_price:
+          type: integer
+          minimum: 0
+        monthly_price:
+          type: integer
+          minimum: 0
+        is_active:
+          type: boolean
+      required:
+      - monthly_price
+      - name
+      - nightly_price
+      - weekly_price
+    Session:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+      - token
+      - user
+    SetStatusRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/RoomStatusEnum'
+        reason:
+          type: string
+          default: ''
+          maxLength: 200
+        version:
+          type: integer
+          minimum: 1
+      required:
+      - status
+    Shift:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        device:
+          type: string
+          maxLength: 64
+        opened_at:
+          type: string
+          format: date-time
+        opened_by:
+          type: string
+          readOnly: true
+        opening:
+          type: integer
+          readOnly: true
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+        closed_by_name:
+          type: string
+          readOnly: true
+        expected:
+          type: integer
+          readOnly: true
+          nullable: true
+        counted:
+          type: integer
+          readOnly: true
+          nullable: true
+        difference:
+          type: integer
+          readOnly: true
+          nullable: true
+        difference_reason:
+          type: string
+          maxLength: 300
+        version:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - closed_by_name
+      - counted
+      - device
+      - difference
+      - expected
+      - id
+      - opened_at
+      - opened_by
+      - opening
+    ShiftDetail:
+      type: object
+      properties:
+        shift:
+          $ref: '#/components/schemas/Shift'
+        totals:
+          $ref: '#/components/schemas/ShiftTotals'
+        movements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movement'
+      required:
+      - movements
+      - shift
+      - totals
+    ShiftHistory:
+      type: object
+      properties:
+        count:
+          type: integer
+        with_difference:
+          type: integer
+        net_difference:
+          type: integer
+        shifts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShiftHistoryRow'
+      required:
+      - count
+      - net_difference
+      - shifts
+      - with_difference
+    ShiftHistoryRow:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        device:
+          type: string
+          maxLength: 64
+        opened_at:
+          type: string
+          format: date-time
+        opened_by:
+          type: string
+          readOnly: true
+        opening:
+          type: integer
+          readOnly: true
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+        closed_by_name:
+          type: string
+          readOnly: true
+        expected:
+          type: integer
+          readOnly: true
+          nullable: true
+        counted:
+          type: integer
+          readOnly: true
+          nullable: true
+        difference:
+          type: integer
+          readOnly: true
+          nullable: true
+        difference_reason:
+          type: string
+          maxLength: 300
+        version:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        receipts:
+          type: integer
+          readOnly: true
+          description: Cash receipts.
+        cash_expenses:
+          type: integer
+          readOnly: true
+      required:
+      - cash_expenses
+      - closed_by_name
+      - counted
+      - device
+      - difference
+      - expected
+      - id
+      - opened_at
+      - opened_by
+      - opening
+      - receipts
+    ShiftTotals:
+      type: object
+      properties:
+        opening:
+          type: integer
+        receipts:
+          $ref: '#/components/schemas/MethodTotals'
+        expenses:
+          $ref: '#/components/schemas/MethodTotals'
+        expected:
+          type: integer
+          description: Opening + cash receipts − cash expenses.
+      required:
+      - expected
+      - expenses
+      - opening
+      - receipts
+    SourceEnum:
+      enum:
+      - drive
+      - file
+      type: string
+      description: |-
+        * `drive` - Drive
+        * `file` - USB
+    StaffResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        total:
+          type: integer
+        handled:
+          type: integer
+        handled_percent:
+          type: integer
+        neglected:
+          type: integer
+        average_delay_minutes:
+          type: integer
+          nullable: true
+      required:
+      - average_delay_minutes
+      - handled
+      - handled_percent
+      - name
+      - neglected
+      - total
+    StateEnum:
+      enum:
+      - new
+      - imported
+      - older
+      type: string
+      description: |-
+        * `new` - new
+        * `imported` - imported
+        * `older` - older
+    Stay:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        reservation:
+          allOf:
+          - $ref: '#/components/schemas/Reservation'
+          readOnly: true
+        checked_in_at:
+          type: string
+          format: date-time
+        checked_out_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_night:
+          type: string
+          format: date
+          readOnly: true
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaySegment'
+          readOnly: true
+        override_by_name:
+          type: string
+          readOnly: true
+        override_reason:
+          type: string
+          maxLength: 300
+        version:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - checked_in_at
+      - id
+      - last_night
+      - override_by_name
+      - reservation
+      - segments
+    StayActionParamsRequest:
+      type: object
+      description: 'extend: duration_kind, count, option_key…; confirm_checkout: room_status,
+        override_password…'
+      properties:
+        duration_kind:
+          $ref: '#/components/schemas/BookingDurationKindEnum'
+        count:
+          type: integer
+          maximum: 366
+          minimum: 1
+        option_key:
+          type: string
+          nullable: true
+          minLength: 1
+        final_total:
+          type: integer
+          minimum: 0
+          nullable: true
+        override_reason:
+          type: string
+          maxLength: 300
+        room_status:
+          $ref: '#/components/schemas/AfterRoomStatusEnum'
+        maintenance_reason:
+          type: string
+          maxLength: 200
+        override_password:
+          type: string
+          maxLength: 128
+    StaySegment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        room:
+          type: string
+          format: uuid
+        room_number:
+          type: string
+          readOnly: true
+        from_date:
+          type: string
+          format: date
+        to_date:
+          type: string
+          format: date
+          description: Exclusive.
+        reason:
+          type: string
+          maxLength: 300
+      required:
+      - from_date
+      - id
+      - room
+      - room_number
+      - to_date
+    SyncResult:
+      type: object
+      properties:
+        uploaded:
+          type: integer
+          description: 'Reception: files uploaded now.'
+        downloaded:
+          type: array
+          items:
+            type: string
+          description: 'Owner: files fetched to incoming/.'
+        message:
+          type: string
+      required:
+      - downloaded
+      - message
+      - uploaded
+    SystemStatus:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/DeviceRoleEnum'
+        hotel_id:
+          type: string
+          format: uuid
+          nullable: true
+        last_backup:
+          type: string
+          format: date-time
+          nullable: true
+        data_as_of:
+          type: string
+          format: date-time
+          nullable: true
+        clock_blocked:
+          type: boolean
+        version:
+          type: string
+        schema_version:
+          type: integer
+      required:
+      - clock_blocked
+      - data_as_of
+      - hotel_id
+      - last_backup
+      - role
+      - schema_version
+      - version
+    TaskAction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+        label:
+          type: string
+        at:
+          type: string
+          format: date-time
+        note:
+          type: string
+          maxLength: 300
+        next_at:
+          type: string
+          format: date-time
+          nullable: true
+        by:
+          type: string
+      required:
+      - action
+      - at
+      - id
+      - label
+    TaskRow:
+      type: object
+      properties:
+        stay:
+          type: string
+          format: uuid
+          nullable: true
+        room:
+          type: string
+          nullable: true
+        room_state:
+          type: string
+        guest:
+          type: string
+        kind:
+          type: string
+        last_night:
+          type: string
+          format: date
+        when:
+          type: string
+          description: «تنتهي بعد يومين», «متجاوزة منذ يوم»
+        id:
+          type: string
+          format: uuid
+        rule:
+          type: string
+          description: '«قاعدة: شهري – قبل 5 أيام · 09:00»'
+        trigger_kind:
+          $ref: '#/components/schemas/TriggerKindEnum'
+        title:
+          type: string
+        status:
+          type: string
+        due_at:
+          type: string
+          format: date-time
+        snooze_count:
+          type: integer
+        max_snoozes:
+          type: integer
+        snooze_label:
+          type: string
+          description: «تأجيل (2 من 3)»
+        can_snooze:
+          type: boolean
+        next_at:
+          type: string
+          format: date-time
+          nullable: true
+        note:
+          type: string
+        neglected_shift_user:
+          type: string
+          nullable: true
+          description: '«مُهمَلة — وردية: أحمد»'
+        version:
+          type: integer
+      required:
+      - can_snooze
+      - due_at
+      - id
+      - max_snoozes
+      - neglected_shift_user
+      - next_at
+      - note
+      - room
+      - rule
+      - snooze_count
+      - snooze_label
+      - status
+      - stay
+      - title
+      - trigger_kind
+      - version
+    Toast:
+      type: object
+      properties:
+        seq:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Poll cursor.
+        task:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 60
+        body:
+          type: string
+          maxLength: 120
+        at:
+          type: string
+          format: date-time
+      required:
+      - at
+      - body
+      - seq
+      - task
+      - title
+    ToastBatch:
+      type: object
+      properties:
+        cursor:
+          type: integer
+          description: Pass back as ?after= on the next poll.
+        toasts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Toast'
+      required:
+      - cursor
+      - toasts
+    TriggerKindEnum:
+      enum:
+      - stay_ending
+      - stay_overdue
+      - checkout_debt
+      - shift_open_too_long
+      - room_cleaning_too_long
+      - room_maintenance_too_long
+      - no_backup
+      - no_drive_upload
+      type: string
+      description: |-
+        * `stay_ending` - انتهاء الإقامة
+        * `stay_overdue` - إقامة متجاوزة
+        * `checkout_debt` - خروج بدين
+        * `shift_open_too_long` - وردية مفتوحة طويلًا
+        * `room_cleaning_too_long` - تنظيف متأخر
+        * `room_maintenance_too_long` - صيانة طويلة
+        * `no_backup` - لا نسخة احتياطية
+        * `no_drive_upload` - لا رفع إلى Drive
+    UpcomingRow:
+      type: object
+      properties:
+        stay:
+          type: string
+          format: uuid
+          nullable: true
+        room:
+          type: string
+          nullable: true
+        room_state:
+          type: string
+        guest:
+          type: string
+        kind:
+          type: string
+        last_night:
+          type: string
+          format: date
+        when:
+          type: string
+          description: «تنتهي بعد يومين», «متجاوزة منذ يوم»
+        rule:
+          type: string
+        alert_at:
+          type: string
+          format: date-time
+          description: «سيُنبَّه الجمعة 9 أكتوبر 09:00»
+      required:
+      - alert_at
+      - room
+      - rule
+      - stay
+    UploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required:
+      - file
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/UserRoleEnum'
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: آخر دخول
+        locked_until:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        version:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - full_name
+      - id
+      - is_active
+      - last_login
+      - locked_until
+      - role
+      - updated_at
+      - username
+      - version
+    UserCreateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 64
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+        pin:
+          type: string
+          minLength: 1
+          maxLength: 6
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - full_name
+      - pin
+      - role
+      - username
+    UserRoleEnum:
+      enum:
+      - owner
+      - manager
+      - reception
+      type: string
+      description: |-
+        * `owner` - المالك
+        * `manager` - مدير
+        * `reception` - استقبال
+    VersionRequest:
+      type: object
+      properties:
+        version:
+          type: integer
+          minimum: 1
+    Week:
+      type: object
+      properties:
+        label:
+          type: string
+        date_from:
+          type: string
+          format: date
+        date_to:
+          type: string
+          format: date
+        revenue:
+          type: integer
+        collected:
+          type: integer
+      required:
+      - collected
+      - date_from
+      - date_to
+      - label
+      - revenue
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"

@@ -122,7 +122,7 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Sky Towers API",
     "DESCRIPTION": "Local API of the Sky Towers hotel management system.",
-    "VERSION": "0.1.0",
+    "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "COMPONENT_SPLIT_REQUEST": True,
@@ -134,6 +134,8 @@ SPECTACULAR_SETTINGS = {
         "BookingDurationKindEnum": "apps.stays.serializers.BOOKING_KINDS",
         "AfterRoomStatusEnum": "apps.stays.serializers.AFTER_ROOM_STATUS",
         "PaymentMethodEnum": "apps.cash.models.PaymentMethod",
+        "AuditCategoryEnum": "apps.audit.rules.CATEGORY_KEYS",
+        "ExpenseCategoryEnum": "apps.cash.models.ExpenseCategory",
     },
 }
 

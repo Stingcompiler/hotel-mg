@@ -61,6 +61,7 @@ class ClockApproveView(APIView):
 
 class HotelSettingsSerializer(serializers.ModelSerializer):
     expense_attachment_threshold = MoneyMinorField(min_value=0)
+    debt_attention_threshold = MoneyMinorField(min_value=0, required=False)
 
     class Meta:
         model = HotelSettings
@@ -76,6 +77,7 @@ class HotelSettingsSerializer(serializers.ModelSerializer):
             "session_lock_minutes",
             "expense_attachment_threshold",
             "max_discount_percent",
+            "debt_attention_threshold",
             "auto_print_receipt",
             "thermal_printer",
             "hotel_id",
@@ -90,6 +92,11 @@ class HotelSettingsUpdateSerializer(HotelSettingsSerializer):
 
     class Meta(HotelSettingsSerializer.Meta):
         read_only_fields = ["currency", "hotel_id", "updated_at"]
+
+    def validate(self, attrs):
+        if "version" not in attrs:  # partial=True would otherwise let it through
+            raise serializers.ValidationError({"version": ["هذا الحقل مطلوب."]})
+        return attrs
 
 
 class HotelSettingsView(APIView):

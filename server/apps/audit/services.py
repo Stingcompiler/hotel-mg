@@ -1,9 +1,10 @@
 import json
-from datetime import UTC
+from datetime import UTC, datetime, time, timedelta
 
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
+from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.utils import timezone
 
@@ -95,3 +96,23 @@ def verify_chain(hotel_id=None, using: str = "default") -> int | None:
         for r in AuditLog.objects.using(using).filter(hotel_id=hotel_id).order_by("seq").iterator()
     )
     return rules.first_broken(rows)
+
+
+def search(qs=None, *, q: str = "", date_from=None, date_to=None, category: str = ""):
+    """Settings → سجل التدقيق filters, newest first. Category is decided per row by ``rules.category``."""
+    qs = (AuditLog.objects.all() if qs is None else qs).select_related("actor").order_by("-seq")
+    if date_from:
+        qs = qs.filter(at__gte=_local_midnight(date_from))
+    if date_to:
+        qs = qs.filter(at__lt=_local_midnight(date_to + timedelta(days=1)))
+    if q := q.strip():
+        qs = qs.filter(
+            Q(action__icontains=q) | Q(entity__icontains=q) | Q(entity_id=q) | Q(actor__full_name__icontains=q)
+        )
+    if category:
+        return [row for row in qs if rules.category(row.action, row.after) == category]
+    return qs
+
+
+def _local_midnight(day):
+    return timezone.make_aware(datetime.combine(day, time.min))

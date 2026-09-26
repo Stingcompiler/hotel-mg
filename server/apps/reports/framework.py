@@ -66,14 +66,15 @@ class ReportDef:
     build: Callable[[Params], Report]
     default_days: int  # 0 = today only; 30 = month to date
     badge: Callable[[], int] | None = None
+    manager_only: bool = False  # also hidden from the reports index (e.g. the audit log lives in Settings)
 
 
 REGISTRY: dict[str, ReportDef] = {}
 
 
-def report(name: str, title: str, *, default_days: int = 30, badge=None):
+def report(name: str, title: str, *, default_days: int = 30, badge=None, manager_only: bool = False):
     def register(fn):
-        REGISTRY[name] = ReportDef(name, title, fn, default_days, badge)
+        REGISTRY[name] = ReportDef(name, title, fn, default_days, badge, manager_only)
         return fn
 
     return register
@@ -100,5 +101,8 @@ def parse_params(name: str, query) -> Params:
     return Params(date_from, date_to, extra)
 
 
-def build(name: str, query) -> Report:
-    return REGISTRY[name].build(parse_params(name, query)) if name in REGISTRY else parse_params(name, query)
+def build(name: str, query, *, is_manager: bool = True) -> Report:
+    params = parse_params(name, query)
+    if REGISTRY[name].manager_only and not is_manager:
+        raise ApiError("permission_denied", 403)
+    return REGISTRY[name].build(params)

@@ -7,10 +7,13 @@ from django.db.models import Max, Q, Sum
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 
+from apps.audit import rules as audit_rules
+from apps.audit import services as audit
 from apps.billing.models import Folio, FolioLine, Payment
 from apps.billing.services import FolioTotals, balances_by_reservation
 from apps.cash.models import Expense, Shift
 from apps.cash.services import ShiftTotals
+from apps.core.errors import ApiError
 from apps.core.models import HotelSettings
 from apps.rooms.models import Room, RoomStatus, RoomStatusHistory
 from apps.stays import rules as stay_rules
@@ -896,4 +899,43 @@ def alert_response(params: Params) -> Report:
             {"label": "مُهمَلة", "value": neglected, "type": "int"},
         ],
         note="كل إجراء مسجَّل باسم من نفّذه ووقته؛ المهمة المُهمَلة تُنسب إلى الوردية المسؤولة وقت الإهمال.",
+    )
+
+
+@report("audit_log", "سجل التدقيق", manager_only=True)
+def audit_log(params: Params) -> Report:
+    """Settings → سجل التدقيق «تصدير CSV»: the same filters as ``GET /audit/``."""
+    category = params.get("category", "")
+    if category and category not in audit_rules.CATEGORIES:
+        raise ApiError("validation_error", 400, detail="تصنيف غير معروف.")
+    rows = [
+        {
+            "seq": row.seq,
+            "at": row.at,
+            "by": row.actor.full_name if row.actor_id else "النظام",
+            "category": audit_rules.CATEGORIES[audit_rules.category(row.action, row.after)],
+            "action": row.action,
+            "entity": row.entity,
+            "entity_id": row.entity_id,
+        }
+        for row in audit.search(
+            q=params.get("q", ""), date_from=params.date_from, date_to=params.date_to, category=category
+        )
+    ]
+    return Report(
+        "audit_log",
+        "سجل التدقيق",
+        [
+            Column("seq", "#", "int"),
+            Column("at", "الوقت", "datetime"),
+            Column("by", "المستخدم"),
+            Column("category", "التصنيف"),
+            Column("action", "الإجراء"),
+            Column("entity", "الكيان"),
+            Column("entity_id", "المعرّف"),
+        ],
+        rows,
+        period=(params.date_from, params.date_to),
+        tiles=[{"label": "السجلات", "value": len(rows), "type": "int"}],
+        note="السجل للقراءة فقط ومتسلسل بالبصمات؛ التحقق من السلسلة في «التحقق من السجل».",
     )
