@@ -102,3 +102,37 @@ def category(action: str, after: dict | None) -> str:
     if action.startswith(_SETTINGS_PREFIXES):
         return "settings"
     return "other"
+
+
+# Arabic wording of actions for activity logs (stay «السجل» tab, Settings → سجل التدقيق).
+ACTION_LABELS = {
+    "reservation.create": "إنشاء الحجز",
+    "reservation.assign_room": "تخصيص غرفة للحجز",
+    "reservation.cancel": "إلغاء الحجز",
+    "reservation.no_show": "لم يحضر",
+    "stay.check_in": "تسكين",
+    "stay.extend": "تمديد الإقامة",
+    "stay.change_room": "تغيير الغرفة",
+    "stay.checkout": "تسجيل خروج",
+    "stay.cancel": "إلغاء الإقامة",
+    "folio.room": "قيد إقامة",
+    "folio.service": "إضافة خدمة",
+    "folio.discount": "خصم",
+    "folio.adjustment": "تسوية",
+    "folio.tax": "ضريبة",
+    "folio.reversal": "قيد عكس",
+    "folio.reverse_line": "عكس قيد",
+    "payment.deposit": "عربون",
+    "payment.payment": "دفعة",
+    "payment.refund": "ردّ مبلغ",
+    "payment.reversal": "عكس دفعة",
+    "payment.reverse": "عكس دفعة",
+    "guest.create": "تسجيل نزيل",
+    "guest.update": "تعديل بيانات النزيل",
+    "guest.add_document": "إضافة صورة هوية",
+    "guest.view_document": "عرض صورة هوية",
+}
+
+
+def action_label(action: str) -> str:
+    return ACTION_LABELS.get(action, action)

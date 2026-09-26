@@ -30,6 +30,7 @@ from .serializers import (
     ReservationCreateSerializer,
     ReservationSerializer,
     RoomBoardSerializer,
+    StayDetailSerializer,
     StaySerializer,
     VersionSerializer,
 )
@@ -195,10 +196,11 @@ class CheckInView(APIView):
 class StayDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses=StaySerializer)
+    @extend_schema(responses=StayDetailSerializer)
     def get(self, request, pk):
         get_object_or_404(Stay, pk=pk)
-        return _stay_response(pk)
+        stay = _stays().prefetch_related("reservation__guest__companions").get(pk=pk)
+        return Response(StayDetailSerializer(stay, context={"request": request}).data)
 
 
 class ExtendQuoteView(APIView):

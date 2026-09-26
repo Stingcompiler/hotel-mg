@@ -55,3 +55,9 @@ def test_audit_log_export_is_manager_only_and_hidden_from_the_index(api_as_manag
     token = login_with_password("ahmed.ali", demo_data.DEMO_PASSWORD).token
     reception.credentials(HTTP_AUTHORIZATION=f"Token {token}")
     assert reception.get("/api/v1/reports/audit_log").status_code == 403
+
+
+def test_action_labels():
+    assert rules.action_label("stay.check_in") == "تسكين"
+    assert rules.action_label("payment.deposit") == "عربون"
+    assert rules.action_label("something.new") == "something.new"

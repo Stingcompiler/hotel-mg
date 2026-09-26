@@ -1,5 +1,6 @@
 from datetime import date
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.cash.models import PaymentMethod
@@ -306,3 +307,114 @@ class RoomBoardSerializer(serializers.Serializer):
     date = serializers.DateField()
     summary = RoomBoardSummarySerializer()
     rooms = RoomBoardRoomSerializer(many=True)
+
+
+class StayGuestSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    full_name = serializers.CharField()
+    phone = serializers.CharField()
+    nationality = serializers.CharField()
+    id_type_label = serializers.CharField()
+    id_number = serializers.CharField(help_text="Full for manager/owner; last 4 characters otherwise.")
+    warning_note = serializers.CharField()
+    companions = serializers.ListField(child=serializers.DictField(child=serializers.CharField()))
+
+
+class StayRoomSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    number = serializers.CharField()
+    floor = serializers.IntegerField()
+    room_type_name = serializers.CharField()
+    status = serializers.ChoiceField(choices=RoomStatus.choices)
+    display_status = serializers.ChoiceField(choices=DISPLAY_STATUS)
+
+
+class StayLogEntrySerializer(serializers.Serializer):
+    at = serializers.DateTimeField()
+    action = serializers.CharField()
+    label = serializers.CharField()
+    by = serializers.CharField(allow_null=True)
+
+
+class StayDetailSerializer(StaySerializer):
+    """Stay detail 6.5: the stay plus the guest card, the room line, days left and the activity log."""
+
+    guest = serializers.SerializerMethodField()
+    room = serializers.SerializerMethodField()
+    days_left = serializers.SerializerMethodField(help_text="0 = ends today; negative = overdue; null once closed")
+    log = serializers.SerializerMethodField(
+        help_text="Audit rows of this stay, its reservation and folio; newest first"
+    )
+
+    class Meta(StaySerializer.Meta):
+        fields = [*StaySerializer.Meta.fields, "guest", "room", "days_left", "log"]
+
+    @extend_schema_field(StayGuestSerializer)
+    def get_guest(self, stay):
+        from apps.accounts import rules as account_rules
+        from apps.guests import rules as guest_rules
+
+        g = stay.reservation.guest
+        user = self.context["request"].user
+        return {
+            "id": g.pk,
+            "full_name": g.full_name,
+            "phone": g.phone,
+            "nationality": g.nationality,
+            "id_type_label": g.get_id_type_display() if g.id_type else "",
+            "id_number": g.id_number
+            if account_rules.is_manager(user.role)
+            else guest_rules.mask_id_number(g.id_number),
+            "warning_note": g.warning_note,
+            "companions": [{"name": c.name, "relation": c.relation} for c in g.companions.filter(removed=False)],
+        }
+
+    @extend_schema_field(StayRoomSerializer(allow_null=True))
+    def get_room(self, stay):
+        from apps.rooms import rules as room_rules
+
+        room = stay.reservation.room
+        if room is None:
+            return None
+        overdue = stay.checked_out_at is None and room_rules.is_overdue(
+            room.status, services_today(), stay.reservation.check_out_date
+        )
+        return {
+            "id": room.pk,
+            "number": room.number,
+            "floor": room.floor,
+            "room_type_name": stay.reservation.room_type.name,
+            "status": room.status,
+            "display_status": "overdue" if overdue else room.status,
+        }
+
+    def get_days_left(self, stay) -> int | None:
+        if stay.checked_out_at is not None:
+            return None
+        return (rules.last_night(stay.reservation.check_out_date) - services_today()).days
+
+    @extend_schema_field(StayLogEntrySerializer(many=True))
+    def get_log(self, stay):
+        from apps.audit import rules as audit_rules
+        from apps.audit.models import AuditLog
+
+        ids = [str(stay.pk), str(stay.reservation_id)]
+        folio = getattr(stay.reservation, "folio", None)
+        if folio is not None:
+            ids.append(str(folio.pk))
+        rows = AuditLog.objects.filter(entity_id__in=ids).select_related("actor").order_by("-seq")
+        return [
+            {
+                "at": r.at,
+                "action": r.action,
+                "label": audit_rules.action_label(r.action),
+                "by": r.actor.full_name if r.actor_id else None,
+            }
+            for r in rows
+        ]
+
+
+def services_today():
+    from .services import today
+
+    return today()
