@@ -40,9 +40,14 @@ const middleware: Middleware = {
     try {
       body = await response.clone().json();
     } catch {
-      // not JSON (proxy error, server down)
+      // not JSON: the Django server did not answer (dev proxy error, gateway)
     }
-    const code = typeof body.code === "string" ? body.code : response.status >= 500 ? "error" : "validation_error";
+    const code =
+      typeof body.code === "string"
+        ? body.code
+        : response.status >= 500
+          ? "server_unavailable"
+          : "validation_error";
     const detail = typeof body.detail === "string" ? body.detail : undefined;
     if (response.status === 401) session.signOut();
     const { code: _code, detail: _detail, ...extra } = body;
@@ -51,7 +56,16 @@ const middleware: Middleware = {
 };
 
 // Same origin as the page (Vite proxy in development, Django in production).
-export const api = createClient<paths>({ baseUrl: window.location.origin, fetch: (request) => globalThis.fetch(request) });
+/** `fetch` resolved at call time; a refused connection becomes `server_unavailable` with its Arabic message. */
+async function send(request: Request): Promise<Response> {
+  try {
+    return await globalThis.fetch(request);
+  } catch {
+    throw new ApiError(0, "server_unavailable", errorMessage("server_unavailable"));
+  }
+}
+
+export const api = createClient<paths>({ baseUrl: window.location.origin, fetch: send });
 api.use(middleware);
 
 /** Unwraps an openapi-fetch result (errors were already thrown by the middleware). */

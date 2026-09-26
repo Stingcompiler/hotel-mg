@@ -22,6 +22,7 @@ function json(status: number, body: unknown) {
 
 beforeEach(() => {
   session.signOut();
+  window.localStorage.clear();
   pinCalls.length = 0;
   pinReplies = [];
   vi.stubGlobal(
@@ -105,4 +106,22 @@ test("the keyboard types digits (Arabic-Indic too) and Enter submits a 4-digit P
   for (const key of ["١", "2", "٣", "4"]) fireEvent.keyDown(window, { key });
   fireEvent.keyDown(window, { key: "Enter" });
   await waitFor(() => expect(pinCalls).toEqual([{ user_id: "u2", pin: "1234" }]));
+});
+
+test("a server that does not answer is named, not «unexpected error»", async () => {
+  pinReplies = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: Request) => {
+      const url = new URL(input.url);
+      if (url.pathname === "/api/v1/auth/users") return json(200, USERS);
+      if (url.pathname === "/api/v1/system/status") return json(200, STATUS);
+      if (url.pathname === "/api/v1/auth/pin") return new Response("", { status: 500 }); // Vite proxy: ECONNREFUSED
+      throw new TypeError("Failed to fetch");
+    }),
+  );
+  renderLogin();
+  await screen.findByText("مرحبًا، أحمد");
+  typePin("123456");
+  expect(await screen.findByRole("alert")).toHaveTextContent("تعذّر الاتصال بالخادم المحلي");
 });
