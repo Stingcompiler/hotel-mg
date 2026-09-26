@@ -32,6 +32,13 @@ def _stay_for_update(stay_id, version: int | None) -> Stay:
     return stay
 
 
+def _retire_tasks(stay: Stay, reason: str) -> None:
+    """Pending follow-up tasks of the stay become superseded; the engine re-plans from the new end (spec §6.6)."""
+    from apps.followups.services import supersede_for_stay  # followups depends on stays; import at use
+
+    supersede_for_stay(stay, reason=reason)
+
+
 def _open_segment(stay: Stay) -> StaySegment:
     return stay.segments.order_by("-from_date", "-created_at").first()
 
@@ -201,6 +208,7 @@ def extend(
     segment = _open_segment(stay)
     segment.to_date = q.check_out_date
     segment.save()
+    _retire_tasks(stay, f"تمديد حتى {rules.last_night(q.check_out_date):%d/%m}")
     billing.post_line(
         actor,
         billing.folio_of(reservation),
@@ -286,6 +294,7 @@ def change_room(
     room_services.transition(
         new_room, RoomStatus.OCCUPIED, trigger="check_in", actor=actor, reason=f"نقل من {old_room.number}"
     )
+    _retire_tasks(stay, f"نقل إلى {new_room.number}")
     reservation.room = new_room
     reservation.room_type = new_room.room_type
     reservation.total += difference
@@ -325,6 +334,7 @@ def change_room(
 
 def _close(stay: Stay, actor, *, status: str, room_status: str, maintenance_reason: str, why: str) -> None:
     reservation = stay.reservation
+    _retire_tasks(stay, why)
     segment = _open_segment(stay)
     segment.to_date = max(today(), segment.from_date)
     segment.save()

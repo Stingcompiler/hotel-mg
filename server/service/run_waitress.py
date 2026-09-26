@@ -1,7 +1,7 @@
 """Serve the API with Waitress on 127.0.0.1:8471 (spec §2).
 
 The settings module follows ``role`` in config.json, so one build serves both PCs.
-The Windows service wrapper (pywin32) and the scheduler thread arrive in Track W / B3.
+The scheduler thread (alert engine, clock guard) runs next to the server; the pywin32 service wrapper is Track W.
 
     python -m service.run_waitress          # from server/
 """
@@ -30,6 +30,10 @@ def main() -> None:
     from waitress import serve
 
     from config.wsgi import application
+    from service import scheduler
+
+    if role == "reception":  # the owner PC has no hotel operations to watch
+        scheduler.start()
 
     serve(application, host=HOST, port=PORT, threads=8)
 

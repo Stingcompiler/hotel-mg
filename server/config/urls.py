@@ -25,6 +25,7 @@ api_v1 = [
     path("shifts/", include(shift_urls)),
     path("expenses/", include(expense_urls)),
     path("reports/", include(report_urls)),
+    path("followups/", include("apps.followups.urls")),
     path("", include(document_urls)),
 ]
 
