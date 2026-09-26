@@ -21,3 +21,6 @@ server/openapi.yml
 .DS_Store
 Thumbs.db
 .hypothesis/
+
+# API contract tooling
+api/node_modules/

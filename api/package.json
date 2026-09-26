@@ -1,0 +1,12 @@
+{
+  "name": "skytowers-api-contract",
+  "private": true,
+  "description": "Frozen API contract (v1.0-api): OpenAPI schema, generated TypeScript types, Postman collection.",
+  "scripts": {
+    "gen": "openapi-typescript openapi.yml -o schema.d.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3"
+  }
+}

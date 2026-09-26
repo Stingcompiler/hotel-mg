@@ -93,6 +93,7 @@ def record_check_in(actor, reservation: Reservation, room: Room, at=None) -> Sta
             description=f"خصم: {discount['reason']}",
             amount=-discount["amount"],
             reason=discount["reason"],
+            approved_by=discount.get("approved_by"),
         )
     return stay
 

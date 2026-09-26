@@ -63,3 +63,21 @@ def confirm():
         return client
 
     return attach
+
+
+@pytest.fixture
+def seeded(db):
+    """The demo hotel (room board artboards): 18/30 occupied, debts on 203 and 305."""
+    from django.core.management import call_command
+
+    call_command("seed_demo", "--allow-non-debug")
+
+
+@pytest.fixture
+def api_as_manager(seeded):
+    from apps.accounts.services import login_with_password
+    from apps.core.seed import demo_data
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Token {login_with_password('manager', demo_data.DEMO_PASSWORD).token}")
+    return client

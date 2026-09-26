@@ -106,6 +106,7 @@ class HotelSettings(BaseModel):
     session_lock_minutes = models.PositiveSmallIntegerField(default=15)
     expense_attachment_threshold = MoneyField(default=2_000_000, help_text="Receipt required above (minor units).")
     max_discount_percent = models.PositiveSmallIntegerField(default=20)
+    debt_attention_threshold = MoneyField(default=5_000_000, help_text="Owner dashboard: debts above this (minor).")
     auto_print_receipt = models.BooleanField(default=True)
     thermal_printer = models.CharField(max_length=60, blank=True)
 

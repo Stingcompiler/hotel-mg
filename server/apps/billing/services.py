@@ -83,8 +83,10 @@ def balances_by_reservation(reservation_ids) -> dict:
 # --- Lines ----------------------------------------------------------------------------------
 
 
-def post_line(actor, folio: Folio, *, kind: str, description: str, amount: int, reason: str = "") -> FolioLine:
-    """Append a line and audit it. Caller owns the transaction."""
+def post_line(
+    actor, folio: Folio, *, kind: str, description: str, amount: int, reason: str = "", approved_by=None
+) -> FolioLine:
+    """Append a line and audit it (with the approving manager, if any). Caller owns the transaction."""
     line = FolioLine.objects.create(
         folio=folio,
         kind=kind,
@@ -94,9 +96,10 @@ def post_line(actor, folio: Folio, *, kind: str, description: str, amount: int, 
         posted_at=timezone.now(),
         created_by=actor,
     )
-    audit.record(
-        actor=actor, action=f"folio.{kind}", entity="folio", entity_id=folio.pk, after=audit.snapshot(line, LINE_FIELDS)
-    )
+    after = audit.snapshot(line, LINE_FIELDS)
+    if approved_by:
+        after["approved_by"] = str(approved_by)
+    audit.record(actor=actor, action=f"folio.{kind}", entity="folio", entity_id=folio.pk, after=after)
     return line
 
 
@@ -118,7 +121,13 @@ def add_line(actor, folio_id, *, kind: str, description: str, amount: int, reaso
             raise ApiError("reason_required", 400, detail="سبب الخصم مطلوب عند إدخال أي خصم.")
         check_discount(folio, amount, approver=approver)
         return post_line(
-            actor, folio, kind="discount", description=description or f"خصم: {reason}", amount=-amount, reason=reason
+            actor,
+            folio,
+            kind="discount",
+            description=description or f"خصم: {reason}",
+            amount=-amount,
+            reason=reason,
+            approved_by=approver.pk if approver else None,
         )
     return post_line(actor, folio, kind=kind, description=description, amount=amount, reason=reason)
 

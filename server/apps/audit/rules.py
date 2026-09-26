@@ -65,3 +65,40 @@ def first_broken(rows) -> int | None:
         expected_prev = row["hash"]
         expected_seq += 1
     return None
+
+
+# --- Categories for Settings → سجل التدقيق (artboard 6.11 E) ---------------------------------------
+
+CATEGORIES = {
+    "payment": "دفعة",
+    "stay": "إقامة",
+    "reversal": "عكس",
+    "override": "تجاوز مدير",
+    "settings": "إعدادات",
+    "login": "دخول",
+    "sensitive": "عرض حساس",
+    "other": "أخرى",
+}
+CATEGORY_KEYS = list(CATEGORIES)
+_SENSITIVE = {"guest.view_document"}
+_SETTINGS_PREFIXES = ("settings.", "room_type.", "room.", "user.", "backup.", "followup.rule_", "system.")
+
+
+def category(action: str, after: dict | None) -> str:
+    """One category per row. Most specific first: a reversed payment is «عكس», an overridden checkout
+    is «تجاوز مدير»."""
+    if action in _SENSITIVE:
+        return "sensitive"
+    if isinstance(after, dict) and any(after.get(k) for k in ("approved_by", "override_by", "override_reason")):
+        return "override"
+    if "revers" in action or action == "payment.refund":
+        return "reversal"
+    if action.startswith("auth."):
+        return "login"
+    if action.startswith(("payment.", "folio.")):
+        return "payment"
+    if action.startswith(("stay.", "reservation.")):
+        return "stay"
+    if action.startswith(_SETTINGS_PREFIXES):
+        return "settings"
+    return "other"

@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.accounts import rules as account_rules
@@ -47,6 +48,48 @@ class GuestSerializer(serializers.ModelSerializer):
     def get_id_number(self, guest) -> str:
         user = self.context["request"].user
         return guest.id_number if account_rules.is_manager(user.role) else rules.mask_id_number(guest.id_number)
+
+
+class LastStaySerializer(serializers.Serializer):
+    reservation_id = serializers.UUIDField()
+    check_in_date = serializers.DateField()
+    room = serializers.CharField()
+
+
+class GuestListItemSerializer(GuestSerializer):
+    """Guest list row (artboard 6.8): history numbers come from ``context["stats"]`` (see ``stats.for_guests``)."""
+
+    stays_count = serializers.SerializerMethodField()
+    last_stay = serializers.SerializerMethodField()
+    debt = serializers.SerializerMethodField(help_text="Open balance over all stays, minor units.")
+    in_house = serializers.SerializerMethodField()
+
+    class Meta(GuestSerializer.Meta):
+        fields = [*GuestSerializer.Meta.fields, "stays_count", "last_stay", "debt", "in_house"]
+
+    def get_stays_count(self, guest) -> int:
+        return self.context["stats"][guest.pk]["stays_count"]
+
+    @extend_schema_field(LastStaySerializer(allow_null=True))
+    def get_last_stay(self, guest):
+        return self.context["stats"][guest.pk]["last_stay"]
+
+    def get_debt(self, guest) -> int:
+        return self.context["stats"][guest.pk]["debt"]
+
+    def get_in_house(self, guest) -> bool:
+        return self.context["stats"][guest.pk]["in_house"]
+
+
+class GuestHistoryItemSerializer(serializers.Serializer):
+    reservation_id = serializers.UUIDField()
+    room = serializers.CharField(allow_null=True)
+    check_in_date = serializers.DateField()
+    check_out_date = serializers.DateField()
+    nights = serializers.IntegerField()
+    status = serializers.CharField()
+    status_label = serializers.CharField()
+    balance = serializers.IntegerField()
 
 
 class GuestWriteSerializer(serializers.Serializer):
