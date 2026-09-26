@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, LayoutGrid, List, Plus, SearchX, TriangleAlert } from "lucide-react";
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { ChevronDown, LayoutGrid, List, Plus, SearchX } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { api, data } from "@/api/client";
 import { keys, useSystemStatus } from "@/api/queries";
@@ -31,10 +31,11 @@ function matches(room: BoardRoom, filter: Filter): boolean {
   return room.status === filter; // «مشغولة» includes overdue rooms, as the artboard counts them
 }
 
-export function useRoomBoard() {
+export function useRoomBoard(enabled = true) {
   return useQuery({
     queryKey: keys.roomBoard,
     queryFn: () => data(api.GET("/api/v1/rooms/board")),
+    enabled,
     refetchInterval: 15_000, // spec §10.5
   });
 }
@@ -45,7 +46,16 @@ export function RoomBoardPage() {
   const board = useRoomBoard();
   const offline = useSystemStatus().isError;
   const now = useNow(60_000);
-  const [filter, setFilter] = useState<Filter>("all");
+  // «عرض» on the overdue system bar opens the board with `?filter=overdue`.
+  const [params, setParams] = useSearchParams();
+  const [filter, setFilterState] = useState<Filter>(params.get("filter") === "overdue" ? "overdue" : "all");
+  useEffect(() => {
+    if (params.get("filter") === "overdue") setFilterState("overdue");
+  }, [params]);
+  const setFilter = (next: Filter) => {
+    setFilterState(next);
+    if (params.has("filter")) setParams({}, { replace: true });
+  };
   const [floor, setFloor] = useState<number | null>(null);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -102,24 +112,6 @@ export function RoomBoardPage() {
 
   return (
     <div className="flex h-full flex-col">
-      {summary && summary.overdue > 0 && (
-        <div className="flex h-11 flex-none items-center gap-3 bg-danger-soft px-6 text-body font-medium text-danger-text">
-          <TriangleAlert className="h-icon w-icon flex-none" strokeWidth={1.75} aria-hidden />
-          <span>
-            {summary.overdue === 1
-              ? t("board.overdueBannerOne")
-              : t("board.overdueBanner", { n: digits(String(summary.overdue)) })}
-          </span>
-          <button
-            type="button"
-            onClick={() => setFilter("overdue")}
-            className="border-0 bg-transparent p-0 font-sans text-body font-medium text-danger-text underline"
-          >
-            {t("board.show")}
-          </button>
-        </div>
-      )}
-
       <div className="flex min-h-0 flex-1 flex-col gap-4 p-6 max-[1599px]:gap-3">
         <div className="flex h-9 items-center justify-between">
           <h1 className="m-0 text-page-title">{t("board.title")}</h1>

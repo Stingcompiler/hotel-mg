@@ -7109,6 +7109,18 @@ components:
             threshold.
         clock_blocked:
           type: boolean
+        clock_last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Latest recorded write on this PC.
+        disk_free_bytes:
+          type: integer
+          nullable: true
+          description: Free space on the data disk.
+        disk_low:
+          type: boolean
+          description: Free space under the backup safety margin (system bar).
         version:
           type: string
         schema_version:
@@ -7122,6 +7134,9 @@ components:
       - device_name
       - backup_stale_hours
       - clock_blocked
+      - clock_last_seen_at
+      - disk_free_bytes
+      - disk_low
       - version
       - schema_version
     TaskAction:

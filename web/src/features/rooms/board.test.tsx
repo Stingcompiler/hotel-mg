@@ -99,23 +99,20 @@ afterEach(() => {
   session.signOut();
 });
 
-function renderBoard() {
+function renderBoard(path = "/") {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <RoomBoardPage />
       </MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
-test("banner, filters and the drawer", async () => {
-  renderBoard();
-  expect(await screen.findByText("إقامة واحدة انتهت دون إجراء")).toBeInTheDocument();
-  expect(screen.getAllByRole("button", { name: /^(101|305|410)/ })).toHaveLength(3);
-
-  fireEvent.click(screen.getByRole("button", { name: "عرض" })); // show the overdue rooms only
+test("overdue link, filters and the drawer", async () => {
+  renderBoard("/?filter=overdue"); // «عرض» on the overdue system bar
+  await screen.findByText("عبدالله حسن موسى");
   expect(screen.getAllByRole("button", { name: /^(101|305|410)/ })).toHaveLength(1);
 
   fireEvent.click(screen.getByRole("radio", { name: /صيانة/ }));

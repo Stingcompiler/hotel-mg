@@ -1,3 +1,5 @@
+import shutil
+
 from django.conf import settings
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
@@ -9,7 +11,8 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import IsManager
 from apps.accounts.services import require_confirmation
 
-from .clock import approve_clock, is_clock_blocked
+from . import rules
+from .clock import approve_clock, is_clock_blocked, last_seen_at
 from .fields import MoneyMinorField
 from .models import SCHEMA_VERSION, HotelSettings
 from .settings_service import update_settings
@@ -26,8 +29,18 @@ class SystemStatusSerializer(serializers.Serializer):
         allow_null=True, help_text="Hours since the last backup once past the «no backup» alert threshold."
     )
     clock_blocked = serializers.BooleanField()
+    clock_last_seen_at = serializers.DateTimeField(allow_null=True, help_text="Latest recorded write on this PC.")
+    disk_free_bytes = serializers.IntegerField(allow_null=True, help_text="Free space on the data disk.")
+    disk_low = serializers.BooleanField(help_text="Free space under the backup safety margin (system bar).")
     version = serializers.CharField()
     schema_version = serializers.IntegerField()
+
+
+def _disk_free(path) -> int | None:
+    try:
+        return shutil.disk_usage(path).free
+    except OSError:
+        return None
 
 
 class SystemStatusView(APIView):
@@ -43,6 +56,7 @@ class SystemStatusView(APIView):
         from apps.followups.models import AlertRule, TriggerKind
 
         last_import = last_imported() if settings.SKYTOWERS_ROLE == "owner" else None
+        free = _disk_free(settings.RUNTIME.home)
         last_backup = last_backup_at()
         rule = AlertRule.objects.filter(trigger_kind=TriggerKind.NO_BACKUP, is_active=True).first()
         limit = (rule.threshold_hours if rule else None) or 24
@@ -55,6 +69,9 @@ class SystemStatusView(APIView):
             "imported_seq": last_import.backup_seq if last_import else None,
             "device_name": settings.RUNTIME.device_name,
             "clock_blocked": is_clock_blocked(),
+            "clock_last_seen_at": last_seen_at(),
+            "disk_free_bytes": free,
+            "disk_low": rules.disk_low(free),
             "version": settings.APP_VERSION,
             "schema_version": SCHEMA_VERSION,
         }

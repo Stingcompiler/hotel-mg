@@ -19,6 +19,9 @@ export class ApiError extends Error {
   }
 }
 
+/** Fired when the server refuses a write because the PC clock went back (HTTP 423); the clock guard re-checks. */
+export const CLOCK_EVENT = "skytowers:clock-rollback";
+
 const CREDENTIAL_PATHS = ["/api/v1/auth/password", "/api/v1/auth/pin", "/api/v1/auth/confirm"];
 const OWNER_WRITABLE = ["/api/v1/auth/", "/api/v1/owner/"];
 
@@ -53,6 +56,7 @@ const middleware: Middleware = {
     // A wrong password on login or on the sensitive-action confirmation is not an expired session.
     const credentialsCheck = CREDENTIAL_PATHS.some((p) => new URL(request.url).pathname === p);
     if (response.status === 401 && !credentialsCheck) session.signOut();
+    if (code === "clock_rollback") window.dispatchEvent(new Event(CLOCK_EVENT));
     const { code: _code, detail: _detail, ...extra } = body;
     throw new ApiError(response.status, code, errorMessage(code, detail), extra);
   },
