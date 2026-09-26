@@ -31,3 +31,5 @@ export const fieldsToFix = (n: number) => plural(n, "count.fields1", "count.fiel
 export const roomsAvailable = (n: number) => plural(n, "count.rooms1", "count.rooms2", "count.roomsFew", "count.roomsMany");
 export const previousStays = (n: number) =>
   n === 0 ? t("count.stays0") : plural(n, "count.stays1", "count.stays2", "count.staysFew", "count.staysMany");
+export const staysCount = (n: number) =>
+  n === 0 ? t("count.staysN0") : plural(n, "count.staysN1", "count.staysN2", "count.staysNFew", "count.staysNMany");

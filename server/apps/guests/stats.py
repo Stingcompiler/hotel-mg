@@ -1,6 +1,10 @@
 """Per-guest history numbers for the guest list and profile (artboard 6.8). Read-only."""
 
+from django.db.models import Sum
+
+from apps.billing.models import FolioLine, Payment
 from apps.billing.services import balances_by_reservation
+from apps.stays import rules as stay_rules
 from apps.stays.models import Reservation, ReservationStatus
 
 STAYED = (ReservationStatus.CHECKED_IN, ReservationStatus.CHECKED_OUT)
@@ -34,19 +38,37 @@ def debtor_ids() -> set:
 def history(guest_id) -> list[dict]:
     """Every reservation of the guest, newest first, with money totals."""
     reservations = list(
-        Reservation.objects.filter(guest_id=guest_id).select_related("room").order_by("-check_in_date", "-created_at")
+        Reservation.objects.filter(guest_id=guest_id)
+        .select_related("room", "stay")
+        .order_by("-check_in_date", "-created_at")
     )
-    balances = balances_by_reservation([r.pk for r in reservations])
+    ids = [r.pk for r in reservations]
+    balances = balances_by_reservation(ids)
+    charged = dict(
+        FolioLine.objects.filter(folio__reservation_id__in=ids)
+        .values_list("folio__reservation_id")
+        .annotate(s=Sum("amount"))
+    )
+    paid = dict(
+        Payment.objects.filter(folio__reservation_id__in=ids)
+        .values_list("folio__reservation_id")
+        .annotate(s=Sum("amount"))
+    )
     return [
         {
             "reservation_id": r.pk,
             "room": r.room.number if r.room_id else None,
             "check_in_date": r.check_in_date,
             "check_out_date": r.check_out_date,
+            "last_night": stay_rules.last_night(r.check_out_date),
             "nights": r.nights,
             "status": r.status,
             "status_label": r.get_status_display(),
+            "duration_label": r.get_duration_kind_display(),
+            "total": charged.get(r.pk) or 0,
+            "paid": paid.get(r.pk) or 0,
             "balance": balances[r.pk],
+            "stay": getattr(getattr(r, "stay", None), "pk", None),
         }
         for r in reservations
     ]

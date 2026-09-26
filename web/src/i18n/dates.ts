@@ -43,3 +43,8 @@ export function formatRange(from: string | Date, to: string | Date): string {
 export function formatDayMonth(value: string | Date): string {
   return digits(format(asDate(value), "d MMMM", { locale: ar }));
 }
+
+/** "مارس 2025" */
+export function formatMonthYear(value: string | Date): string {
+  return digits(format(asDate(value), "MMMM yyyy", { locale: ar }));
+}

@@ -43,6 +43,18 @@ export function NewReservationPage() {
     if (room && !form.room_type) update({ room_type: room.room_type, room: room.id, check_in_date: board!.date });
   }, [preset, board]);
 
+  // From the guest profile: «حجز جديد لهذا النزيل».
+  const presetGuest = params.get("guest");
+  const guestRow = useQuery({
+    queryKey: ["guests", "row", presetGuest],
+    queryFn: () => data(api.GET("/api/v1/guests/{id}", { params: { path: { id: presetGuest! } } })),
+    enabled: !!presetGuest,
+  }).data;
+  useEffect(() => {
+    if (guestRow && form.guestMode !== "picked")
+      update({ guestMode: "picked", picked: { ...guestRow, stays_count: 0, last_stay: null, debt: 0, in_house: false } });
+  }, [guestRow]);
+
   const quote = useQuery({
     queryKey: ["quote", form.room_type, form.check_in_date, form.duration_kind, form.count],
     queryFn: () =>
