@@ -130,7 +130,7 @@ export function Segmented<T extends string>({
           role="radio"
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
-          className={`flex flex-1 items-center justify-center border-0 border-border px-3 font-sans text-body [&:not(:first-child)]:border-s ${
+          className={`flex flex-1 items-center justify-center whitespace-nowrap border-0 border-border px-3 font-sans text-body [&:not(:first-child)]:border-s ${
             o.value === value ? "bg-primary-soft font-semibold text-primary" : "bg-bg-surface text-text-primary hover:bg-bg-surface-2"
           }`}
         >

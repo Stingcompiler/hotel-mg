@@ -13,6 +13,8 @@ import { digits } from "@/i18n/digits";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 
+import { CancelStayModal } from "./CancelStayModal";
+import { ChangeRoomModal } from "./ChangeRoomModal";
 import { CheckoutModal } from "./CheckoutModal";
 import { ExtendModal } from "./ExtendModal";
 import { PaymentModal } from "./PaymentModal";
@@ -20,7 +22,7 @@ import { useFolio, useRefreshStay, useStay } from "./queries";
 
 type Ledger = components["schemas"]["LedgerEntry"][];
 type Tab = "invoice" | "payments" | "companions" | "notes" | "log";
-type Dialog = null | "payment" | "checkout" | "extend";
+type Dialog = null | "payment" | "checkout" | "extend" | "changeRoom" | "cancel";
 
 const money = (v: number) => formatMoney(v);
 const when = (iso: string) => (
@@ -151,7 +153,7 @@ export function StayDetailPage() {
           <CalendarPlus className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
           {t("stay.extend")}
         </button>
-        <button type="button" disabled className={buttons.secondary} title={t("common.comingSoon")}>
+        <button type="button" disabled={!writable} onClick={() => setDialog("changeRoom")} className={buttons.secondary}>
           <DoorOpen className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
           {t("stay.changeRoom")}
         </button>
@@ -163,7 +165,7 @@ export function StayDetailPage() {
         {offline ? (
           <span className="text-body text-text-secondary">{t("stay.viewOnly")}</span>
         ) : (
-          <button type="button" disabled className={buttons.dangerGhost} title={t("common.comingSoon")}>
+          <button type="button" disabled={!writable} onClick={() => setDialog("cancel")} className={buttons.dangerGhost}>
             {t("stay.cancelStay")}
           </button>
         )}
@@ -213,6 +215,32 @@ export function StayDetailPage() {
           totals={totals}
           onClose={() => setDialog(null)}
           onPay={() => setDialog("payment")}
+          onDone={done}
+        />
+      )}
+      {dialog === "changeRoom" && (
+        <ChangeRoomModal
+          stayId={stay.id}
+          version={stay.version}
+          guest={stay.guest.full_name}
+          room={{ number: folio.room_number, floor: room?.floor ?? 0, type: r.room_type_name }}
+          lastNight={stay.last_night}
+          onClose={() => setDialog(null)}
+          onDone={done}
+        />
+      )}
+      {dialog === "cancel" && (
+        <CancelStayModal
+          stayId={stay.id}
+          version={stay.version}
+          room={folio.room_number}
+          guest={stay.guest.full_name}
+          kind={t(`duration.${r.duration_kind}`)}
+          checkIn={r.check_in_date}
+          totalNights={r.nights}
+          paid={totals.paid}
+          total={totals.total}
+          onClose={() => setDialog(null)}
           onDone={done}
         />
       )}
