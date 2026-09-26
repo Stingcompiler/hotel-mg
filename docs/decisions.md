@@ -182,3 +182,7 @@ Append-only. Newest last. Each entry: date, phase, decision, reason.
 ## 2026-09-26 — F2 Cash & shift (6.7)
 
 118. **Cash page**: the open shift shows opening, receipts by method, cash expenses and the expected cash (from the API); closing takes the counted amount on a 44 px money field, previews the difference (success at zero, danger otherwise) and requires a reason when it is not zero. With no open shift a warning bar explains that cash movements are blocked and the open card proposes `suggested_opening` and shows the last closed shift. The history tab filters this week / this month / last month and by user, with shift count, shifts with a difference and the net difference. Signed amounts are laid out LTR so the sign stays in front («− 2,500»).
+
+## 2026-09-26 — F2 Expenses (6.8)
+
+119. **Expenses page**: scopes هذه الوردية / اليوم / هذا الشهر (API `scope`), category filter, tiles from `expenses/summary` (the «% of revenue» hint of the artboard needs revenue data and is replaced by the top category's share), the list with reversals in danger (the original struck through) and «ناقص — أرفق» on expenses above the receipt threshold, which opens the file picker. «مصروف جديد» is a 480 px drawer (shared `Drawer` component): amount, category chips, note, method (+ reference), optional room, receipt required above `expense_attachment_threshold`; cash expenses name the shift they come out of. Reversal takes a reason; nothing is deleted. «تسجيل وطباعة إيصال» comes with the print templates.
