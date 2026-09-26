@@ -28,11 +28,11 @@ USERS = [
 ]
 
 # Settings → Room types & prices (Gap Fill artboard). weekly = 7 nights, monthly = 30 nights.
-# Capacity is not given by the design; see docs/design-gaps.md.
+# Capacity is not given by the design; assumed 1/2/3 (see docs/design-gaps.md #1).
 ROOM_TYPES = [
-    {"name": "مفردة", "nightly": sdg(12_000), "weekly": sdg(77_000), "monthly": sdg(280_000)},
-    {"name": "مزدوجة", "nightly": sdg(15_000), "weekly": sdg(95_000), "monthly": sdg(300_000)},
-    {"name": "جناح", "nightly": sdg(25_000), "weekly": sdg(160_000), "monthly": sdg(520_000)},
+    {"name": "مفردة", "capacity": 1, "nightly": sdg(12_000), "weekly": sdg(77_000), "monthly": sdg(280_000)},
+    {"name": "مزدوجة", "capacity": 2, "nightly": sdg(15_000), "weekly": sdg(95_000), "monthly": sdg(300_000)},
+    {"name": "جناح", "capacity": 3, "nightly": sdg(25_000), "weekly": sdg(160_000), "monthly": sdg(520_000)},
 ]
 
 # 30 rooms on 4 floors: singles 101-108, doubles 201-208 and 405-412, suites 301-306.
@@ -43,8 +43,10 @@ ROOMS = (
     + [{"number": str(n), "floor": 4, "type": "مزدوجة"} for n in range(405, 413)]
 )
 
-# Operational states that differ from "ready" (Brief §10.3 + Settings → Rooms artboard).
+# Non-occupied states that differ from "ready" (Room Board artboard). Occupied rooms come
+# from checked-in stays, which the stays loader creates.
 ROOM_STATES = {
+    "104": {"status": "cleaning"},
     "306": {"status": "cleaning"},
     "410": {"status": "maintenance", "maintenance_reason": "تسرب مياه — فني السباكة 26 سبتمبر"},
 }

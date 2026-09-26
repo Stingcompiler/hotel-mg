@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from apps.rooms.urls import room_type_urls
+
 api_v1 = [
     path("schema", SpectacularAPIView.as_view(), name="schema"),
     path("schema/swagger/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
@@ -9,6 +11,8 @@ api_v1 = [
     path("auth/", include("apps.accounts.urls")),
     path("users/", include("apps.accounts.urls_users")),
     path("audit/", include("apps.audit.urls")),
+    path("room-types/", include(room_type_urls)),
+    path("rooms/", include("apps.rooms.urls")),
 ]
 
 urlpatterns = [

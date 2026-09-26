@@ -30,3 +30,16 @@ def test_demo_rooms_match_design():
     types = {t["name"] for t in demo_data.ROOM_TYPES}
     assert {r["type"] for r in demo_data.ROOMS} == types
     assert all(isinstance(t[k], int) for t in demo_data.ROOM_TYPES for k in ("nightly", "weekly", "monthly"))
+
+
+def test_seed_loads_rooms_idempotently():
+    from apps.rooms.models import Room, RoomType
+
+    call_command("seed_demo", "--allow-non-debug")
+    call_command("seed_demo", "--allow-non-debug")
+    assert RoomType.objects.count() == 3
+    assert Room.objects.count() == 30
+    assert Room.objects.get(number="410").status == "maintenance"
+    assert Room.objects.get(number="410").maintenance_reason.startswith("تسرب مياه")
+    assert set(Room.objects.filter(status="cleaning").values_list("number", flat=True)) == {"104", "306"}
+    assert RoomType.objects.get(name="مزدوجة").rooms.count() == 16
