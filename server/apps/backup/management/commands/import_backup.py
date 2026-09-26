@@ -6,6 +6,8 @@ from apps.backup import merge
 
 
 class Command(BaseCommand):
+    # Runs on a new owner PC before its first import: no hotel id yet, and the model checks would need one.
+    requires_system_checks = []
     help = "Owner PC: import an encrypted backup file (first import, or USB without the app window)."
 
     def add_arguments(self, parser):

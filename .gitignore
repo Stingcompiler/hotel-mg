@@ -27,3 +27,10 @@ api/node_modules/
 web/node_modules/
 web/dist/
 web/tsconfig.tsbuildinfo
+
+# Built SPA served by Django (build/build_spa.py)
+server/static_spa/
+
+# Windows builds
+dist-server/
+build-work/

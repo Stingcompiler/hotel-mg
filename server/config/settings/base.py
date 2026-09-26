@@ -102,6 +102,8 @@ USE_TZ = True  # timestamps stored in UTC
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "static_collected"
+# Built SPA (web/dist copied by build/build_spa.py; bundled next to the service at release time).
+SPA_ROOT = BASE_DIR / "static_spa"
 
 # --- API --------------------------------------------------------------------
 REST_FRAMEWORK = {

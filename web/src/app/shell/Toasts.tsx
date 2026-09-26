@@ -7,6 +7,7 @@ import type { components } from "@api/schema";
 
 import { api, data } from "@/api/client";
 import { t } from "@/i18n/t";
+import { notify } from "@/lib/desktop";
 
 type Toast = components["schemas"]["Toast"];
 const SHOW_MS = 10_000;
@@ -29,7 +30,11 @@ export function Toasts() {
   useEffect(() => {
     const batch = poll.data;
     if (!batch) return;
-    if (cursor.current !== null && batch.toasts.length) setShown((s) => [...batch.toasts, ...s].slice(0, 3));
+    if (cursor.current !== null && batch.toasts.length) {
+      setShown((s) => [...batch.toasts, ...s].slice(0, 3));
+      // Desktop: also a Windows notification, so it reaches staff while the window sits in the tray.
+      batch.toasts.forEach((toast) => void notify(toast.title, toast.body));
+    }
     cursor.current = batch.cursor;
   }, [poll.data]);
 
