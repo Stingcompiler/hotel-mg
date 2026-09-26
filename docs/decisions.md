@@ -169,3 +169,7 @@ Append-only. Newest last. Each entry: date, phase, decision, reason.
 112. **Page**: «إضافة دفعة» is the primary action (most frequent); extend and check-out open dialogs (6.5 D, B/C); the drawer's «تمديد» / «تسجيل خروج» open them directly (`?action=`). The remaining balance is danger when owed, success at zero, info when the guest is in credit. The invoice ledger shows reversals in danger with ↩ and «القيد #n» pointing at the original row; nothing is edited or deleted.
 113. **Check-out** with a non-zero balance: the manager override section is folded by default; the submit button stays disabled until password and reason are filled, then turns danger «تسجيل الخروج بدين». «إضافة دفعة X» opens the payment dialog with the remaining amount. A guest in credit gets the same rule with «ردّ المبلغ» wording.
 114. «تغيير الغرفة» and «إلغاء الإقامة» are drawn in the V2 file; they are disabled here and land in the next PR. Print buttons wait for the print templates.
+
+## 2026-09-26 — F2 Change room and cancel stay (V2)
+
+115. **Change room** (V2 «نافذة تغيير الغرفة»): rooms free for the remaining nights, same type first; the price difference for the remaining nights comes from the API; a negative difference asks for the manager password; the old room goes to cleaning or maintenance (with reason). **Cancel stay**: always a manager password (API rule); three ways to settle the nights used (the two quoted options and a manual amount); the preview shows new total, paid and the refund (or what stays owed); the danger button names the refund amount.
