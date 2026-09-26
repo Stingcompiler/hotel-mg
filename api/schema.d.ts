@@ -3018,6 +3018,10 @@ export interface components {
             last_backup: string | null;
             /** Format: date-time */
             data_as_of: string | null;
+            /** @description Owner PC: number of the last imported backup. */
+            imported_seq: number | null;
+            /** @description This PC's name (login footer). */
+            device_name: string;
             /** @description Hours since the last backup once past the «no backup» alert threshold. */
             backup_stale_hours: number | null;
             clock_blocked: boolean;

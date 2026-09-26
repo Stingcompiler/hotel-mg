@@ -50,7 +50,8 @@ const middleware: Middleware = {
   },
 };
 
-export const api = createClient<paths>({ baseUrl: "" });
+// Same origin as the page (Vite proxy in development, Django in production).
+export const api = createClient<paths>({ baseUrl: window.location.origin, fetch: (request) => globalThis.fetch(request) });
 api.use(middleware);
 
 /** Unwraps an openapi-fetch result (errors were already thrown by the middleware). */

@@ -20,6 +20,8 @@ class SystemStatusSerializer(serializers.Serializer):
     hotel_id = serializers.UUIDField(allow_null=True)
     last_backup = serializers.DateTimeField(allow_null=True)
     data_as_of = serializers.DateTimeField(allow_null=True)
+    imported_seq = serializers.IntegerField(allow_null=True, help_text="Owner PC: number of the last imported backup.")
+    device_name = serializers.CharField(help_text="This PC's name (login footer).")
     backup_stale_hours = serializers.IntegerField(
         allow_null=True, help_text="Hours since the last backup once past the «no backup» alert threshold."
     )
@@ -50,6 +52,8 @@ class SystemStatusView(APIView):
             "last_backup": last_backup,
             "backup_stale_hours": backup_rules.stale_hours(last_backup, timezone.now(), limit),
             "data_as_of": last_import.data_as_of if last_import else None,
+            "imported_seq": last_import.backup_seq if last_import else None,
+            "device_name": settings.RUNTIME.device_name,
             "clock_blocked": is_clock_blocked(),
             "version": settings.APP_VERSION,
             "schema_version": SCHEMA_VERSION,

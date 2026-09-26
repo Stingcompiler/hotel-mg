@@ -21,6 +21,8 @@ def test_system_status_is_public(api):
         "last_backup": None,
         "backup_stale_hours": None,
         "data_as_of": None,
+        "imported_seq": None,
+        "device_name": settings.RUNTIME.device_name,
         "clock_blocked": False,
         "version": settings.APP_VERSION,
         "schema_version": SCHEMA_VERSION,
