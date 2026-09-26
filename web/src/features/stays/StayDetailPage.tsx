@@ -1,4 +1,4 @@
-import { CalendarPlus, ChevronRight, DoorOpen, LogOut, Plus, Undo2, Users, Wallet } from "lucide-react";
+import { CalendarPlus, ChevronRight, DoorOpen, LogOut, Plus, Printer, Undo2, Users, Wallet } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
@@ -7,6 +7,7 @@ import type { components } from "@api/schema";
 import { useSystemStatus } from "@/api/queries";
 import { buttons } from "@/components/ui/Modal";
 import { stateColor } from "@/design/state";
+import { openPrint } from "@/features/print/PrintPage";
 import { days, nights } from "@/i18n/counts";
 import { formatDayDate, formatDayMonth, formatRange, formatTime } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
@@ -188,6 +189,11 @@ export function StayDetailPage() {
               {tb.count ? <span className="text-label font-normal text-text-secondary">{digits(String(tb.count))}</span> : null}
             </button>
           ))}
+          <div className="flex-1" />
+          <button type="button" onClick={() => openPrint("invoice", folio.id)} className={`${buttons.secondary} h-9 px-3`}>
+            <Printer className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
+            {t("print.printInvoice")}
+          </button>
         </div>
         {tab === "invoice" && <InvoiceTab ledger={ledger} balance={totals.balance} />}
         {tab === "payments" && <PaymentsTab ledger={payments} />}
@@ -327,7 +333,7 @@ function InvoiceTab({ ledger, balance }: { ledger: Ledger; balance: number }) {
   );
 }
 
-const PAY_GRID = "grid grid-cols-[180px_1fr_160px_200px_160px] items-center gap-4 px-4";
+const PAY_GRID = "grid grid-cols-[180px_1fr_160px_200px_160px_110px] items-center gap-4 px-4";
 
 function PaymentsTab({ ledger }: { ledger: Ledger }) {
   if (!ledger.length) return <Empty icon={<Wallet className="h-10 w-10 text-text-disabled" strokeWidth={1.75} aria-hidden />} text={t("stay.noPayments")} />;
@@ -339,6 +345,7 @@ function PaymentsTab({ ledger }: { ledger: Ledger }) {
         <div>{t("stay.colAmount")}</div>
         <div>{t("stay.colReference")}</div>
         <div>{t("stay.colBy")}</div>
+        <div />
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
         {ledger.map((e, i) => (
@@ -352,6 +359,16 @@ function PaymentsTab({ ledger }: { ledger: Ledger }) {
               {e.reference}
             </div>
             <div className="text-text-secondary">{e.by}</div>
+            <div>
+              <button
+                type="button"
+                onClick={() => openPrint("receipt", e.id)}
+                className="inline-flex items-center gap-1 border-0 bg-transparent p-0 font-sans text-label font-medium text-primary hover:text-primary-hover"
+              >
+                <Printer className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
+                {t("print.printReceipt")}
+              </button>
+            </div>
           </div>
         ))}
       </div>

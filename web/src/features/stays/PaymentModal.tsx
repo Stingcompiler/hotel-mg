@@ -1,8 +1,10 @@
 import { useState } from "react";
 
 import { api, ApiError, data } from "@/api/client";
+import { useHotelSettings } from "@/api/queries";
 import { ErrorBanner, Field, MoneyInput, Segmented, TextInput } from "@/components/ui/form";
 import { buttons, Modal } from "@/components/ui/Modal";
+import { openPrint } from "@/features/print/PrintPage";
 import { digits } from "@/i18n/digits";
 import { formatMoney, parseMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
@@ -12,6 +14,7 @@ type Props = { folioId: string; room: string; balance: number; onClose: () => vo
 
 /** «إضافة دفعة»: recorded in this device's open shift (the server refuses without one). */
 export function PaymentModal({ folioId, room, balance, onClose, onDone }: Props) {
+  const autoPrint = useHotelSettings().data?.auto_print_receipt ?? false;
   const [amount, setAmount] = useState(balance > 0 ? formatMoney(balance) : "");
   const [method, setMethod] = useState<Method>("cash");
   const [reference, setReference] = useState("");
@@ -27,7 +30,11 @@ export function PaymentModal({ folioId, room, balance, onClose, onDone }: Props)
     setBusy(true);
     setError(null);
     try {
-      await data(api.POST("/api/v1/folios/{id}/payments", { params: { path: { id: folioId } }, body: { amount: minor, method, reference: reference.trim() } }));
+      const payment = await data(
+        api.POST("/api/v1/folios/{id}/payments", { params: { path: { id: folioId } }, body: { amount: minor, method, reference: reference.trim() } }),
+      );
+      // «طباعة إيصال تلقائيًا بعد كل دفعة» (hotel settings, V2 6.11 D).
+      if (autoPrint) openPrint("receipt", payment.id);
       onDone();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t("errors.error"));

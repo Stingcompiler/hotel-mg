@@ -504,8 +504,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/ExpenseReceiptDocument'
           description: ''
   /api/v1/expenses/{id}/reverse:
     post:
@@ -600,8 +599,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/InvoiceDocument'
           description: ''
   /api/v1/folios/{id}/lines:
     post:
@@ -1457,8 +1455,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/PaymentReceiptDocument'
           description: ''
   /api/v1/payments/{id}/reverse:
     post:
@@ -2339,8 +2336,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/ShiftStatementDocument'
           description: ''
   /api/v1/shifts/close:
     post:
@@ -3949,6 +3945,42 @@ components:
       - category
       - method
       - note
+    ExpenseReceiptDocument:
+      type: object
+      properties:
+        hotel:
+          $ref: '#/components/schemas/HotelHeader'
+        number:
+          type: string
+        at:
+          type: string
+          format: date-time
+        category:
+          type: string
+        note:
+          type: string
+        room:
+          type: string
+          nullable: true
+        amount:
+          type: integer
+        amount_in_words:
+          type: string
+        method:
+          type: string
+        by:
+          type: string
+      required:
+      - hotel
+      - number
+      - at
+      - category
+      - note
+      - room
+      - amount
+      - amount_in_words
+      - method
+      - by
     ExpenseSummary:
       type: object
       properties:
@@ -4347,6 +4379,28 @@ components:
             $ref: '#/components/schemas/CompanionRequest'
       required:
       - full_name
+    HotelHeader:
+      type: object
+      properties:
+        name_ar:
+          type: string
+        name_latin:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        digits:
+          $ref: '#/components/schemas/DigitsEnum'
+        money_decimals:
+          type: integer
+      required:
+      - name_ar
+      - name_latin
+      - address
+      - phone
+      - digits
+      - money_decimals
     HotelSettings:
       type: object
       properties:
@@ -4542,6 +4596,105 @@ components:
       description: |-
         * `ok` - اكتمل
         * `failed` - مرفوض
+    InvoiceDocument:
+      type: object
+      properties:
+        hotel:
+          $ref: '#/components/schemas/HotelHeader'
+        invoice:
+          type: string
+        printed_at:
+          type: string
+          format: date-time
+        printed_by:
+          type: string
+        guest:
+          $ref: '#/components/schemas/InvoiceGuest'
+        stay:
+          $ref: '#/components/schemas/InvoiceStay'
+        ledger:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerEntry'
+        totals:
+          $ref: '#/components/schemas/InvoiceTotals'
+        notes:
+          type: array
+          items:
+            type: string
+      required:
+      - hotel
+      - invoice
+      - printed_at
+      - printed_by
+      - guest
+      - stay
+      - ledger
+      - totals
+      - notes
+    InvoiceGuest:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        id_type:
+          type: string
+        id_number:
+          type: string
+        companions:
+          type: array
+          items:
+            type: string
+      required:
+      - name
+      - phone
+      - id_type
+      - id_number
+      - companions
+    InvoiceStay:
+      type: object
+      properties:
+        room:
+          type: string
+          nullable: true
+        room_type:
+          type: string
+        duration_kind:
+          type: string
+          description: 'Arabic label: يومي / أسبوعي / شهري / مختلط.'
+        check_in_date:
+          type: string
+          format: date
+        last_night:
+          type: string
+          format: date
+        nights:
+          type: integer
+        state:
+          type: string
+      required:
+      - room
+      - room_type
+      - duration_kind
+      - check_in_date
+      - last_night
+      - nights
+      - state
+    InvoiceTotals:
+      type: object
+      properties:
+        total:
+          type: integer
+        paid:
+          type: integer
+        balance:
+          type: integer
+      required:
+      - total
+      - paid
+      - balance
     KeyEnum:
       enum:
       - month
@@ -5402,6 +5555,60 @@ components:
         * `cash` - نقدي
         * `bankak` - بنكك
         * `transfer` - تحويل
+    PaymentReceiptDocument:
+      type: object
+      properties:
+        hotel:
+          $ref: '#/components/schemas/HotelHeader'
+        receipt:
+          type: string
+        kind:
+          type: string
+        at:
+          type: string
+          format: date-time
+        room:
+          type: string
+          nullable: true
+        guest:
+          type: string
+        invoice:
+          type: string
+        amount:
+          type: integer
+        amount_in_words:
+          type: string
+        method:
+          type: string
+        reference:
+          type: string
+        stay_total:
+          type: integer
+        paid_to_date:
+          type: integer
+        balance:
+          type: integer
+        by:
+          type: string
+        shift:
+          type: string
+      required:
+      - hotel
+      - receipt
+      - kind
+      - at
+      - room
+      - guest
+      - invoice
+      - amount
+      - amount_in_words
+      - method
+      - reference
+      - stay_total
+      - paid_to_date
+      - balance
+      - by
+      - shift
     Peak:
       type: object
       properties:
@@ -6458,6 +6665,45 @@ components:
       - version
       - receipts
       - cash_expenses
+    ShiftStatementDocument:
+      type: object
+      properties:
+        hotel:
+          $ref: '#/components/schemas/HotelHeader'
+        shift:
+          $ref: '#/components/schemas/StatementShift'
+        printed_at:
+          type: string
+          format: date-time
+        printed_by:
+          type: string
+        tiles:
+          $ref: '#/components/schemas/StatementTiles'
+        movements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movement'
+        counted:
+          type: integer
+          nullable: true
+        difference:
+          type: integer
+          nullable: true
+        difference_reason:
+          type: string
+        formula:
+          type: string
+      required:
+      - hotel
+      - shift
+      - printed_at
+      - printed_by
+      - tiles
+      - movements
+      - counted
+      - difference
+      - difference_reason
+      - formula
     ShiftTotals:
       type: object
       properties:
@@ -6516,6 +6762,47 @@ components:
         * `new` - new
         * `imported` - imported
         * `older` - older
+    StatementShift:
+      type: object
+      properties:
+        id:
+          type: string
+        device:
+          type: string
+        opened_at:
+          type: string
+          format: date-time
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+        opened_by:
+          type: string
+        closed_by:
+          type: string
+      required:
+      - id
+      - device
+      - opened_at
+      - closed_at
+      - opened_by
+      - closed_by
+    StatementTiles:
+      type: object
+      properties:
+        opening:
+          type: integer
+        receipts:
+          $ref: '#/components/schemas/MethodTotals'
+        cash_expenses:
+          type: integer
+        expected:
+          type: integer
+      required:
+      - opening
+      - receipts
+      - cash_expenses
+      - expected
     Stay:
       type: object
       properties:

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Download } from "lucide-react";
+import { Download, Printer } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 
@@ -8,6 +8,7 @@ import type { components } from "@api/schema";
 import { api, ApiError, data, download } from "@/api/client";
 import { ErrorBanner, Segmented, Select, TextInput } from "@/components/ui/form";
 import { buttons } from "@/components/ui/Modal";
+import { openPrint } from "@/features/print/PrintPage";
 import { formatDayMonth, formatRange, formatTime, formatWhen } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
 import { formatMoney } from "@/i18n/money";
@@ -154,6 +155,10 @@ export function ReportsPage() {
             )}
           </>
         )}
+        <button type="button" disabled={!r} onClick={() => openPrint("report", current!, query)} className={`${buttons.secondary} h-9 px-4`}>
+          <Printer className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
+          {t("print.printA4")}
+        </button>
         <button type="button" disabled={!r} onClick={() => void exportAs("xlsx")} className={`${buttons.secondary} h-9 px-4`}>
           <Download className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
           {t("reports.exportExcel")}

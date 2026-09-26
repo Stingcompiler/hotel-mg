@@ -1992,6 +1992,19 @@ export interface components {
             /** Format: uuid */
             room?: string | null;
         };
+        ExpenseReceiptDocument: {
+            hotel: components["schemas"]["HotelHeader"];
+            number: string;
+            /** Format: date-time */
+            at: string;
+            category: string;
+            note: string;
+            room: string | null;
+            amount: number;
+            amount_in_words: string;
+            method: string;
+            by: string;
+        };
         ExpenseSummary: {
             shift_total: number;
             shift_count: number;
@@ -2140,6 +2153,14 @@ export interface components {
             warning_note?: string;
             companions?: components["schemas"]["CompanionRequest"][];
         };
+        HotelHeader: {
+            name_ar: string;
+            name_latin: string;
+            address: string;
+            phone: string;
+            digits: components["schemas"]["DigitsEnum"];
+            money_decimals: number;
+        };
         HotelSettings: {
             name_ar: string;
             name_latin: string;
@@ -2232,6 +2253,42 @@ export interface components {
          * @enum {string}
          */
         ImportRunStatusEnum: "ok" | "failed";
+        InvoiceDocument: {
+            hotel: components["schemas"]["HotelHeader"];
+            invoice: string;
+            /** Format: date-time */
+            printed_at: string;
+            printed_by: string;
+            guest: components["schemas"]["InvoiceGuest"];
+            stay: components["schemas"]["InvoiceStay"];
+            ledger: components["schemas"]["LedgerEntry"][];
+            totals: components["schemas"]["InvoiceTotals"];
+            notes: string[];
+        };
+        InvoiceGuest: {
+            name: string;
+            phone: string;
+            id_type: string;
+            id_number: string;
+            companions: string[];
+        };
+        InvoiceStay: {
+            room: string | null;
+            room_type: string;
+            /** @description Arabic label: يومي / أسبوعي / شهري / مختلط. */
+            duration_kind: string;
+            /** Format: date */
+            check_in_date: string;
+            /** Format: date */
+            last_night: string;
+            nights: number;
+            state: string;
+        };
+        InvoiceTotals: {
+            total: number;
+            paid: number;
+            balance: number;
+        };
         /**
          * @description * `month` - month
          *     * `previous` - previous
@@ -2630,6 +2687,25 @@ export interface components {
          * @enum {string}
          */
         PaymentMethodEnum: "cash" | "bankak" | "transfer";
+        PaymentReceiptDocument: {
+            hotel: components["schemas"]["HotelHeader"];
+            receipt: string;
+            kind: string;
+            /** Format: date-time */
+            at: string;
+            room: string | null;
+            guest: string;
+            invoice: string;
+            amount: number;
+            amount_in_words: string;
+            method: string;
+            reference: string;
+            stay_total: number;
+            paid_to_date: number;
+            balance: number;
+            by: string;
+            shift: string;
+        };
         Peak: {
             /** Format: date */
             date: string;
@@ -3060,6 +3136,19 @@ export interface components {
             readonly receipts: number;
             readonly cash_expenses: number;
         };
+        ShiftStatementDocument: {
+            hotel: components["schemas"]["HotelHeader"];
+            shift: components["schemas"]["StatementShift"];
+            /** Format: date-time */
+            printed_at: string;
+            printed_by: string;
+            tiles: components["schemas"]["StatementTiles"];
+            movements: components["schemas"]["Movement"][];
+            counted: number | null;
+            difference: number | null;
+            difference_reason: string;
+            formula: string;
+        };
         ShiftTotals: {
             opening: number;
             receipts: components["schemas"]["MethodTotals"];
@@ -3088,6 +3177,22 @@ export interface components {
          * @enum {string}
          */
         StateEnum: "new" | "imported" | "older";
+        StatementShift: {
+            id: string;
+            device: string;
+            /** Format: date-time */
+            opened_at: string;
+            /** Format: date-time */
+            closed_at: string | null;
+            opened_by: string;
+            closed_by: string;
+        };
+        StatementTiles: {
+            opening: number;
+            receipts: components["schemas"]["MethodTotals"];
+            cash_expenses: number;
+            expected: number;
+        };
         Stay: {
             /** Format: uuid */
             readonly id: string;
@@ -3828,9 +3933,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["ExpenseReceiptDocument"];
                 };
             };
         };
@@ -3918,9 +4021,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["InvoiceDocument"];
                 };
             };
         };
@@ -4680,9 +4781,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["PaymentReceiptDocument"];
                 };
             };
         };
@@ -5341,9 +5440,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["ShiftStatementDocument"];
                 };
             };
         };

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, LockOpen, Receipt, TriangleAlert } from "lucide-react";
+import { Lock, LockOpen, Printer, Receipt, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 
 import type { components } from "@api/schema";
@@ -9,6 +9,7 @@ import { keys, useCurrentShift, useSystemStatus } from "@/api/queries";
 import { ErrorBanner, Segmented, Select } from "@/components/ui/form";
 import { buttons } from "@/components/ui/Modal";
 import { stateColor } from "@/design/state";
+import { openPrint } from "@/features/print/PrintPage";
 import { elapsed } from "@/i18n/counts";
 import { formatDayDate, formatDayMonth, formatTime } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
@@ -22,6 +23,9 @@ const signed = (v: number) => (v < 0 ? `− ${formatMoney(-v)}` : v > 0 ? `+ ${f
 /** 6.7 Cash & shift: the open shift with expected cash and closing, opening a shift, and the shift history. */
 export function CashPage() {
   const [tab, setTab] = useState<"current" | "history">("current");
+  const current = useCurrentShift().data;
+  // «طباعة كشف الوردية»: the open shift, or the last closed one when none is open.
+  const printable = current?.shift?.id ?? current?.last_closed?.id;
   return (
     <div className="flex h-full flex-col gap-4 p-6 max-[1599px]:gap-3">
       <div className="flex h-9 items-center gap-4">
@@ -35,6 +39,11 @@ export function CashPage() {
             { value: "history", label: t("cash.tabHistory") },
           ]}
         />
+        <div className="flex-1" />
+        <button type="button" disabled={!printable} onClick={() => openPrint("shift", printable!)} className={`${buttons.secondary} h-9 px-4`}>
+          <Printer className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
+          {t("print.printStatement")}
+        </button>
       </div>
       {tab === "current" ? <CurrentTab /> : <HistoryTab />}
     </div>
@@ -312,7 +321,7 @@ function HistoryTab() {
     queryKey: ["shifts", "history", period, user],
     queryFn: () => data(api.GET("/api/v1/shifts/", { params: { query: { ...range(period), ...(user ? { user } : {}) } } })),
   }).data;
-  const GRID = "grid grid-cols-[150px_110px_1fr_110px_110px_110px_110px_110px_1.4fr] items-center gap-3 px-4";
+  const GRID = "grid grid-cols-[150px_110px_1fr_110px_110px_110px_110px_110px_1.4fr_40px] items-center gap-3 px-4";
   const zero = stateColor("ready");
   return (
     <>
@@ -348,6 +357,7 @@ function HistoryTab() {
           {["hDate", "hTime", "hUser", "hOpening", "hReceipts", "hExpenses", "hCounted", "hDiff", "hReason"].map((k) => (
             <div key={k}>{t(`cash.${k}`)}</div>
           ))}
+          <div />
         </div>
         <div className="min-h-0 flex-1 overflow-auto">
           {history?.shifts.length === 0 && <div className="p-6 text-center text-body text-text-secondary">{t("cash.noHistory")}</div>}
@@ -372,6 +382,15 @@ function HistoryTab() {
                 )}
               </div>
               <div className="truncate text-label font-normal text-text-secondary">{s.difference_reason}</div>
+              <button
+                type="button"
+                aria-label={t("print.printStatement")}
+                title={t("print.printStatement")}
+                onClick={() => openPrint("shift", s.id)}
+                className="flex h-8 w-8 items-center justify-center rounded-control border-0 bg-transparent text-text-secondary hover:bg-bg-surface-2"
+              >
+                <Printer className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
+              </button>
             </div>
           ))}
         </div>

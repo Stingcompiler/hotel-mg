@@ -1,0 +1,113 @@
+/* Print templates (spec §8, artboards 7.1–7.3): black on white, 12pt minimum, no state colours.
+   Named pages pick the paper per template; the page number sits bottom-left (RTL: the line end). */
+
+@page a4 {
+  size: A4 portrait;
+  margin: 14mm 14mm 16mm;
+  @bottom-left {
+    content: counter(page) " / " counter(pages);
+    font: 10pt "IBM Plex Sans Arabic", sans-serif;
+    direction: ltr;
+  }
+}
+
+@page a4-landscape {
+  size: A4 landscape;
+  margin: 12mm 12mm 14mm;
+  @bottom-left {
+    content: counter(page) " / " counter(pages);
+    font: 10pt "IBM Plex Sans Arabic", sans-serif;
+    direction: ltr;
+  }
+}
+
+@page thermal {
+  size: 80mm auto;
+  margin: 0;
+}
+
+.print-root {
+  font-size: 12pt;
+  line-height: 1.5;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* The named page goes on <body>: switching page type on an inner box would force a page break. */
+body:has(.sheet-a4) {
+  page: a4;
+}
+
+body:has(.sheet-a4-landscape) {
+  page: a4-landscape;
+}
+
+body:has(.sheet-thermal) {
+  page: thermal;
+}
+
+@media print {
+  body {
+    background: var(--color-bg-surface);
+  }
+}
+
+.sheet-a4 {
+  width: 182mm;
+  margin-inline: auto;
+}
+
+.sheet-a4-landscape {
+  width: 273mm;
+  margin-inline: auto;
+}
+
+/* 80 mm roll = 302 px at 96 dpi, 12 px side margin; dotted rules instead of hairlines (they vanish on thermal paper). */
+.sheet-thermal {
+  width: 80mm;
+  padding: 12px 12px 24px;
+  box-sizing: border-box;
+  margin-inline: auto;
+}
+
+.rule-dotted {
+  border-top: 1.5px dotted currentColor;
+}
+
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.print-table th,
+.print-table td {
+  padding: 4px 6px;
+  text-align: start;
+  vertical-align: top;
+}
+
+.print-table thead {
+  display: table-header-group;
+}
+
+.print-table tr {
+  break-inside: avoid;
+}
+
+.print-table .num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media screen {
+  .print-root {
+    padding-block: 24px;
+  }
+  .sheet-a4,
+  .sheet-a4-landscape,
+  .sheet-thermal {
+    box-shadow: 0 0 0 1px var(--color-border);
+    padding: 12mm;
+  }
+}
