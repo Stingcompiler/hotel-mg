@@ -18,3 +18,16 @@ export function elapsed(fromIso: string, now: Date = new Date()): string {
   }
   return days(Math.floor(minutes / (24 * 60)));
 }
+
+function plural(n: number, one: string, two: string, few: string, many: string): string {
+  if (n === 1) return t(one);
+  if (n === 2) return t(two);
+  return t(n >= 3 && n <= 10 ? few : many, { n: digits(String(n)) });
+}
+
+/** ليلة واحدة / ليلتان / 3–10 ليالٍ / 11+ ليلة. */
+export const nights = (n: number) => plural(n, "count.night1", "count.night2", "count.nightsFew", "count.nightsMany");
+export const fieldsToFix = (n: number) => plural(n, "count.fields1", "count.fields2", "count.fieldsFew", "count.fieldsMany");
+export const roomsAvailable = (n: number) => plural(n, "count.rooms1", "count.rooms2", "count.roomsFew", "count.roomsMany");
+export const previousStays = (n: number) =>
+  n === 0 ? t("count.stays0") : plural(n, "count.stays1", "count.stays2", "count.staysFew", "count.staysMany");
