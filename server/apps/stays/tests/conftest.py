@@ -41,3 +41,27 @@ def rooms(single, double):
 @pytest.fixture
 def guest(db):
     return Guest.objects.create(full_name="خالد إبراهيم عبدالله", search_name="خالد ابراهيم عبدالله")
+
+
+@pytest.fixture
+def open_shift(reception):
+    from apps.cash import services as cash
+
+    return cash.open_shift(reception, opening=5_000_000)
+
+
+@pytest.fixture
+def pay():
+    """Pay a reservation's full balance in cash through the API."""
+
+    def settle(api, reservation_id):
+        from apps.billing.models import Folio
+        from apps.billing.services import FolioTotals
+
+        folio = Folio.objects.get(reservation_id=reservation_id)
+        due = FolioTotals.of(folio).balance
+        res = api.post(f"/api/v1/folios/{folio.pk}/payments", {"amount": due, "method": "cash"}, format="json")
+        assert res.status_code == 201, res.json()
+        return res.json()
+
+    return settle

@@ -97,4 +97,9 @@ BALANCES = {"203": sdg(15_000), "305": sdg(42_000)}
 
 GUEST_PHONE = "+249 91 234 5678"
 SHIFT = {"user": "ahmed.ali", "opened_at": "08:00", "opening": sdg(50_000)}
+# Expenses artboard 6.8 — today's two cash expenses (12,500 in all).
+EXPENSES = [
+    {"category": "supplies", "amount": sdg(5_000), "note": "مواد تنظيف — 4 عبوات كلور + مناشف", "method": "cash"},
+    {"category": "purchases", "amount": sdg(7_500), "note": "مياه شرب — 10 كراتين", "method": "cash"},
+]
 INVOICE_NO = "INV-000318"

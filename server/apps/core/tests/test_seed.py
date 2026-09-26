@@ -61,3 +61,18 @@ def test_seed_matches_room_board():
     assert rows["411"]["stay"]["days_left"] == 18
     assert rows["102"]["status"] == "ready" and rows["102"]["next_reservation"]["guest_name"] == "خالد إبراهيم عبدالله"
     assert rows["410"]["status"] == "maintenance"
+
+
+def test_seed_money_matches_brief():
+    from apps.cash.services import ShiftTotals, current_shift
+    from apps.stays.board import board
+
+    call_command("seed_demo", "--allow-non-debug")
+    call_command("seed_demo", "--allow-non-debug")
+    rows = {r["number"]: r for r in board()["rooms"]}
+    assert rows["203"]["stay"]["balance"] == 1_500_000
+    assert rows["305"]["stay"]["balance"] == 4_200_000
+    assert rows["411"]["stay"]["balance"] == 0
+    shift = current_shift()
+    assert shift.opening == 5_000_000 and shift.created_by.username == "ahmed.ali"
+    assert ShiftTotals.of(shift).expected == 5_000_000 - 1_250_000

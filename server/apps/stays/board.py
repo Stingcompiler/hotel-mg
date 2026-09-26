@@ -1,5 +1,6 @@
 """Room board data (spec §10.4: GET rooms?view=board): every room with its state, current stay and next booking."""
 
+from apps.billing.services import balances_by_reservation
 from apps.rooms import rules as room_rules
 from apps.rooms.models import Room
 
@@ -13,8 +14,11 @@ def board() -> dict:
     rooms = list(Room.objects.select_related("room_type").order_by("number"))
     current = {
         r.room_id: r
-        for r in Reservation.objects.filter(status=ReservationStatus.CHECKED_IN).select_related("guest", "stay")
+        for r in Reservation.objects.filter(status=ReservationStatus.CHECKED_IN).select_related(
+            "guest", "stay", "folio"
+        )
     }
+    balances = balances_by_reservation([r.pk for r in current.values()])
     upcoming: dict = {}
     for r in (
         Reservation.objects.filter(status=ReservationStatus.CONFIRMED, check_in_date__gte=day)
@@ -54,7 +58,8 @@ def board() -> dict:
                 "last_night": last,
                 "days_left": (last - day).days,  # 0 = ends today, negative = overdue by N days
                 "duration_kind": stay.duration_kind,
-                "balance": None,  # B2: folio balance
+                "balance": balances.get(stay.pk),
+                "invoice": stay.folio.invoice_label if hasattr(stay, "folio") else None,
             }
         if nxt := upcoming.get(room.pk):
             row["next_reservation"] = {

@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 
 from apps.audit.models import AuditLog
-from apps.guests import rules
+from apps.core import imaging
 from apps.guests.models import Companion, Guest, GuestDocument
 
 pytestmark = pytest.mark.django_db
@@ -92,13 +92,13 @@ class TestDocuments:
 
     def test_upload_is_compressed_under_limit(self, reception_api, guest):
         raw = _image()
-        assert len(raw) > rules.MAX_DOCUMENT_BYTES
+        assert len(raw) > imaging.MAX_STORED_BYTES
         res = self.upload(reception_api, guest, raw)
         assert res.status_code == 201, res.json()
         doc = GuestDocument.objects.get(pk=res.json()["id"])
         stored = settings.RUNTIME.attachments_dir / doc.file_path
         assert stored.exists()
-        assert doc.size == stored.stat().st_size <= rules.MAX_DOCUMENT_BYTES
+        assert doc.size == stored.stat().st_size <= imaging.MAX_STORED_BYTES
         with Image.open(stored) as img:
             assert img.format == "JPEG"
 

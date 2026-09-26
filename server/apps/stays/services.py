@@ -7,9 +7,13 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
+from apps.accounts.services import verify_manager_override
 from apps.audit import services as audit
+from apps.billing import rules as billing_rules
+from apps.billing import services as billing
 from apps.core.concurrency import get_for_update
 from apps.core.errors import ApiError
+from apps.core.models import HotelSettings
 from apps.rooms.models import Room, RoomStatus, RoomType
 
 from . import rules
@@ -152,8 +156,16 @@ def create_reservation(
     final_total: int | None = None,
     override_reason: str = "",
     notes: str = "",
+    discount: int = 0,
+    discount_reason: str = "",
+    deposit: int = 0,
+    deposit_method: str = "cash",
+    deposit_reference: str = "",
+    manager_password: str = "",
+    manager_reason: str = "",
     allow_past: bool = False,
 ) -> Reservation:
+    """Book a room type (and optionally a room). Opens the folio; a deposit is taken in the open shift."""
     if check_in_date < today() and not allow_past:
         raise ApiError("date_in_past", 400)
     q = quote(room_type, check_in_date, duration_kind, count)
@@ -197,6 +209,9 @@ def create_reservation(
         notes=notes,
         created_by=actor,
     )
+    folio = billing.open_folio(reservation, actor)
+    if discount:
+        _book_discount(reservation, discount, discount_reason, manager_password, manager_reason)
     audit.record(
         actor=actor,
         action="reservation.create",
@@ -204,7 +219,31 @@ def create_reservation(
         entity_id=reservation.pk,
         after=snapshot(reservation),
     )
+    if deposit:
+        billing.take_payment(
+            actor, folio, amount=deposit, method=deposit_method, reference=deposit_reference, kind="deposit"
+        )
     return reservation
+
+
+def _book_discount(reservation: Reservation, discount: int, reason: str, manager_password: str, manager_reason: str):
+    """Discount agreed at booking; posted with the room charge at check-in (artboard 6.4: «سبب الخصم *»)."""
+    if discount < 0 or discount > reservation.total:
+        raise ApiError("validation_error", 400, detail="قيمة الخصم غير صحيحة.")
+    if not reason.strip():
+        raise ApiError("reason_required", 400, detail="سبب الخصم مطلوب عند إدخال أي خصم.")
+    approver = None
+    limit = HotelSettings.load().max_discount_percent
+    if not billing_rules.discount_within_limit(discount, reservation.total, limit):
+        if not manager_password:
+            raise ApiError("override_required", 403, detail=f"الخصم أكبر من {limit}٪ ويحتاج موافقة المدير.")
+        approver = verify_manager_override(manager_password, manager_reason or reason)
+    reservation.rate_snapshot["discount"] = {
+        "amount": discount,
+        "reason": reason.strip(),
+        "approved_by": str(approver.pk) if approver else None,
+    }
+    reservation.save(update_fields=["rate_snapshot"])
 
 
 def _get_locked(reservation_id, version: int | None) -> Reservation:
@@ -223,6 +262,7 @@ def cancel_reservation(actor, reservation_id, *, reason: str, version: int | Non
     reservation.status = ReservationStatus.CANCELLED
     reservation.status_reason = reason.strip()
     reservation.save()
+    billing.close_folio(reservation)  # a deposit stays as credit until refunded
     audit.record(
         actor=actor,
         action="reservation.cancel",
@@ -244,6 +284,7 @@ def mark_no_show(actor, reservation_id, *, version: int | None = None) -> Reserv
     before = snapshot(reservation)
     reservation.status = ReservationStatus.NO_SHOW
     reservation.save()
+    billing.close_folio(reservation)
     audit.record(
         actor=actor,
         action="reservation.no_show",

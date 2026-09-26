@@ -178,3 +178,13 @@ def after_room_statuses(choice: str) -> list[str]:
     if choice not in ("cleaning", "maintenance"):
         raise ValueError(f"unknown room status after leaving: {choice!r}")
     return ["cleaning"] if choice == "cleaning" else ["cleaning", "maintenance"]
+
+
+KIND_ADJECTIVE = {"daily": "يومية", "weekly": "أسبوعية", "monthly": "شهرية"}
+
+
+def room_line_text(kind: str, room_type: str, room_number: str, nights: int, label: str = "") -> str:
+    """Folio line for the room charge: «إقامة شهرية — مزدوجة 203 (30 ليلة)» (artboard 6.5 ledger)."""
+    if kind in KIND_ADJECTIVE:
+        return f"إقامة {KIND_ADJECTIVE[kind]} — {room_type} {room_number} ({count_label('daily', nights)})"
+    return f"إقامة — {room_type} {room_number} ({label or count_label('daily', nights)})"
