@@ -75,7 +75,7 @@ def test_guest_lists(api_as_manager):
     assert len(get(api_as_manager, "current_guests")["rows"]) == 18
     soon = get(api_as_manager, "ending_soon")["rows"]
     assert [r["room"] for r in soon][:2] == ["305", "207"]
-    assert soon[0]["state"] == "متجاوزة منذ 2 يوم"
+    assert soon[0]["state"] == "متجاوزة منذ يومين"
 
 
 def test_money_reports(api_as_manager):

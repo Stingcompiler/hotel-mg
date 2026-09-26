@@ -13,6 +13,7 @@ from apps.billing.models import Folio, FolioLine, Payment
 from apps.billing.services import FolioTotals, balances_by_reservation
 from apps.cash.models import Expense, Shift
 from apps.cash.services import ShiftTotals
+from apps.core import arabic
 from apps.core.errors import ApiError
 from apps.core.models import HotelSettings
 from apps.rooms.models import Room, RoomStatus, RoomStatusHistory
@@ -315,7 +316,10 @@ def ending_soon(params: Params) -> Report:
     rows = []
     for r in sorted(stays, key=lambda r: r.check_out_date):
         left = (stay_rules.last_night(r.check_out_date) - today).days
-        state = f"متجاوزة منذ {-left} يوم" if left < 0 else ("تنتهي اليوم" if left == 0 else f"تنتهي بعد {left} يوم")
+        if left < 0:
+            state = f"متجاوزة منذ {arabic.days(left)}"
+        else:
+            state = "تنتهي اليوم" if left == 0 else f"تنتهي بعد {arabic.days(left)}"
         rows.append(
             {
                 "room": r.room.number,
@@ -379,12 +383,12 @@ def debts(params: Params) -> Report:
             if r.status == ReservationStatus.CHECKED_IN:
                 left = (stay_rules.last_night(r.check_out_date) - today).days
                 age, age_days = "جارية", max(-left, 0)
-                reason = f"متجاوزة منذ {-left} يوم" if left < 0 else f"تنتهي بعد {left} يوم"
+                reason = f"متجاوزة منذ {arabic.days(left)}" if left < 0 else f"تنتهي بعد {arabic.days(left)}"
                 if left < 0:
-                    age = f"{-left} يوم (جارية)"
+                    age = f"{arabic.days(left)} (جارية)"
             else:
                 age_days = (today - timezone.localtime(stay.checked_out_at).date()).days
-                age = f"{age_days} يوم"
+                age = arabic.days(age_days)
                 by = stay.override_by.full_name if stay.override_by_id else ""
                 reason = f"خروج بتجاوز المدير ({by}) — «{stay.override_reason}»" if by else "خروج بدين"
             rows.append(
@@ -419,7 +423,7 @@ def debts(params: Params) -> Report:
                         "total": totals.total,
                         "paid": totals.paid,
                         "balance": 0,
-                        "age": f"سُدِّد بعد {late} يوم",
+                        "age": f"سُدِّد بعد {arabic.days(late)}",
                         "age_days": late,
                         "reason": "مسدَّد متأخرًا",
                         "state": "paid_late",

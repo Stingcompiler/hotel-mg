@@ -5,13 +5,14 @@ import { createBrowserRouter, Navigate, RouterProvider, useLocation } from "reac
 
 import { useHotelSettings, useSystemStatus } from "@/api/queries";
 import { session } from "@/api/session";
+import { BackupImportPage } from "@/features/backup/BackupImportPage";
 import { CashPage } from "@/features/cash/CashPage";
 import { ExpensesPage } from "@/features/expenses/ExpensesPage";
 import { FollowupsPage } from "@/features/followups/FollowupsPage";
 import { GuestsPage } from "@/features/guests/GuestsPage";
 import { LoginPage } from "@/features/login/LoginPage";
-import { Placeholder } from "@/features/placeholder/Placeholder";
 import { ReportsPage } from "@/features/reports/ReportsPage";
+import { OwnerDashboardPage } from "@/features/owner/OwnerDashboardPage";
 import { NewReservationPage } from "@/features/reservations/NewReservationPage";
 import { ReservationsPage } from "@/features/reservations/ReservationsPage";
 import { RoomBoardPage } from "@/features/rooms/RoomBoardPage";
@@ -55,8 +56,6 @@ function Root() {
   return <ReceptionShell />;
 }
 
-const screen = (path: string, key: string) => ({ path, element: <Placeholder titleKey={`nav.${key}`} /> });
-
 const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   {
@@ -74,8 +73,8 @@ const router = createBrowserRouter([
       { path: "/reports/:name", element: <ReportsPage /> },
       { path: "/settings", element: <SettingsPage /> },
       { path: "/settings/:tab", element: <SettingsPage /> },
-      screen("/owner", "owner"),
-      screen("/backup", "backup"),
+      { path: "/owner", element: <OwnerDashboardPage /> },
+      { path: "/backup", element: <BackupImportPage /> },
       { path: "*", element: <Navigate to="/" replace /> },
     ],
   },
