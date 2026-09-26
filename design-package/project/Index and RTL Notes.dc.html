@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F7F9;font-family:"IBM Plex Sans Arabic","Noto Sans Arabic",sans-serif;color:#1B2430}
+a{color:#0F766E;text-decoration:none}a:hover{color:#115E59;text-decoration:underline}
+</style>
+</helmet>
+<div dir="rtl" style="max-width:1200px;margin:0 auto;padding:48px 32px;display:flex;flex-direction:column;gap:32px;font-family:'IBM Plex Sans Arabic','Noto Sans Arabic',sans-serif;font-variant-numeric:tabular-nums;color:#1B2430;text-align:right">
+
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap">
+    <div>
+      <div style="font-size:12px;font-weight:500;line-height:16px;color:#5B6674">Sky Towers · نظام إدارة الفندق · حزمة التسليم</div>
+      <h1 style="margin:4px 0 0;font-size:28px;font-weight:700;line-height:34px">فهرس التصميم ووثيقة RTL</h1>
+      <div style="margin-top:4px;font-size:14px;line-height:22px;color:#5B6674">الإصدار 1 · 26 سبتمبر 2026 · 14 ملفًا · كل الشاشات مبنية من نظام التصميم فقط</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span style="display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:6px;background:#DCFCE7;color:#14532D;font-size:12px;font-weight:500;white-space:nowrap">§10.1 نظام التصميم ✓</span>
+      <span style="display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:6px;background:#DCFCE7;color:#14532D;font-size:12px;font-weight:500;white-space:nowrap">§10.2 الشاشات الحرجة ✓</span>
+      <span style="display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:6px;background:#DCFCE7;color:#14532D;font-size:12px;font-weight:500;white-space:nowrap">§10.3 بقية الشاشات ✓</span>
+      <span style="display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:6px;background:#DCFCE7;color:#14532D;font-size:12px;font-weight:500;white-space:nowrap">§10.4 الطباعة و RTL ✓</span>
+    </div>
+  </div>
+
+  <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border-bottom:1px solid #E3E6EB"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">الملفات</h2><span style="font-size:14px;color:#5B6674">افتح أي ملف — كل لوحة تحمل ملاحظات قراراتها في أسفلها</span></div>
+    <div style="display:grid;grid-template-columns:70px 1fr 1.6fr 110px;height:40px;align-items:center;background:#F1F3F6;font-size:12px;font-weight:500;color:#5B6674;padding:0 16px;gap:16px;border-bottom:1px solid #E3E6EB"><div>البند</div><div>الملف</div><div>المحتوى</div><div>الإطارات</div></div>
+    <sc-for list="{{ files }}" as="f" hint-placeholder-count="12">
+      <a href="{{ f.href }}" style="display:grid;grid-template-columns:70px 1fr 1.6fr 110px;min-height:44px;align-items:center;font-size:14px;padding:6px 16px;gap:16px;border-bottom:1px solid #E3E6EB;text-decoration:none;color:#1B2430;background:{{ f.bg }}" style-hover="background:#F6F7F9"><div style="font-size:12px;font-weight:600;color:#5B6674">{{ f.sec }}</div><div style="font-weight:600;color:#0F766E">{{ f.name }}</div><div style="font-size:14px;line-height:20px;color:#5B6674">{{ f.desc }}</div><div style="font-size:12px;color:#5B6674">{{ f.frames }}</div></a>
+    </sc-for>
+  </section>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+    <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+      <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">وثيقة RTL — القواعد المطبَّقة</h2>
+      <sc-for list="{{ rtl }}" as="r" hint-placeholder-count="10">
+        <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #E3E6EB"><span style="width:24px;height:24px;border-radius:50%;background:#DCFCE7;color:#16A34A;display:inline-flex;align-items:center;justify-content:center;flex:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span><div style="flex:1"><div style="font-size:14px;font-weight:600;line-height:20px">{{ r.title }}</div><div style="font-size:14px;line-height:22px;color:#5B6674">{{ r.text }}</div></div></div>
+      </sc-for>
+    </section>
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <section style="background:#FFEDD5;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px;color:#B45309">
+        <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">استثناءات مُعلَنة — تحتاج تأكيدك النهائي</h2>
+        <sc-for list="{{ exceptions }}" as="e" hint-placeholder-count="4">
+          <div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid rgba(180,83,9,0.25)"><span style="font-size:14px;font-weight:700;flex:none;width:24px">{{ e.n }}</span><div style="font-size:14px;line-height:22px"><strong>{{ e.title }}</strong> — {{ e.text }}</div></div>
+        </sc-for>
+      </section>
+      <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+        <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">إضافات إلى نظام التصميم أثناء العمل</h2>
+        <sc-for list="{{ additions }}" as="a" hint-placeholder-count="6">
+          <div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid #E3E6EB;font-size:14px;line-height:22px"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;background:#F1F3F6;color:#5B6674;flex:none;align-self:flex-start">{{ a.where }}</span><span>{{ a.text }}</span></div>
+        </sc-for>
+        <div style="font-size:12px;color:#5B6674;line-height:16px">كلها مضافة إلى <span dir="ltr">tokens.json</span> أو إلى <a href="Design System.dc.html">Design System.dc.html</a> بحسب طبيعتها.</div>
+      </section>
+    </div>
+  </div>
+
+  <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+    <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">مصفوفة الحالات — ما غُطّي في كل شاشة</h2>
+    <div style="display:grid;grid-template-columns:1.4fr repeat(6,1fr);gap:0;font-size:12px">
+      <div style="padding:8px 12px;background:#F1F3F6;font-weight:500;color:#5B6674;border-bottom:1px solid #E3E6EB">الشاشة</div>
+      <sc-for list="{{ stateCols }}" as="c" hint-placeholder-count="6"><div style="padding:8px 12px;background:#F1F3F6;font-weight:500;color:#5B6674;border-bottom:1px solid #E3E6EB;text-align:center">{{ c }}</div></sc-for>
+      <sc-for list="{{ matrix }}" as="m" hint-placeholder-count="10">
+        <div style="padding:10px 12px;border-bottom:1px solid #E3E6EB;font-size:14px;font-weight:500">{{ m.screen }}</div>
+        <sc-for list="{{ m.cells }}" as="c" hint-placeholder-count="6"><div style="padding:10px 12px;border-bottom:1px solid #E3E6EB;text-align:center;color:{{ c.color }};font-weight:600">{{ c.mark }}</div></sc-for>
+      </sc-for>
+    </div>
+    <div style="font-size:12px;color:#5B6674;line-height:16px">✓ مُصمَّم · — غير مطلوب للشاشة (مثلًا: لا حالة «فارغة» لتسجيل الدخول) · الحالات المتبقية تُستنبط من النمط المعتمد في الشاشة المقابلة.</div>
+  </section>
+
+  <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:8px">
+    <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">الإصدار 2 — مُنجَز</h2>
+    <div style="font-size:14px;line-height:22px;color:#5B6674"><a href="V2 — Settings Modals Migration.dc.html">V2 — Settings Modals Migration.dc.html</a>: الغرف · بيانات الفندق · سجل التدقيق · نافذة تغيير الغرفة · نافذة إلغاء الإقامة · تقرير الوصول والمغادرة (نموذج بقية التقارير) · تدفق الترحيل الأولي يوم الافتتاح. الانحرافات الأربعة عن البريف معتمَدة كما بُنيت. بقية التقارير الثمانية تتبع القالب نفسه ولا تحتاج تصميمًا منفصلًا.</div>
+    <div style="font-size:14px;line-height:22px;margin-top:8px">مراجعة التغطية الكاملة والانحرافات المقصودة عن البريف: <a href="Gap Fill — Settings Users Prices, Report Landscape, Guest ID, Quick Expense.dc.html">Gap Fill.dc.html</a></div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const files = [
+      ['§3–5','Design System.dc.html','الألوان، الخط بنوعَي الأرقام، المسافات والزوايا وحلقة التركيز والأيقونات، الأزرار ×4×5، الحقول ولوحة الرمز، الشرائح، بطاقة الغرفة ×8 + هيكل، الجدول والمؤشر والإشعارات','1 لوحة'],
+      ['—','tokens.json','قيم §3 كاملة للمطورين (ألوان، أدوار الخط، مسافات، مقاسات)','—'],
+      ['6.1 · 6.14','Login and System States.dc.html','تسجيل الدخول ×4 حالات · حارس الساعة · إشعارات النظام المكدّسة · قفل الجلسة','6'],
+      ['6.2','Room Board.dc.html','لوحة الغرف 1920 و1366 · درج الغرفة · تحميل · فارغة · خادم غير متاح','6'],
+      ['6.3','Reservations.dc.html','خط زمني 14 و7 أيام · قائمة بصف محدد · تعارض · تحميل · فارغة','5'],
+      ['6.4','New Reservation.dc.html','حجز/تسكين: افتراضي · أخطاء ومدة مختلطة وسعر معدَّل · 1366 · فارغ · تحميل · خادم غير متاح','6'],
+      ['6.5','Stay Detail.dc.html','تفاصيل الإقامة والفاتورة · خروج بدين (مطوي/مفتوح) · تمديد · تحميل · فارغ · رصيد صفر','7'],
+      ['6.6','Follow-ups.dc.html','المتابعة بثلاث مجموعات · تأجيل · مُهمَل · مواصفة إشعار ويندوز · حالات','6'],
+      ['6.7','Cash Shift.dc.html','الصندوق: وردية بفرق · فتح وردية · سجل الورديات · تحميل · فرق صفر · خادم غير متاح','6'],
+      ['6.8–6.11','Expenses Guests Reports Settings.dc.html','المصروفات + درج · النزلاء + ملف · التقارير (الديون) · قواعد التنبيه inline','4'],
+      ['6.12','Owner Dashboard.dc.html','لوحة المالك 1920 · بيانات قديمة 1366 · تحميل · لا شيء يحتاج انتباهك','4'],
+      ['6.13','Backup Import.dc.html','بطاقة النسخ على الجهازين · نافذة الاستيراد ×4 خطوات + تحذير · حالات Drive ×6 · حالات الشاشة','9'],
+      ['7','Print Templates.dc.html','فاتورة A4 · إيصال دفعة وإيصال مصروف حراري · كشف الوردية A4','4'],
+      ['—','Shell Sidebar.dc.html · Shell TopBar.dc.html','مكوّنا الهيكل المشتركان (خصائص: active, collapsed, owner, followups, shiftOpen, backupStale…)','—']
+    ].map(([sec,name,desc,frames],i)=>({sec,name,desc,frames,href:name.includes('·')?'#':name,bg:i%2?'#F6F7F9':'#fff'}));
+    const rtl = [
+      ['الاتجاه العام','dir="rtl" على الجذر؛ الشريط الجانبي يمين، المحتوى يمتد يسارًا، الأدراج تنزلق من اليسار بعرض 480 بكسل.'],
+      ['الأيقونات والنص','الأيقونة تسبق النص (على يمينه) في كل الأزرار؛ الأسهم الاتجاهية معكوسة: «رجوع» يشير يمينًا، «التالي/التقدّم» يسارًا.'],
+      ['الجداول','العمود الأول على اليمين؛ الأعمدة الرقمية محاذاة نهاية السطر (يسار) لتصطف الخانات؛ الرؤوس والخلايا نفس المحاذاة.'],
+      ['المقاطع LTR','الهواتف، المعرفات (INV/RSV/RCP)، الأوقات (08:00)، المسارات، البريد، الأحجام — داخل dir="ltr" لمنع انقلاب الرموز.'],
+      ['الأرقام','أرقام غربية افتراضيًا بأرقام جدولية؛ خيار الأرقام العربية-الهندية للمالك (عيّنة في نظام التصميم)؛ فاصل الآلاف «,» والعملة «ج.س» بعد الرقم.'],
+      ['الزمن الأفقي','في خط زمن الحجوزات والرسوم البيانية: اليوم على اليمين والزمن يتقدّم يسارًا — اتساق §3.5، مُعلَن كاستثناء لأن بعض المستخدمين يتوقعون العكس.'],
+      ['لوحة الأرقام','شبكة 1-2-3 من اليسار إلى اليمين كالآلة الحاسبة والهاتف (dir="ltr" على الشبكة فقط)، مع أزرار «مسح» و⌫ في الصف الأخير.'],
+      ['التواريخ','تقويم ميلادي بأسماء الأشهر العربية المشرقية (سبتمبر، أكتوبر)؛ اسم اليوم قبل التاريخ؛ الفترات بشرطة طويلة «1 – 30 أكتوبر».'],
+      ['الشرائح والشارات','شارة العدد في زاوية الأيقونة اليسرى العليا (نهاية السطر) — تظهر مع الشريط المطوي كذلك.'],
+      ['الشطب والتركيز','الملغى مشطوب بلون معطّل؛ حلقة التركيز خارج العنصر 2+2 بكسل في كل الاتجاهات؛ ترتيب Tab يتبع ترتيب DOM (يمين → يسار).']
+    ].map(([title,text])=>({title,text}));
+    const exceptions = [
+      {n:'1',title:'عرض بطاقة الغرفة',text:'8 بطاقات في الصف عند 1920 مع شريط 240 يجعل العرض ~194 بكسل بدل 220؛ الارتفاع 132 ثابت. اعتُمد مبدئيًا وأُضيف كقاعدة «العرض = عمود الشبكة، الحد الأدنى 190».'},
+      {n:'2',title:'الأخضر/الأحمر خارج حالة الغرفة',text:'شرائح الوردية والنسخ، الفرق في الصندوق، المتبقي، ومؤشر «متجاوزة» تستخدم success/danger من §3.1 Feedback بالقيم نفسها — استخدام دلالي لا تزييني.'},
+      {n:'3',title:'اتجاه الزمن',text:'اليوم على اليمين في خط الزمن والرسوم؛ إن فضّل المالك العكس فتغييره في مكان واحد (متغير الاتجاه في المكوّن).'},
+      {n:'4',title:'زر primary على جهاز المالك',text:'الوحيد المسموح هو «استيراد نسخة» في 6.13؛ كل ما عداه روابط وأزرار ثانوية.'}
+    ];
+    const additions = [
+      {where:'tokens',text:'reserved-soon #7C3AED كإطار فقط (بلا soft) — بطاقة الغرفة المحجوزة غدًا وشريط الحجز المؤكد.'},
+      {where:'tokens',text:'owner-banner-bg #FFEDD5 / owner-banner-text #B45309 — شريط المالك 56 بكسل يحل محل الشريط العلوي.'},
+      {where:'tokens',text:'chart-secondary #94A3B8 — اللون الثاني الوحيد في الرسوم.'},
+      {where:'مكوّن',text:'شريط النظام 44 بكسل (danger-soft / warning-soft / info-soft / danger-solid للخادم) بحد أقصى ثلاثة مكدّسة.'},
+      {where:'مكوّن',text:'حقل المال الكبير 44 بكسل بخط 20/600 مع لاحقة «ج.س» — للمعدود والمبالغ المدخلة واقفًا.'},
+      {where:'مكوّن',text:'شريحة رقم الغرفة 32 بكسل بلون الحالة الناعم — في صفوف المتابعة والقوائم.'},
+      {where:'قاعدة',text:'تعتيم النوافذ 32٪؛ النوافذ الحاجزة (حارس الساعة) 48٪ بلا زر إغلاق.'},
+      {where:'قاعدة',text:'زر التأجيل يعرض العدّاد دائمًا «تأجيل (n من 3)» ويُعطَّل عند النفاد.'}
+    ];
+    const stateCols = ['افتراضي','1366','تحميل','فارغة','خادم غير متاح','خطأ / تحذير'];
+    const Y = {mark:'✓',color:'#14532D'}, N = {mark:'—',color:'#9AA3AF'};
+    const matrix = [
+      ['تسجيل الدخول',[Y,Y,N,N,Y,Y]],['لوحة الغرف',[Y,Y,Y,Y,Y,Y]],['الحجوزات',[Y,Y,Y,Y,N,Y]],['حجز جديد',[Y,Y,Y,Y,Y,Y]],['تفاصيل الإقامة',[Y,Y,Y,Y,Y,Y]],
+      ['المتابعة',[Y,Y,Y,Y,Y,Y]],['الصندوق',[Y,Y,Y,Y,Y,Y]],['المصروفات · النزلاء · التقارير · الإعدادات',[Y,N,N,N,N,Y]],['لوحة المالك',[Y,Y,Y,Y,N,Y]],['النسخ والاستيراد',[Y,Y,Y,Y,Y,Y]]
+    ].map(([screen,cells])=>({screen,cells}));
+    return { files, rtl, exceptions, additions, stateCols, matrix };
+  }
+}
+</script>
+</body>
+</html>

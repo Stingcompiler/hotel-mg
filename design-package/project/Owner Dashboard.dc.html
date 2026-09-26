@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9ECF0;font-family:"IBM Plex Sans Arabic","Noto Sans Arabic",sans-serif;color:#1B2430}
+a{color:#0F766E;text-decoration:none}a:hover{color:#115E59;text-decoration:underline}
+@keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+</style>
+</helmet>
+<div dir="rtl" style="padding:48px;display:flex;flex-direction:column;gap:56px;font-family:'IBM Plex Sans Arabic','Noto Sans Arabic',sans-serif;font-variant-numeric:tabular-nums;color:#1B2430;text-align:right;width:max-content">
+
+  <!-- ===== A: 1920 ===== -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#1B2430;color:#fff;font-size:12px;font-weight:600">6.12 A</span><span style="font-size:14px;font-weight:600">لوحة المالك — 1920×1080 — جهاز المالك · تنبيه «نسخة أحدث على Drive»</span><span style="font-size:12px;color:#5B6674">لا أزرار أساسية · لا حقول · كل شيء للعرض</span></div>
+    <div data-screen-label="6.12 A لوحة المالك 1920" style="width:1920px;height:1080px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+      <dc-import name="Shell Sidebar" active="owner" owner="{{ true }}" followups="{{ 0 }}" hint-size="240px,1080px"></dc-import>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <div style="height:56px;flex:none;background:#FFEDD5;color:#B45309;display:flex;align-items:center;gap:12px;padding:0 24px;font-size:14px;font-weight:600;border-bottom:1px solid #E3E6EB"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>بيانات حتى 25 سبتمبر 2026 – <span dir="ltr">22:10</span> · للعرض فقط</span><div style="flex:1"></div><span style="font-weight:500">النسخة رقم 117 · استُوردت أمس <span dir="ltr">22:15</span></span></div>
+        <div style="height:44px;display:flex;align-items:center;gap:12px;padding:0 24px;background:#DBEAFE;color:#1E3A8A;font-size:14px;font-weight:500;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg><span>توجد نسخة أحدث على Drive — النسخة رقم 118 · اليوم <span dir="ltr">14:03</span></span><a href="#" style="color:#1E3A8A;text-decoration:underline">الانتقال إلى النسخ والاستيراد</a></div>
+        <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box">
+          <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">لوحة المالك</h1><span style="font-size:14px;color:#5B6674">سبتمبر 2026 · 30 غرفة</span><div style="flex:1"></div><div style="display:inline-flex;height:36px;border:1px solid #C9CED6;border-radius:6px;overflow:hidden;background:#fff"><div style="display:flex;align-items:center;padding:0 16px;font-size:14px;font-weight:600;background:#CCFBF1;color:#0F766E">هذا الشهر</div><div style="display:flex;align-items:center;padding:0 16px;font-size:14px;border-inline-start:1px solid #E3E6EB">الشهر السابق</div><div style="display:flex;align-items:center;padding:0 16px;font-size:14px;border-inline-start:1px solid #E3E6EB">آخر 90 يومًا</div></div></div>
+
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">
+            <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="5">
+              <div style="border:1px solid #E3E6EB;border-radius:8px;padding:16px;background:#fff"><div style="font-size:12px;font-weight:500;line-height:16px;color:#5B6674">{{ k.label }}</div><div style="font-size:28px;font-weight:700;line-height:34px;margin-top:4px;color:{{ k.color }}">{{ k.value }}<span style="font-size:16px;font-weight:600;color:{{ k.unitColor }}"> {{ k.unit }}</span></div><div style="font-size:12px;line-height:16px;color:{{ k.deltaColor }};margin-top:4px">{{ k.delta }}</div></div>
+            </sc-for>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:baseline;gap:12px"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">نسبة الإشغال — آخر 30 يومًا</h2><span style="font-size:12px;color:#5B6674">المتوسط 58٪ · الأعلى 77٪ (الجمعة 18)</span><span style="margin-inline-start:auto;font-size:12px;color:#5B6674">اليوم على اليمين ←</span></div>
+              <div style="position:relative;height:200px">
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;font-size:12px;color:#9AA3AF"><div style="border-top:1px dashed #E3E6EB;display:flex"><span style="margin-top:-8px">100٪</span></div><div style="border-top:1px dashed #E3E6EB;display:flex"><span style="margin-top:-8px">75٪</span></div><div style="border-top:1px dashed #E3E6EB;display:flex"><span style="margin-top:-8px">50٪</span></div><div style="border-top:1px dashed #E3E6EB;display:flex"><span style="margin-top:-8px">25٪</span></div><div style="border-top:1px solid #E3E6EB"></div></div>
+                <svg viewBox="0 0 600 200" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible"><polyline points="{{ occAreaPts }}" fill="#CCFBF1" stroke="none" opacity="0.6"></polyline><polyline points="{{ occPts }}" fill="none" stroke="#0F766E" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"></polyline></svg>
+                <div style="position:absolute;top:0;right:0;width:2px;height:100%;background:#0F766E"></div>
+                <div style="position:absolute;top:8px;right:8px;background:#fff;border:1px solid #E3E6EB;border-radius:6px;padding:4px 8px;font-size:12px;box-shadow:0 8px 24px rgba(27,36,48,0.12)"><span style="color:#5B6674">25 سبتمبر</span> · <span style="font-weight:600">60٪</span> · 18 من 30</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:#5B6674"><span>25 سبتمبر</span><span>18 سبتمبر</span><span>11 سبتمبر</span><span>4 سبتمبر</span><span>27 أغسطس</span></div>
+            </section>
+            <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:baseline;gap:12px"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">الإيراد مقابل المحصّل — أسبوعيًا</h2><span style="margin-inline-start:auto;display:flex;gap:16px;font-size:12px;color:#5B6674"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:2px;background:#0F766E"></span>الإيراد</span><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:2px;background:#94A3B8"></span>المحصّل</span></span></div>
+              <div style="position:relative;height:200px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;align-items:end;padding:0 8px">
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;font-size:12px;color:#9AA3AF"><div style="border-top:1px dashed #E3E6EB;display:flex"><span style="margin-top:-8px">1.5M</span></div><div style="border-top:1px dashed #E3E6EB;display:flex"><span style="margin-top:-8px">1.0M</span></div><div style="border-top:1px dashed #E3E6EB;display:flex"><span style="margin-top:-8px">0.5M</span></div><div style="border-top:1px solid #E3E6EB"></div></div>
+                <sc-for list="{{ weeks }}" as="w" hint-placeholder-count="4">
+                  <div style="display:flex;gap:6px;align-items:flex-end;height:100%;position:relative;padding:0 8px"><div style="flex:1;height:{{ w.rev }};background:#0F766E;border-radius:4px 4px 0 0;position:relative"><span style="position:absolute;top:-18px;inset-inline:0;text-align:center;font-size:12px;font-weight:600">{{ w.revLabel }}</span></div><div style="flex:1;height:{{ w.col }};background:#94A3B8;border-radius:4px 4px 0 0;position:relative"><span style="position:absolute;top:-18px;inset-inline:0;text-align:center;font-size:12px;color:#5B6674">{{ w.colLabel }}</span></div></div>
+                </sc-for>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;font-size:12px;color:#5B6674;text-align:center"><sc-for list="{{ weeks }}" as="w" hint-placeholder-count="4"><span>{{ w.label }}</span></sc-for></div>
+            </section>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px;flex:1;min-height:0">
+            <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border-bottom:1px solid #E3E6EB"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">يحتاج انتباهك</h2><span style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#DC2626;color:#fff;font-size:12px;font-weight:600">6</span></div>
+              <sc-for list="{{ attention }}" as="a" hint-placeholder-count="6">
+                <a href="#" style="display:grid;grid-template-columns:110px 1fr 160px 24px;gap:16px;align-items:center;height:48px;padding:0 16px;border-bottom:1px solid #E3E6EB;text-decoration:none;color:#1B2430;font-size:14px" style-hover="background:#F6F7F9">
+                  <span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;background:{{ a.bg }};color:{{ a.color }};width:fit-content">{{ a.kind }}</span>
+                  <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.text }}</span>
+                  <span style="font-size:12px;color:#5B6674;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.report }}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9AA3AF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+                </a>
+              </sc-for>
+            </section>
+            <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border-bottom:1px solid #E3E6EB"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">الاستجابة للتنبيهات</h2><span style="font-size:12px;color:#5B6674">هذا الشهر · لكل موظف</span><a href="#" style="margin-inline-start:auto;font-size:12px;font-weight:500">التقرير الكامل</a></div>
+              <div style="display:grid;grid-template-columns:1fr 110px 110px 90px 130px;height:40px;align-items:center;background:#F1F3F6;font-size:12px;font-weight:500;color:#5B6674;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB"><div>الموظف</div><div>عدد التنبيهات</div><div>تُصرِّف فيها</div><div>مُهمَلة</div><div>متوسط التأخير</div></div>
+              <sc-for list="{{ staff }}" as="s" hint-placeholder-count="3">
+                <div style="display:grid;grid-template-columns:1fr 110px 110px 90px 130px;height:40px;align-items:center;font-size:14px;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB;background:{{ s.bg }}"><div style="font-weight:500">{{ s.name }}</div><div>{{ s.total }}</div><div>{{ s.handled }} <span style="font-size:12px;color:#5B6674">({{ s.pct }})</span></div><div style="font-weight:600;color:{{ s.negColor }}">{{ s.neglected }}</div><div>{{ s.delay }}</div></div>
+              </sc-for>
+              <div style="padding:12px 16px;font-size:12px;color:#5B6674;line-height:16px;margin-top:auto">متوسط التأخير = من وقت التنبيه إلى أول إجراء صريح (تمديد / تأكيد مغادرة / بانتظار الرد). التأجيل لا يُحتسب إجراءً.</div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== B/C/D at 1366 ===== -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#1B2430;color:#fff;font-size:12px;font-weight:600">6.12 B · C · D</span><span style="font-size:14px;font-weight:600">1366 مع تنبيه «لم تُستورد نسخة منذ 3 أيام» · تحميل · لا شيء يحتاج انتباهك</span></div>
+    <div style="display:flex;gap:32px">
+
+      <div data-screen-label="6.12 B بيانات قديمة 1366" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+        <dc-import name="Shell Sidebar" active="owner" owner="{{ true }}" collapsed="{{ true }}" followups="{{ 0 }}" hint-size="64px,768px"></dc-import>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+          <div style="height:56px;flex:none;background:#FFEDD5;color:#B45309;display:flex;align-items:center;gap:12px;padding:0 24px;font-size:14px;font-weight:600;border-bottom:1px solid #E3E6EB"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>بيانات حتى 23 سبتمبر 2026 – <span dir="ltr">22:05</span> · للعرض فقط</span></div>
+          <div style="height:44px;display:flex;align-items:center;gap:12px;padding:0 24px;background:#FEE2E2;color:#7F1D1D;font-size:14px;font-weight:500;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg><span>لم تُستورد نسخة جديدة منذ 3 أيام — الأرقام أدناه قديمة.</span><a href="#" style="color:#7F1D1D;text-decoration:underline">استيراد نسخة</a></div>
+          <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+            <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">لوحة المالك</h1><span style="font-size:14px;color:#5B6674">سبتمبر 2026</span></div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
+              <sc-for list="{{ kpisStale }}" as="k" hint-placeholder-count="5"><div style="border:1px solid #E3E6EB;border-radius:8px;padding:12px 16px;background:#fff"><div style="font-size:12px;font-weight:500;line-height:16px;color:#5B6674">{{ k.label }}</div><div style="font-size:28px;font-weight:700;line-height:34px;margin-top:4px;color:{{ k.color }}">{{ k.value }}<span style="font-size:16px;font-weight:600;color:{{ k.unitColor }}"> {{ k.unit }}</span></div></div></sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:12px 16px;display:flex;flex-direction:column;gap:8px"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">نسبة الإشغال — آخر 30 يومًا</h2><div style="position:relative;height:120px"><svg viewBox="0 0 600 200" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%"><polyline points="{{ occAreaPts }}" fill="#CCFBF1" opacity="0.6"></polyline><polyline points="{{ occPts }}" fill="none" stroke="#0F766E" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"></polyline></svg></div></section>
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:12px 16px;display:flex;flex-direction:column;gap:8px"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">الإيراد مقابل المحصّل</h2><div style="height:120px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:end"><sc-for list="{{ weeks }}" as="w" hint-placeholder-count="4"><div style="display:flex;gap:4px;align-items:flex-end;height:100%;padding:0 6px"><div style="flex:1;height:{{ w.rev }};background:#0F766E;border-radius:4px 4px 0 0"></div><div style="flex:1;height:{{ w.col }};background:#94A3B8;border-radius:4px 4px 0 0"></div></div></sc-for></div></section>
+            </div>
+            <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:12px;height:44px;padding:0 16px;border-bottom:1px solid #E3E6EB"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">يحتاج انتباهك</h2><span style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#DC2626;color:#fff;font-size:12px;font-weight:600">6</span></div>
+              <sc-for list="{{ attentionShort }}" as="a" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:110px 1fr 160px;gap:12px;align-items:center;height:44px;padding:0 16px;border-bottom:1px solid #E3E6EB;font-size:14px"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;background:{{ a.bg }};color:{{ a.color }};width:fit-content">{{ a.kind }}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.text }}</span><span style="font-size:12px;color:#5B6674">{{ a.report }}</span></div></sc-for>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div data-screen-label="6.12 C تحميل" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+        <dc-import name="Shell Sidebar" active="owner" owner="{{ true }}" collapsed="{{ true }}" followups="{{ 0 }}" hint-size="64px,768px"></dc-import>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+          <div style="height:56px;flex:none;background:#FFEDD5;color:#B45309;display:flex;align-items:center;gap:12px;padding:0 24px;font-size:14px;font-weight:600;border-bottom:1px solid #E3E6EB"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>جارٍ تحميل البيانات المستوردة… · للعرض فقط</span></div>
+          <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+            <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">لوحة المالك</h1></div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px"><sc-for list="{{ five }}" as="i" hint-placeholder-count="5"><div style="border:1px solid #E3E6EB;border-radius:8px;padding:12px 16px;background:#fff;height:78px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px"><div style="width:80px;height:12px;border-radius:4px;background:#F1F3F6"></div><div style="width:110px;height:28px;border-radius:4px;background:linear-gradient(90deg,#F1F3F6 25%,#E3E6EB 50%,#F1F3F6 75%);background-size:200% 100%;animation:sk 1.4s linear infinite"></div></div></sc-for></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:12px 16px;height:176px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px"><div style="width:200px;height:16px;border-radius:4px;background:#F1F3F6"></div><div style="flex:1;border-radius:6px;background:linear-gradient(90deg,#F1F3F6 25%,#E3E6EB 50%,#F1F3F6 75%);background-size:200% 100%;animation:sk 1.4s linear infinite"></div></section><section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:12px 16px;height:176px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px"><div style="width:220px;height:16px;border-radius:4px;background:#F1F3F6"></div><div style="flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:end"><div style="height:70%;border-radius:4px 4px 0 0;background:#F1F3F6"></div><div style="height:85%;border-radius:4px 4px 0 0;background:#F1F3F6"></div><div style="height:60%;border-radius:4px 4px 0 0;background:#F1F3F6"></div><div style="height:90%;border-radius:4px 4px 0 0;background:#F1F3F6"></div></div></section></div>
+            <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;flex:1;overflow:hidden"><div style="height:44px;border-bottom:1px solid #E3E6EB;display:flex;align-items:center;padding:0 16px"><div style="width:120px;height:16px;border-radius:4px;background:#F1F3F6"></div></div><sc-for list="{{ five }}" as="i" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:110px 1fr 160px;gap:12px;align-items:center;height:44px;padding:0 16px;border-bottom:1px solid #E3E6EB"><div style="height:24px;border-radius:6px;background:#F1F3F6"></div><div style="height:14px;width:60%;border-radius:4px;background:linear-gradient(90deg,#F1F3F6 25%,#E3E6EB 50%,#F1F3F6 75%);background-size:200% 100%;animation:sk 1.4s linear infinite"></div><div style="height:12px;border-radius:4px;background:#F1F3F6"></div></div></sc-for></section>
+          </div>
+        </div>
+      </div>
+
+      <div data-screen-label="6.12 D لا شيء يحتاج انتباهك" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+        <dc-import name="Shell Sidebar" active="owner" owner="{{ true }}" collapsed="{{ true }}" followups="{{ 0 }}" hint-size="64px,768px"></dc-import>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+          <div style="height:56px;flex:none;background:#FFEDD5;color:#B45309;display:flex;align-items:center;gap:12px;padding:0 24px;font-size:14px;font-weight:600;border-bottom:1px solid #E3E6EB"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>بيانات حتى 26 سبتمبر 2026 – <span dir="ltr">14:02</span> · للعرض فقط</span><div style="flex:1"></div><span style="font-weight:500">النسخة رقم 118 · استُوردت الآن</span></div>
+          <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+            <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">لوحة المالك</h1><span style="font-size:14px;color:#5B6674">سبتمبر 2026</span></div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
+              <sc-for list="{{ kpisClean }}" as="k" hint-placeholder-count="5"><div style="border:1px solid #E3E6EB;border-radius:8px;padding:12px 16px;background:#fff"><div style="font-size:12px;font-weight:500;line-height:16px;color:#5B6674">{{ k.label }}</div><div style="font-size:28px;font-weight:700;line-height:34px;margin-top:4px;color:{{ k.color }}">{{ k.value }}<span style="font-size:16px;font-weight:600;color:{{ k.unitColor }}"> {{ k.unit }}</span></div></div></sc-for>
+            </div>
+            <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center">
+              <span style="width:48px;height:48px;border-radius:50%;background:#DCFCE7;color:#16A34A;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+              <div style="font-size:16px;font-weight:600;line-height:24px">لا شيء يحتاج انتباهك</div>
+              <div style="font-size:14px;line-height:22px;color:#5B6674">لا إقامات متجاوزة · لا ديون فوق 50,000 · لا تنبيهات مُهمَلة · كل الورديات مطابقة · لا غرف في الصيانة أكثر من 7 أيام</div>
+            </section>
+            <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:12px;height:44px;padding:0 16px;border-bottom:1px solid #E3E6EB"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">الاستجابة للتنبيهات</h2></div>
+              <div style="display:grid;grid-template-columns:1fr 110px 110px 90px 130px;height:40px;align-items:center;background:#F1F3F6;font-size:12px;font-weight:500;color:#5B6674;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB"><div>الموظف</div><div>عدد التنبيهات</div><div>تُصرِّف فيها</div><div>مُهمَلة</div><div>متوسط التأخير</div></div>
+              <sc-for list="{{ staffClean }}" as="s" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1fr 110px 110px 90px 130px;height:40px;align-items:center;font-size:14px;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB;background:{{ s.bg }}"><div style="font-weight:500">{{ s.name }}</div><div>{{ s.total }}</div><div>{{ s.handled }} <span style="font-size:12px;color:#5B6674">({{ s.pct }})</span></div><div style="font-weight:600;color:{{ s.negColor }}">{{ s.neglected }}</div><div>{{ s.delay }}</div></div></sc-for>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1920px;background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;font-size:14px;line-height:22px;display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:16px;font-weight:600;line-height:24px">ملاحظات القرارات (6.12)</div>
+    <div>• الشريط الكهرماني يحل محل الشريط العلوي بالكامل: لا بحث، لا وردية، لا جرس؛ يحمل تاريخ البيانات ورقم النسخة. أي لقطة شاشة تُعرَف فورًا أنها من جهاز المالك.</div>
+    <div>• لا زر teal في اللوحة كلها؛ الروابط فقط. تنبيهات الجهاز (نسخة أحدث / لم تُستورد نسخة) إشعارات مضمّنة تحت الشريط لا تُغلق إلا بتنفيذ الاستيراد.</div>
+    <div>• الرسوم بلونَي primary و <span dir="ltr">#94A3B8</span> فقط؛ مؤشر «تنبيهات مُهمَلة» وحده يستخدم danger عند &gt; 0، ويعود إلى النص الأساسي عند الصفر.</div>
+    <div>• الزمن في الرسم الخطي يتقدّم يسارًا واليوم على اليمين، اتساقًا مع خط زمن الحجوزات (§3.5) — استثناء مُعلَن في وثيقة RTL.</div>
+    <div>• قائمة «يحتاج انتباهك» صفوف 48 بكسل كاملة قابلة للنقر تُفضي إلى التقرير المعني؛ شريحة النوع تستخدم ألوان التغذية الراجعة الناعمة لا ألوان حالة الغرفة إلا لصنف «متجاوزة».</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const occ = [47,50,53,53,57,60,63,60,57,53,50,53,57,63,67,70,77,73,67,63,60,57,60,63,60,57,53,57,60,60];
+    // today on the right: index 29 -> x=600
+    const pts = occ.map((v,i)=>`${(i/29*600).toFixed(1)},${(200-v*2).toFixed(1)}`);
+    const occPts = pts.join(' ');
+    const occAreaPts = `0,200 ${occPts} 600,200`;
+    const K = (label,value,unit,delta,opts={}) => ({label,value,unit,delta,color:opts.color||'#1B2430',unitColor:opts.color||'#5B6674',deltaColor:opts.deltaColor||'#5B6674'});
+    const kpis = [
+      K('الإشغال اليوم','60','٪','18 من 30 غرفة · المتوسط الشهري 58٪'),
+      K('إيراد الشهر','4,250,000','ج.س','+6٪ عن أغسطس'),
+      K('المحصّل','3,890,000','ج.س','92٪ من الإيراد'),
+      K('الديون المستحقة','57,000','ج.س','إقامتان · أكبرها 42,000 (غرفة 305)'),
+      K('تنبيهات مُهمَلة','1','','وردية أحمد علي · 25 سبتمبر',{color:'#DC2626',deltaColor:'#DC2626'})
+    ];
+    const kpisStale = kpis.map((k,i)=>i===0?{...k,value:'57'}:k);
+    const kpisClean = [kpis[0],kpis[1],kpis[2],K('الديون المستحقة','0','ج.س',''),K('تنبيهات مُهمَلة','0','','')];
+    const weeks = [
+      {label:'الأسبوع 4 (22–28)',rev:'62%',col:'54%',revLabel:'0.93M',colLabel:'0.81M'},
+      {label:'الأسبوع 3 (15–21)',rev:'84%',col:'80%',revLabel:'1.26M',colLabel:'1.20M'},
+      {label:'الأسبوع 2 (8–14)',rev:'70%',col:'68%',revLabel:'1.05M',colLabel:'1.02M'},
+      {label:'الأسبوع 1 (1–7)',rev:'68%',col:'58%',revLabel:'1.02M',colLabel:'0.86M'}
+    ];
+    const KIND = { overdue:{kind:'متجاوزة',bg:'#FEE2E2',color:'#7F1D1D'}, debt:{kind:'دين',bg:'#FEF3C7',color:'#78350F'}, neglected:{kind:'تنبيه مُهمَل',bg:'#FEE2E2',color:'#7F1D1D'}, shift:{kind:'فرق وردية',bg:'#FEF3C7',color:'#78350F'}, maint:{kind:'صيانة طويلة',bg:'#E5E7EB',color:'#1F2937'} };
+    const A = (k,text,report) => ({...KIND[k],text,report});
+    const attention = [
+      A('overdue','غرفة 305 · عبدالله حسن موسى · متجاوزة منذ يومين · المتبقي 42,000 ج.س','الإقامات المتجاوزة'),
+      A('overdue','غرفة 207 · حسن آدم إسحق · متجاوزة منذ يوم','الإقامات المتجاوزة'),
+      A('neglected','تنبيه غرفة 305 نُبِّه 3 مرات دون إجراء — وردية أحمد علي 25 سبتمبر','الاستجابة للتنبيهات'),
+      A('debt','دين فوق الحد (50,000): غرفة 305 · 42,000 + دين سابق 12,000 للنزيل','الديون'),
+      A('shift','وردية أحمد علي 25 سبتمبر صباحًا · فرق − 3,000 ج.س','حركة الصندوق والورديات'),
+      A('maint','غرفة 410 في الصيانة منذ 3 أيام (تسرب مياه) — تتجاوز 7 أيام في 30 سبتمبر','حالة الغرف وفترات الخلو')
+    ];
+    const S = (name,total,handled,neglected,delay,z) => ({name,total,handled,pct:Math.round(handled/total*100)+'٪',neglected,negColor:neglected>0?'#DC2626':'#1B2430',delay,bg:z?'#F1F3F6':'#fff'});
+    const staff = [S('أحمد علي',38,31,1,'1 س 40 د',false),S('المدير',21,20,0,'35 د',true),S('سلمى حسن (مساء)',17,14,0,'2 س 05 د',false)];
+    const staffClean = [S('أحمد علي',38,32,0,'1 س 20 د',false),S('المدير',21,21,0,'35 د',true),S('سلمى حسن (مساء)',17,15,0,'1 س 50 د',false)];
+    return { kpis, kpisStale, kpisClean, occPts, occAreaPts, weeks, attention, attentionShort: attention.slice(0,4), staff, staffClean, five:[1,2,3,4,5] };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9ECF0;font-family:"IBM Plex Sans Arabic","Noto Sans Arabic",sans-serif;color:#1B2430}
+a{color:#0F766E;text-decoration:none}a:hover{color:#115E59;text-decoration:underline}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<div dir="rtl" style="padding:48px;display:flex;flex-direction:column;gap:56px;font-family:'IBM Plex Sans Arabic','Noto Sans Arabic',sans-serif;font-variant-numeric:tabular-nums;color:#1B2430;text-align:right;width:max-content">
+
+  <!-- ===== Settings: Rooms · Hotel info · Audit log ===== -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#1B2430;color:#fff;font-size:12px;font-weight:600">6.11 C · D · E</span><span style="font-size:14px;font-weight:600">الإعدادات — الغرف · بيانات الفندق · سجل التدقيق (1366)</span></div>
+    <div style="display:flex;gap:32px">
+
+      <div data-screen-label="6.11 C الغرف" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+        <dc-import name="Shell Sidebar" active="settings" collapsed="{{ true }}" followups="{{ 5 }}" user-name="المدير" role-name="مدير" hint-size="64px,768px"></dc-import>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+          <dc-import name="Shell TopBar" alerts="{{ 5 }}" user-name="المدير" hint-size="100%,56px"></dc-import>
+          <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+            <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">الإعدادات</h1><span style="color:#9AA3AF">/</span><span style="font-size:16px;font-weight:600">الغرف</span><span style="font-size:14px;color:#5B6674">30 غرفة · 4 طوابق</span><div style="flex:1"></div><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:14px;box-sizing:border-box;min-width:140px;justify-content:space-between"><span>الطابق 4</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div><button style="display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:500"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>غرفة جديدة</button></div>
+            <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;flex:1;min-height:0">
+              <nav style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:2px;align-self:start"><sc-for list="{{ tabsRooms }}" as="t" hint-placeholder-count="7"><div style="display:flex;align-items:center;height:40px;padding:0 12px;border-radius:6px;font-size:14px;font-weight:{{ t.weight }};background:{{ t.bg }};color:{{ t.color }}">{{ t.label }}</div></sc-for></nav>
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+                <div style="display:grid;grid-template-columns:90px 1fr 90px 130px 1.4fr 150px 90px;height:40px;align-items:center;background:#F1F3F6;font-size:12px;font-weight:500;color:#5B6674;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB"><div>الرقم</div><div>النوع</div><div>الطابق</div><div>الحالة الآن</div><div>ملاحظة الصيانة</div><div>في الخدمة</div><div></div></div>
+                <sc-for list="{{ rooms }}" as="r" hint-placeholder-count="8">
+                  <div style="display:grid;grid-template-columns:90px 1fr 90px 130px 1.4fr 150px 90px;height:{{ r.h }};align-items:center;font-size:14px;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB;background:{{ r.bg }}">
+                    <div style="font-size:16px;font-weight:700">{{ r.num }}</div>
+                    <sc-if value="{{ r.editing }}" hint-placeholder-val="{{ false }}"><div style="height:36px;border:1px solid #0F766E;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;box-sizing:border-box;outline:2px solid #0F766E;outline-offset:2px">{{ r.type }}<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div></sc-if>
+                    <sc-if value="{{ r.viewing }}" hint-placeholder-val="{{ true }}"><div>{{ r.type }}</div></sc-if>
+                    <div>{{ r.floor }}</div>
+                    <div><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;background:{{ r.soft }};color:{{ r.text }}">{{ r.state }}</span></div>
+                    <sc-if value="{{ r.editing }}" hint-placeholder-val="{{ false }}"><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;padding:0 12px;box-sizing:border-box">{{ r.note }}</div></sc-if>
+                    <sc-if value="{{ r.viewing }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px;color:#5B6674;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.note }}</div></sc-if>
+                    <div style="display:flex;align-items:center;gap:8px"><div style="width:40px;height:22px;border-radius:11px;background:{{ r.togBg }};position:relative"><div style="position:absolute;top:2px;{{ r.togPos }}:2px;width:18px;height:18px;border-radius:50%;background:#fff"></div></div><span style="font-size:12px;color:#5B6674">{{ r.svc }}</span></div>
+                    <sc-if value="{{ r.editing }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:6px"><button style="height:32px;padding:0 10px;border-radius:6px;border:none;background:#0F766E;color:#fff;font:inherit;font-size:12px;font-weight:600">حفظ</button></div></sc-if>
+                    <sc-if value="{{ r.viewing }}" hint-placeholder-val="{{ true }}"><div><a href="#" style="font-size:12px;font-weight:500">تعديل</a></div></sc-if>
+                  </div>
+                </sc-for>
+                <div style="padding:12px 16px;font-size:12px;color:#5B6674;line-height:16px;margin-top:auto;border-top:1px solid #E3E6EB">إخراج غرفة من الخدمة يمنع حجزها ويستثنيها من حساب الإشغال؛ لا يمكن إخراج غرفة مشغولة. تغيير النوع لا يمس الإقامات الجارية.</div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-screen-label="6.11 D بيانات الفندق" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+        <dc-import name="Shell Sidebar" active="settings" collapsed="{{ true }}" followups="{{ 5 }}" user-name="المدير" role-name="مدير" hint-size="64px,768px"></dc-import>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+          <dc-import name="Shell TopBar" alerts="{{ 5 }}" user-name="المدير" hint-size="100%,56px"></dc-import>
+          <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+            <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">الإعدادات</h1><span style="color:#9AA3AF">/</span><span style="font-size:16px;font-weight:600">بيانات الفندق</span></div>
+            <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;flex:1;min-height:0">
+              <nav style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:2px;align-self:start"><sc-for list="{{ tabsHotel }}" as="t" hint-placeholder-count="7"><div style="display:flex;align-items:center;height:40px;padding:0 12px;border-radius:6px;font-size:14px;font-weight:{{ t.weight }};background:{{ t.bg }};color:{{ t.color }}">{{ t.label }}</div></sc-for></nav>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start">
+                <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+                  <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">الهوية — تظهر في المطبوعات</h2>
+                  <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">اسم الفندق (عربي)</span><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;padding:0 12px;font-size:14px;box-sizing:border-box">فندق سكاي تاورز</div></label>
+                  <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">الاسم اللاتيني</span><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;padding:0 12px;font-size:14px;box-sizing:border-box;direction:ltr;justify-content:flex-end">Sky Towers Hotel</div></label>
+                  <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">العنوان</span><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;padding:0 12px;font-size:14px;box-sizing:border-box">الخرطوم · شارع النيل</div></label>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">الهاتف</span><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;padding:0 12px;font-size:14px;box-sizing:border-box"><span dir="ltr">+249 18 377 6600</span></div></label><label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">معرّف الفندق (ثابت)</span><div style="height:36px;border:1px solid #E3E6EB;border-radius:6px;background:#F1F3F6;display:flex;align-items:center;padding:0 12px;font-size:14px;box-sizing:border-box;color:#5B6674"><span dir="ltr">HTL-SKT-001</span></div></label></div>
+                  <div style="display:flex;align-items:center;gap:12px"><div style="width:56px;height:56px;border:1px dashed #C9CED6;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0F766E;direction:ltr">ST</div><div style="flex:1;font-size:12px;color:#5B6674;line-height:16px">شعار للطباعة (أبيض/أسود، PNG، ≤ 200 KB). يظهر في رأس الفاتورة والكشف.</div><button style="height:32px;padding:0 10px;border-radius:6px;border:1px solid #C9CED6;background:#fff;font:inherit;font-size:12px;font-weight:500;color:#1B2430">تغيير</button></div>
+                </section>
+                <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+                  <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">قواعد التشغيل</h2>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">العملة</span><div style="height:36px;border:1px solid #E3E6EB;border-radius:6px;background:#F1F3F6;display:flex;align-items:center;padding:0 12px;font-size:14px;box-sizing:border-box;color:#5B6674">ج.س — جنيه سوداني</div></label>
+                    <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">الأرقام</span><div style="display:inline-flex;height:36px;border:1px solid #C9CED6;border-radius:6px;overflow:hidden;background:#fff"><div style="flex:1;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;background:#CCFBF1;color:#0F766E">123</div><div style="flex:1;display:flex;align-items:center;justify-content:center;font-size:14px;border-inline-start:1px solid #E3E6EB">١٢٣</div></div></label>
+                    <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">نهاية يوم الإقامة</span><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:14px;box-sizing:border-box"><span dir="ltr">23:59</span><span style="font-size:12px;color:#5B6674">تصبح متجاوزة بعدها</span></div></label>
+                    <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">قفل الجلسة بعد</span><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:14px;box-sizing:border-box">15 دقيقة<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div></label>
+                    <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">مرفق إلزامي للمصروف فوق</span><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:14px;box-sizing:border-box"><span>20,000</span><span style="color:#5B6674">ج.س</span></div></label>
+                    <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">الطابعة الحرارية</span><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:14px;box-sizing:border-box"><span dir="ltr">XP-80C (USB)</span><span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#14532D"><span style="width:8px;height:8px;border-radius:50%;background:#16A34A"></span>متصلة</span></div></label>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid #E3E6EB"><div><div style="font-size:14px">طباعة إيصال تلقائيًا بعد كل دفعة</div><div style="font-size:12px;color:#5B6674">حراري 80مم</div></div><div style="width:40px;height:22px;border-radius:11px;background:#0F766E;position:relative"><div style="position:absolute;top:2px;inset-inline-end:2px;width:18px;height:18px;border-radius:50%;background:#fff"></div></div></div>
+                  <div style="display:flex;gap:8px;justify-content:flex-start;padding-top:4px"><button style="height:36px;padding:0 16px;border-radius:6px;border:none;background:#0F766E;color:#fff;font:inherit;font-size:14px;font-weight:500">حفظ</button><span style="font-size:12px;color:#5B6674;align-self:center">آخر حفظ: 1 أغسطس 2026 · المدير</span></div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-screen-label="6.11 E سجل التدقيق" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+        <dc-import name="Shell Sidebar" active="settings" collapsed="{{ true }}" followups="{{ 5 }}" user-name="المدير" role-name="مدير" hint-size="64px,768px"></dc-import>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+          <dc-import name="Shell TopBar" alerts="{{ 5 }}" user-name="المدير" hint-size="100%,56px"></dc-import>
+          <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+            <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">الإعدادات</h1><span style="color:#9AA3AF">/</span><span style="font-size:16px;font-weight:600">سجل التدقيق</span><span style="font-size:14px;color:#5B6674">للقراءة فقط · لا يُحذف</span><div style="flex:1"></div><div style="width:260px;height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 12px;box-sizing:border-box;color:#9AA3AF;font-size:14px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>غرفة، نزيل، مستخدم، معرّف…</div><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:14px;box-sizing:border-box;min-width:130px;justify-content:space-between"><span>اليوم</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:14px;box-sizing:border-box;min-width:150px;justify-content:space-between"><span>كل الأحداث</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div><button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #C9CED6;background:#fff;font:inherit;font-size:14px;font-weight:500;color:#1B2430">تصدير CSV</button></div>
+            <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;flex:1;min-height:0">
+              <nav style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:2px;align-self:start"><sc-for list="{{ tabsAudit }}" as="t" hint-placeholder-count="7"><div style="display:flex;align-items:center;height:40px;padding:0 12px;border-radius:6px;font-size:14px;font-weight:{{ t.weight }};background:{{ t.bg }};color:{{ t.color }}">{{ t.label }}</div></sc-for></nav>
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+                <div style="display:grid;grid-template-columns:90px 130px 1fr 130px 130px;height:40px;align-items:center;background:#F1F3F6;font-size:12px;font-weight:500;color:#5B6674;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB"><div>الوقت</div><div>الحدث</div><div>التفاصيل (قبل ← بعد)</div><div>المستخدم</div><div>المرجع</div></div>
+                <sc-for list="{{ audit }}" as="a" hint-placeholder-count="10">
+                  <div style="display:grid;grid-template-columns:90px 130px 1fr 130px 130px;height:40px;align-items:center;font-size:14px;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB;background:{{ a.bg }}"><div dir="ltr" style="text-align:right;color:#5B6674">{{ a.time }}</div><div><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;background:{{ a.kBg }};color:{{ a.kColor }}">{{ a.kind }}</span></div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.text }}</div><div>{{ a.user }}</div><div dir="ltr" style="text-align:right;font-size:12px;color:#5B6674">{{ a.ref }}</div></div>
+                </sc-for>
+                <div style="height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:12px;color:#5B6674;margin-top:auto;border-top:1px solid #E3E6EB"><span>10 من 148 حدثًا اليوم</span><span>السجل جزء من النسخة الاحتياطية ويُستورد إلى جهاز المالك (سلسلة التدقيق)</span></div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Modals: change room · cancel stay ===== -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#1B2430;color:#fff;font-size:12px;font-weight:600">6.5 E · F</span><span style="font-size:14px;font-weight:600">نافذة تغيير الغرفة · نافذة إلغاء الإقامة (نمط نافذة الخروج: سبب إلزامي، تجاوز المدير)</span></div>
+    <div style="display:flex;gap:32px;align-items:flex-start">
+      <div data-screen-label="6.5 E تغيير الغرفة" role="dialog" style="width:600px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(27,36,48,0.12);display:flex;flex-direction:column;border:1px solid #E3E6EB">
+        <div style="padding:20px 24px;border-bottom:1px solid #E3E6EB;display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0;font-size:20px;font-weight:600;line-height:28px">تغيير الغرفة — محمد عثمان الطيب</h2><button aria-label="إغلاق" style="width:36px;height:36px;border-radius:6px;border:none;background:transparent;color:#5B6674;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+        <div style="padding:20px 24px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;padding:12px 16px;background:#F1F3F6;border-radius:8px">
+            <div><div style="font-size:12px;font-weight:500;color:#5B6674">من</div><div style="font-size:22px;font-weight:700;line-height:28px">203</div><div style="font-size:12px;color:#5B6674">مزدوجة · الطابق 2</div></div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F766E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path></svg>
+            <div><div style="font-size:12px;font-weight:500;color:#5B6674">إلى</div><div style="font-size:22px;font-weight:700;line-height:28px">205</div><div style="font-size:12px;color:#5B6674">مزدوجة · الطابق 2 · جاهزة</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">الغرف المتاحة للفترة المتبقية (حتى 30 أكتوبر) — نفس النوع أولًا</span><div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ freeRooms }}" as="c" hint-placeholder-count="5"><button style="display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:6px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.color }};font:inherit;font-size:14px;font-weight:600"><span>{{ c.num }}</span><span style="font-size:12px;font-weight:400;color:{{ c.sub }}">{{ c.meta }}</span></button></sc-for></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1px solid #E3E6EB;padding-top:12px">
+            <div><div style="font-size:12px;font-weight:500;color:#5B6674">فرق السعر</div><div style="font-size:16px;font-weight:600;color:#14532D">0 ج.س</div><div style="font-size:12px;color:#5B6674">نفس النوع — لا تغيير في الفاتورة</div></div>
+            <div><div style="font-size:12px;font-weight:500;color:#5B6674">حالة 203 بعد النقل</div><div style="display:inline-flex;height:32px;border:1px solid #C9CED6;border-radius:6px;overflow:hidden;background:#fff;margin-top:4px"><div style="display:flex;align-items:center;padding:0 12px;font-size:14px;font-weight:600;background:#CCFBF1;color:#0F766E">تحتاج تنظيف</div><div style="display:flex;align-items:center;padding:0 12px;font-size:14px;border-inline-start:1px solid #E3E6EB">صيانة</div></div></div>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">سبب التغيير <span style="color:#DC2626">*</span></span><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:14px;box-sizing:border-box">عطل في التكييف<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div></label>
+          <div style="font-size:12px;color:#5B6674;line-height:16px">يُنقل الحجز والفاتورة والتنبيهات إلى 205 ويُسجَّل النقل في الفاتورة كسطر بلا قيمة. عند اختلاف النوع يُحسب فرق السعر لليالي المتبقية ويحتاج موافقة المدير إن كان سالبًا.</div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid #E3E6EB;display:flex;gap:8px;align-items:center"><button style="height:44px;padding:0 24px;border-radius:6px;border:none;background:#0F766E;color:#fff;font:inherit;font-size:14px;font-weight:600">تأكيد النقل إلى 205</button><div style="flex:1"></div><button style="height:44px;padding:0 16px;border-radius:6px;border:none;background:transparent;color:#5B6674;font:inherit;font-size:14px;font-weight:500">إلغاء</button></div>
+      </div>
+
+      <div data-screen-label="6.5 F إلغاء الإقامة" role="dialog" style="width:600px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(27,36,48,0.12);display:flex;flex-direction:column;border:1px solid #E3E6EB">
+        <div style="padding:20px 24px;border-bottom:1px solid #E3E6EB;display:flex;align-items:center;gap:12px"><span style="width:40px;height:40px;border-radius:50%;background:#FEE2E2;color:#DC2626;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg></span><div style="flex:1"><h2 style="margin:0;font-size:20px;font-weight:600;line-height:28px">إلغاء الإقامة — غرفة 203</h2><div style="font-size:14px;color:#5B6674">محمد عثمان الطيب · شهري · بدأت 1 أكتوبر · 12 ليلة مضت</div></div><button aria-label="إغلاق" style="width:36px;height:36px;border-radius:6px;border:none;background:transparent;color:#5B6674;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+        <div style="padding:20px 24px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;gap:12px;padding:12px 16px;background:#FEE2E2;border-radius:8px;color:#7F1D1D;font-size:14px;line-height:22px"><span>الإلغاء لا يحذف شيئًا: تُغلق الإقامة بحالة «ملغاة»، وتبقى الفاتورة والدفعات كما هي، ويُسجَّل الإجراء باسمك في التدقيق والتقارير («التعديلات والخصومات والإلغاءات»).</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">تسوية الليالي المستهلكة (12 من 30)</span>
+            <label style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border:1px solid #0F766E;border-radius:6px;background:#CCFBF1;box-sizing:border-box"><span style="width:18px;height:18px;border-radius:50%;border:5px solid #0F766E;box-sizing:border-box;background:#fff;flex:none"></span><span style="flex:1;font-size:14px;font-weight:600">احتساب 12 ليلة بسعر اليومي</span><span style="font-size:14px;font-weight:600">180,000 ج.س</span></label>
+            <label style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border:1px solid #C9CED6;border-radius:6px;background:#fff;box-sizing:border-box"><span style="width:18px;height:18px;border-radius:50%;border:1.5px solid #C9CED6;box-sizing:border-box;flex:none"></span><span style="flex:1;font-size:14px;font-weight:600">احتساب أسبوع + 5 ليالٍ</span><span style="font-size:14px;font-weight:600">170,000 ج.س</span></label>
+            <label style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border:1px solid #C9CED6;border-radius:6px;background:#fff;box-sizing:border-box"><span style="width:18px;height:18px;border-radius:50%;border:1.5px solid #C9CED6;box-sizing:border-box;flex:none"></span><span style="flex:1;font-size:14px;font-weight:600">مبلغ يدوي <span style="font-size:12px;font-weight:400;color:#5B6674">— يتطلب سببًا وموافقة المدير</span></span></label>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;border-top:1px solid #E3E6EB;padding-top:12px">
+            <div><div style="font-size:12px;font-weight:500;color:#5B6674">الإجمالي الجديد</div><div style="font-size:16px;font-weight:600">180,000 ج.س</div><div style="font-size:12px;color:#5B6674">بدل 285,000</div></div>
+            <div><div style="font-size:12px;font-weight:500;color:#5B6674">المدفوع</div><div style="font-size:16px;font-weight:600">270,000 ج.س</div></div>
+            <div><div style="font-size:12px;font-weight:500;color:#5B6674">يُرَدّ للنزيل</div><div style="font-size:28px;font-weight:700;line-height:34px;color:#16A34A">90,000 ج.س</div><div style="font-size:12px;color:#5B6674">يُسجَّل كردّ نقدي من الوردية</div></div>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">سبب الإلغاء <span style="color:#DC2626">*</span></span><div style="height:56px;border:1px solid #C9CED6;border-radius:6px;background:#fff;padding:8px 12px;font-size:14px;line-height:22px;box-sizing:border-box">سفر مفاجئ — طلب النزيل إنهاء الإقامة مبكرًا.</div></label>
+          <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">كلمة مرور المدير</span><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:14px;box-sizing:border-box"><span style="letter-spacing:4px">••••••••</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg></div></label>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid #E3E6EB;display:flex;gap:8px;align-items:center"><button style="height:44px;padding:0 24px;border-radius:6px;border:none;background:#DC2626;color:#fff;font:inherit;font-size:14px;font-weight:600">إلغاء الإقامة وردّ 90,000</button><div style="flex:1"></div><button style="height:44px;padding:0 16px;border-radius:6px;border:none;background:transparent;color:#5B6674;font:inherit;font-size:14px;font-weight:500">رجوع</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 6.10 representative report + ===== Migration flow ===== -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#1B2430;color:#fff;font-size:12px;font-weight:600">6.10 B · ترحيل</span><span style="font-size:14px;font-weight:600">تقرير «الوصول والمغادرة» (نموذج بقية التقارير) · تدفق الترحيل الأولي يوم الافتتاح (جهاز الاستقبال، المدير)</span></div>
+    <div style="display:flex;gap:32px">
+
+      <div data-screen-label="6.10 B الوصول والمغادرة" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+        <dc-import name="Shell Sidebar" active="reports" collapsed="{{ true }}" followups="{{ 5 }}" user-name="المدير" role-name="مدير" hint-size="64px,768px"></dc-import>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+          <dc-import name="Shell TopBar" alerts="{{ 5 }}" user-name="المدير" hint-size="100%,56px"></dc-import>
+          <div style="flex:1;min-height:0;padding:24px;display:grid;grid-template-columns:220px 1fr;grid-template-rows:36px 1fr;gap:12px;box-sizing:border-box">
+            <div style="display:flex;align-items:center;gap:12px;grid-column:span 2"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">التقارير</h1><span style="color:#9AA3AF">/</span><span style="font-size:16px;font-weight:600">الوصول والمغادرة</span><div style="flex:1"></div><div style="display:inline-flex;height:36px;border:1px solid #C9CED6;border-radius:6px;overflow:hidden;background:#fff"><div style="display:flex;align-items:center;padding:0 12px;font-size:14px;font-weight:600;background:#CCFBF1;color:#0F766E">اليوم</div><div style="display:flex;align-items:center;padding:0 12px;font-size:14px;border-inline-start:1px solid #E3E6EB">غدًا</div><div style="display:flex;align-items:center;padding:0 12px;font-size:14px;border-inline-start:1px solid #E3E6EB">هذا الأسبوع</div></div><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:14px;box-sizing:border-box;min-width:120px;justify-content:space-between"><span>كل الغرف</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div><button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #C9CED6;background:#fff;font:inherit;font-size:14px;font-weight:500;color:#1B2430">PDF</button><button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #C9CED6;background:#fff;font:inherit;font-size:14px;font-weight:500;color:#1B2430">Excel</button><button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #C9CED6;background:#fff;font:inherit;font-size:14px;font-weight:500;color:#1B2430">CSV</button></div>
+            <nav style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:2px;align-self:start"><sc-for list="{{ reports }}" as="r" hint-placeholder-count="11"><div style="display:flex;align-items:center;justify-content:space-between;height:36px;padding:0 12px;border-radius:6px;font-size:14px;font-weight:{{ r.weight }};background:{{ r.bg }};color:{{ r.color }}"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.label }}</span><span style="font-size:12px;color:{{ r.badgeColor }};font-weight:600">{{ r.badge }}</span></div></sc-for></nav>
+            <div style="display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+                <div style="border:1px solid #E3E6EB;border-radius:8px;padding:12px 16px;background:#fff;display:flex;align-items:baseline;justify-content:space-between"><div style="font-size:12px;font-weight:500;color:#5B6674">وصول اليوم</div><div style="font-size:28px;font-weight:700;line-height:34px">3</div></div>
+                <div style="border:1px solid #E3E6EB;border-radius:8px;padding:12px 16px;background:#fff;display:flex;align-items:baseline;justify-content:space-between"><div style="font-size:12px;font-weight:500;color:#5B6674">مغادرة اليوم</div><div style="font-size:28px;font-weight:700;line-height:34px">4</div></div>
+                <div style="border:1px solid #E3E6EB;border-radius:8px;padding:12px 16px;background:#fff;display:flex;align-items:baseline;justify-content:space-between"><div style="font-size:12px;font-weight:500;color:#5B6674">غرف تحتاج تجهيزًا قبل الوصول</div><div style="font-size:28px;font-weight:700;line-height:34px;color:#D97706">1</div></div>
+              </div>
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column">
+                <div style="display:grid;grid-template-columns:90px 80px 1.4fr 120px 1fr 130px 140px;height:40px;align-items:center;background:#F1F3F6;font-size:12px;font-weight:500;color:#5B6674;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB"><div>الحركة</div><div>الغرفة</div><div>النزيل</div><div>النوع</div><div>الفترة</div><div>المتبقي</div><div>الغرفة جاهزة؟</div></div>
+                <sc-for list="{{ arrDep }}" as="a" hint-placeholder-count="7">
+                  <div style="display:grid;grid-template-columns:90px 80px 1.4fr 120px 1fr 130px 140px;height:40px;align-items:center;font-size:14px;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB;background:{{ a.bg }}"><div><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;background:#F1F3F6">{{ a.move }}</span></div><div style="font-weight:600">{{ a.room }}</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.guest }}</div><div>{{ a.type }}</div><div style="color:#5B6674;font-size:12px">{{ a.range }}</div><div style="font-weight:600;color:{{ a.balColor }}">{{ a.bal }}</div><div><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;background:{{ a.rBg }};color:{{ a.rColor }}">{{ a.ready }}</span></div></div>
+                </sc-for>
+                <div style="height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:12px;color:#5B6674;margin-top:auto;border-top:1px solid #E3E6EB"><span>7 حركات · السبت 26 سبتمبر 2026</span><span>«جاهزة؟» تعكس حالة الغرفة الآن؛ الحجز المؤكد يظهر حتى لو لم يصل النزيل.</span></div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-screen-label="ترحيل البيانات الأولي" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+        <dc-import name="Shell Sidebar" active="settings" collapsed="{{ true }}" followups="{{ 0 }}" user-name="المدير" role-name="مدير" hint-size="64px,768px"></dc-import>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+          <dc-import name="Shell TopBar" alerts="{{ 0 }}" user-name="المدير" shift-open="{{ false }}" backup-stale="{{ true }}" hint-size="100%,56px"></dc-import>
+          <div style="height:44px;display:flex;align-items:center;gap:12px;padding:0 24px;background:#DBEAFE;color:#1E3A8A;font-size:14px;font-weight:500;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg><span style="flex:1">وضع الإعداد الأولي — لا تنبيهات ولا ورديات حتى يُكتمل الترحيل ويُفتح النظام رسميًا.</span></div>
+          <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+            <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">ترحيل البيانات الأولي</h1><span style="font-size:14px;color:#5B6674">يوم الافتتاح · الخطوة 3 من 4</span></div>
+            <div style="display:flex;align-items:center;gap:8px;padding:0 4px"><sc-for list="{{ migSteps }}" as="s" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:8px"><span style="width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:{{ s.bg }};color:{{ s.color }};border:1px solid {{ s.border }}">{{ s.n }}</span><span style="font-size:14px;font-weight:{{ s.weight }};color:{{ s.textColor }}">{{ s.label }}</span><span style="width:40px;height:1px;background:#E3E6EB;display:{{ s.lineShow }}"></span></div></sc-for></div>
+            <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:12px;flex:1;min-height:0">
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+                <div style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border-bottom:1px solid #E3E6EB"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">الإقامات الجارية — من الدفتر الورقي</h2><span style="font-size:14px;color:#5B6674">18 من 18 غرفة مشغولة مُدخلة</span><div style="flex:1"></div><button style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 10px;border-radius:6px;border:1px solid #C9CED6;background:#fff;font:inherit;font-size:12px;font-weight:500;color:#1B2430">استيراد من Excel</button></div>
+                <div style="display:grid;grid-template-columns:70px 1.3fr 1fr 110px 120px 120px;height:40px;align-items:center;background:#F1F3F6;font-size:12px;font-weight:500;color:#5B6674;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB"><div>الغرفة</div><div>النزيل</div><div>الوصول الفعلي</div><div>النوع</div><div>المدفوع سابقًا</div><div>المتبقي</div></div>
+                <sc-for list="{{ mig }}" as="m" hint-placeholder-count="7">
+                  <div style="display:grid;grid-template-columns:70px 1.3fr 1fr 110px 120px 120px;height:40px;align-items:center;font-size:14px;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB;background:{{ m.bg }}"><div style="font-weight:600">{{ m.room }}</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.guest }}</div><div style="color:#5B6674;font-size:12px">{{ m.arr }}</div><div>{{ m.type }}</div><div>{{ m.paid }}</div><div style="font-weight:600;color:{{ m.balColor }}">{{ m.bal }}</div></div>
+                </sc-for>
+                <div style="height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:12px;color:#5B6674;margin-top:auto;border-top:1px solid #E3E6EB"><span>الدفعات السابقة تُسجَّل كقيد «رصيد مُرحَّل» بتاريخ اليوم — لا تدخل وردية</span><span>إجمالي المتبقي المُرحَّل: 128,000 ج.س</span></div>
+              </section>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 20px;display:flex;flex-direction:column;gap:10px">
+                  <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">قائمة التحقق قبل الفتح</h2>
+                  <sc-for list="{{ checklist }}" as="c" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:12px;height:36px;border-bottom:1px solid #E3E6EB"><span style="width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:{{ c.bg }};color:{{ c.color }};flex:none">{{ c.icon }}</span><span style="font-size:14px;flex:1">{{ c.label }}</span><span style="font-size:12px;color:#5B6674">{{ c.detail }}</span></div></sc-for>
+                </section>
+                <section style="background:#FEF3C7;border-radius:8px;padding:12px 16px;display:flex;gap:12px;color:#78350F;font-size:14px;line-height:22px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg><div><strong>الفتح الرسمي لا يُعكس.</strong> بعده تُحسب الليالي والتنبيهات من الساعة الحالية، وتُفتح أول وردية برصيد الدرج الفعلي، وتُنشأ النسخة رقم 1.</div></section>
+                <div style="display:flex;gap:8px;margin-top:auto"><button style="height:44px;padding:0 24px;border-radius:6px;border:none;background:#F1F3F6;color:#9AA3AF;font:inherit;font-size:14px;font-weight:600">فتح النظام رسميًا</button><button style="height:44px;padding:0 16px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:500">حفظ والمتابعة لاحقًا</button><span style="font-size:12px;color:#5B6674;align-self:center">يُفعَّل بعد اكتمال القائمة</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1920px;background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;font-size:14px;line-height:22px;display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:16px;font-weight:600;line-height:24px">قرارات الإصدار 2 (اتُّخذت نيابةً عنك)</div>
+    <div>• الانحرافات الأربعة عن البريف مُعتمَدة كما بُنيت: صف سريع + درج للمصروف (كلاهما)، لوحة يمنى للنزيل، تعديل inline لقواعد التنبيه، إجراءات الحجوزات للصف المحدد فقط. السبب المشترك: أقل انتقالًا وأقل ضجيجًا لموظف واقف.</div>
+    <div>• الإعدادات الثلاثة الباقية تتبع النمط نفسه (قائمة يمنى + جدول inline). سجل التدقيق للقراءة فقط بصيغة «قبل ← بعد» ومرجع LTR.</div>
+    <div>• تغيير الغرفة: نفس النوع = فرق صفر ولا موافقة؛ اختلاف النوع بفرق سالب يطلب المدير. الإلغاء: زر خطر بنص يذكر مبلغ الردّ صراحةً، وثلاث طرق للتسوية مثل المدة المختلطة في 6.4.</div>
+    <div>• تقرير واحد إضافي (الوصول والمغادرة) يثبت أن قالب التقرير يغطي البقية: بلاطات ≤ 3 + جدول + سطر معادلة/ملاحظة + PDF/Excel/CSV ثانوية.</div>
+    <div>• الترحيل الأولي: أربع خطوات (الغرف والأسعار ← المستخدمون ← الإقامات الجارية ← الفتح الرسمي)؛ الأرصدة السابقة قيد «رصيد مُرحَّل» خارج الورديات، والفتح الرسمي لا يُعكس.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const h = React.createElement;
+    const ok = h('svg',{width:14,height:14,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2.5,strokeLinecap:'round',strokeLinejoin:'round'},h('path',{d:'M20 6 9 17l-5-5'}));
+    const dot = h('span',{style:{width:8,height:8,borderRadius:'50%',background:'#9AA3AF',display:'inline-block'}});
+    const z = i => i%2 ? '#F1F3F6' : '#fff';
+    const tabs = active => ['المستخدمون','أنواع الغرف والأسعار','الغرف','قواعد التنبيه','النسخ الاحتياطي','بيانات الفندق','سجل التدقيق'].map(label=>{const a=label===active;return{label,bg:a?'#CCFBF1':'transparent',color:a?'#0F766E':'#1B2430',weight:a?600:500};});
+    const S = { ready:['جاهزة','#DCFCE7','#14532D'], occupied:['مشغولة','#DBEAFE','#1E3A8A'], cleaning:['تحتاج تنظيف','#FEF3C7','#78350F'], maintenance:['صيانة','#E5E7EB','#1F2937'], off:['خارج الخدمة','#F1F3F6','#5B6674'] };
+    const rooms = [['405','مزدوجة','occupied','',true],['406','مزدوجة','ready','',true],['407','مزدوجة','occupied','',true],['408','مزدوجة','occupied','',true],['409','مزدوجة','ready','',true],['410','مزدوجة','maintenance','تسرب مياه — فني السباكة 26 سبتمبر',true,true],['411','مزدوجة','occupied','',true],['412','مزدوجة','off','تجديد كامل حتى نوفمبر',false]]
+      .map(([num,type,k,note,svc,editing],i)=>({num,type,floor:'4',state:S[k][0],soft:S[k][1],text:S[k][2],note:note||'—',svc:svc?'نعم':'لا',togBg:svc?'#0F766E':'#C9CED6',togPos:svc?'inset-inline-end':'inset-inline-start',editing:!!editing,viewing:!editing,h:editing?'60px':'44px',bg:editing?'#CCFBF1':z(i)}));
+    const K = { pay:['دفعة','#F1F3F6','#1B2430'], stay:['إقامة','#F1F3F6','#1B2430'], rev:['عكس','#FEE2E2','#7F1D1D'], override:['تجاوز مدير','#FEF3C7','#78350F'], settings:['إعدادات','#F1F3F6','#5B6674'], auth:['دخول','#F1F3F6','#5B6674'], view:['عرض حساس','#FEF3C7','#78350F'] };
+    const audit = [
+      ['14:40','pay','دفعة 15,000 نقدي — غرفة 203 · INV-000318','أحمد علي','RCP-004712'],
+      ['14:35','auth','تسجيل دخول — جهاز الاستقبال','أحمد علي','RECEPTION-PC'],
+      ['14:20','view','عرض صورة هوية — عبدالله حسن موسى','المدير','GST-00291'],
+      ['13:42','stay','تأكيد مغادرة — غرفة 204 · تحتاج تنظيف','أحمد علي','STY-01188'],
+      ['12:05','rev','عكس مصروف 5,000 «مواد تنظيف» — المبلغ الصحيح 4,500','أحمد علي','EXP-001181'],
+      ['11:20','stay','بانتظار الرد — غرفة 203 · «سيؤكد التمديد بعد الظهر»','أحمد علي','ALR-00934'],
+      ['10:15','settings','قاعدة التنبيه «شهري»: قبل 3 أيام ← قبل 5 أيام','المدير','RULE-03'],
+      ['09:58','override','تسجيل خروج بدين 12,000 — غرفة 302 · «سيحوّل من السعودية»','المدير','STY-01102'],
+      ['09:40','pay','دفعة 120,000 بنكك BOK-77812 — غرفة 203','أحمد علي','RCP-004701'],
+      ['08:00','stay','فتح وردية — رصيد افتتاحي 50,000','أحمد علي','SH-0611']
+    ].map(([time,k,text,user,ref],i)=>({time,kind:K[k][0],kBg:K[k][1],kColor:K[k][2],text,user,ref,bg:z(i)}));
+    const freeRooms = [['205','جاهزة · مزدوجة',true],['202','جاهزة · مزدوجة',false],['406','جاهزة · مزدوجة',false],['302','جاهزة · جناح +160,000',false],['304','جاهزة · جناح +160,000',false]]
+      .map(([num,meta,sel])=>({num,meta,border:sel?'#0F766E':'#C9CED6',bg:sel?'#CCFBF1':'#fff',color:sel?'#0F766E':'#1B2430',sub:sel?'#0F766E':'#5B6674'}));
+    const reports = [['حالة الغرف وفترات الخلو',''],['الإشغال',''],['النزلاء الحاليون',''],['الوصول والمغادرة',''],['القريبة من الانتهاء والمتجاوزة','2'],['الإيرادات والتحصيل',''],['الديون','4'],['المصروفات',''],['حركة الصندوق والورديات','2'],['التعديلات والخصومات والإلغاءات',''],['الاستجابة للتنبيهات','1']]
+      .map(([label,badge])=>{const a=label==='الوصول والمغادرة';return{label,badge,weight:a?600:500,bg:a?'#CCFBF1':'transparent',color:a?'#0F766E':'#1B2430',badgeColor:badge?'#DC2626':'transparent'};});
+    const arrDep = [
+      ['وصول','101','عمر خالد البشير','يومي','26 سبتمبر – 3 أكتوبر','0','مسكّن'],
+      ['وصول','102','ياسر عبدالرحيم (ملغى)','يومي','26 – 28 سبتمبر','—','ملغى'],
+      ['وصول','306','شركة النيل — وفد','يومي','26 – 30 سبتمبر','80,000 عربون','تحتاج تنظيف'],
+      ['مغادرة','204','فاطمة أحمد النور','يومي','24 – 26 سبتمبر','0','—'],
+      ['مغادرة','108','نادية صالح عبدالله','يومي','21 – 26 سبتمبر','0','—'],
+      ['مغادرة','303','الصادق محمد الحسن','يومي','24 – 27 سبتمبر','6,000','—'],
+      ['مغادرة','305','عبدالله حسن موسى','أسبوعي','17 – 24 سبتمبر (متجاوزة)','42,000','—']
+    ].map(([move,room,guest,type,range,bal,ready],i)=>({move,room,guest,type,range,bal:bal==='0'?'0':bal,balColor:/^\d/.test(bal)&&bal!=='0'&&!/عربون/.test(bal)?'#DC2626':'#1B2430',ready,rBg:ready==='مسكّن'?'#DBEAFE':ready==='تحتاج تنظيف'?'#FEF3C7':ready==='ملغى'?'#F1F3F6':'transparent',rColor:ready==='مسكّن'?'#1E3A8A':ready==='تحتاج تنظيف'?'#78350F':'#9AA3AF',bg:z(i)}));
+    const migSteps = ['الغرف والأسعار','المستخدمون','الإقامات الجارية','الفتح الرسمي'].map((label,i)=>{const n=i+1,cur=3,done=n<cur,act=n===cur;return{n:done?'✓':String(n),label,bg:done?'#0F766E':act?'#CCFBF1':'#fff',color:done?'#fff':act?'#0F766E':'#9AA3AF',border:done||act?'#0F766E':'#C9CED6',weight:act?600:500,textColor:act?'#1B2430':done?'#5B6674':'#9AA3AF',lineShow:n<4?'block':'none'};});
+    const mig = [['101','عمر خالد البشير','20 سبتمبر','يومي','60,000','24,000'],['103','هالة محمد يوسف','22 سبتمبر','يومي','30,000','18,000'],['107','إبراهيم عوض الكريم','10 سبتمبر','شهري','300,000','0'],['203','محمد عثمان الطيب','1 سبتمبر','شهري','285,000','15,000'],['207','حسن آدم إسحق','23 سبتمبر','يومي','0','36,000'],['301','ليلى حامد الفكي','22 سبتمبر','يومي','75,000','25,000'],['305','عبدالله حسن موسى','17 سبتمبر','أسبوعي','35,000','42,000']]
+      .map(([room,guest,arr,type,paid,bal],i)=>({room,guest,arr,type,paid,bal,balColor:bal==='0'?'#5B6674':'#DC2626',bg:z(i)}));
+    const ck = (label,detail,done) => ({label,detail,icon:done?ok:dot,bg:done?'#DCFCE7':'#F1F3F6',color:done?'#16A34A':'#9AA3AF'});
+    const checklist = [ck('30 غرفة بأنواعها وأسعارها','3 أنواع · 9 أسعار',true),ck('مستخدمان على الأقل (مدير + استقبال)','3 مستخدمين',true),ck('كل الغرف المشغولة مُدخلة','18 / 18',true),ck('ساعة الجهاز صحيحة','مطابقة للخادم',true),ck('مجلد النسخ الاحتياطي + مجلد ثانٍ','D: ✓ · E: غير متصل',false),ck('عدّ الدرج للرصيد الافتتاحي الأول','لم يُدخل',false)];
+    return { tabsRooms:tabs('الغرف'), tabsHotel:tabs('بيانات الفندق'), tabsAudit:tabs('سجل التدقيق'), rooms, audit, freeRooms, reports, arrDep, migSteps, mig, checklist };
+  }
+}
+</script>
+</body>
+</html>

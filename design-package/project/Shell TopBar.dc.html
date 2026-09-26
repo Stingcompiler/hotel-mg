@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>body{margin:0}a{color:#0F766E;text-decoration:none}a:hover{color:#115E59}</style>
+</helmet>
+<header dir="rtl" style="height:56px;box-sizing:border-box;background:#fff;border-bottom:1px solid #E3E6EB;display:flex;align-items:center;gap:12px;padding:0 24px;font-family:'IBM Plex Sans Arabic','Noto Sans Arabic',sans-serif;color:#1B2430;font-variant-numeric:tabular-nums">
+  <div style="width:360px;height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 12px;box-sizing:border-box;color:#9AA3AF;font-size:14px">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+    <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ابحث برقم الغرفة أو الاسم أو الهاتف</span>
+  </div>
+  <span style="display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:6px;font-size:12px;font-weight:500;background:{{ shiftBg }};color:{{ shiftColor }};white-space:nowrap"><span style="width:8px;height:8px;border-radius:50%;background:{{ shiftDot }}"></span>{{ shiftText }}</span>
+  <div style="flex:1"></div>
+  <span style="display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:6px;font-size:12px;font-weight:500;background:{{ backupBg }};color:{{ backupColor }};white-space:nowrap">{{ backupText }}</span>
+  <button style="position:relative;width:36px;height:36px;border-radius:6px;border:1px solid transparent;background:transparent;color:#1B2430;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#F1F3F6" aria-label="التنبيهات">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+    <sc-if value="{{ hasAlerts }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:0;inset-inline-start:0;display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#DC2626;color:#fff;font-size:11px;font-weight:600;border:2px solid #fff;box-sizing:content-box">{{ alerts }}</span></sc-if>
+  </button>
+  <button style="display:flex;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;border-radius:6px;border:1px solid transparent;background:transparent;font:inherit;font-size:14px;color:#1B2430;cursor:pointer" style-hover="background:#F1F3F6">
+    <span style="width:28px;height:28px;border-radius:50%;background:#CCFBF1;color:#0F766E;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">{{ initial }}</span>
+    <span>{{ userName }}</span>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+  </button>
+</header>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1680,&quot;height&quot;:56},&quot;shiftOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;backupStale&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;alerts&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:0,&quot;max&quot;:99},&quot;userName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;أحمد علي&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;shiftSince&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;08:00&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;backupTime&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;14:00&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    const shiftOpen = p.shiftOpen ?? true;
+    const backupStale = p.backupStale ?? false;
+    const alerts = p.alerts ?? 5;
+    const userName = p.userName ?? 'أحمد علي';
+    return {
+      shiftText: shiftOpen ? `وردية مفتوحة · ${userName.split(' ')[0]} · منذ ${p.shiftSince ?? '08:00'}` : 'لا توجد وردية مفتوحة',
+      shiftBg: shiftOpen ? '#DCFCE7' : '#F1F3F6', shiftColor: shiftOpen ? '#14532D' : '#5B6674', shiftDot: shiftOpen ? '#16A34A' : '#9AA3AF',
+      backupText: backupStale ? 'لم تُنشأ نسخة منذ 26 ساعة' : `آخر نسخة: اليوم ${p.backupTime ?? '14:00'}`,
+      backupBg: backupStale ? '#FEE2E2' : '#DCFCE7', backupColor: backupStale ? '#7F1D1D' : '#14532D',
+      alerts, hasAlerts: alerts > 0, userName, initial: userName.trim().charAt(0)
+    };
+  }
+}
+</script>
+</body>
+</html>

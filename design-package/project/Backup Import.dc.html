@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9ECF0;font-family:"IBM Plex Sans Arabic","Noto Sans Arabic",sans-serif;color:#1B2430}
+a{color:#0F766E;text-decoration:none}a:hover{color:#115E59;text-decoration:underline}
+@keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<div dir="rtl" style="padding:48px;display:flex;flex-direction:column;gap:56px;font-family:'IBM Plex Sans Arabic','Noto Sans Arabic',sans-serif;font-variant-numeric:tabular-nums;color:#1B2430;text-align:right;width:max-content">
+
+  <!-- ===== A: Reception settings › backup (1920) ===== -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#1B2430;color:#fff;font-size:12px;font-weight:600">6.13 A</span><span style="font-size:14px;font-weight:600">جهاز الاستقبال — الإعدادات › النسخ الاحتياطي — 1920×1080</span><span style="font-size:12px;color:#5B6674">زر الاستيراد معطّل هنا (جهاز المالك فقط)</span></div>
+    <div data-screen-label="6.13 A النسخ الاحتياطي استقبال" style="width:1920px;height:1080px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+      <dc-import name="Shell Sidebar" active="settings" followups="{{ 5 }}" user-name="المدير" role-name="مدير" hint-size="240px,1080px"></dc-import>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <dc-import name="Shell TopBar" alerts="{{ 5 }}" user-name="المدير" hint-size="100%,56px"></dc-import>
+        <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box">
+          <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">الإعدادات</h1><span style="color:#9AA3AF">/</span><span style="font-size:16px;font-weight:600">النسخ الاحتياطي</span></div>
+          <div style="display:grid;grid-template-columns:240px 1fr;gap:24px;flex:1;min-height:0">
+            <nav style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:2px;align-self:start">
+              <sc-for list="{{ settingsTabs }}" as="t" hint-placeholder-count="7"><a href="#" style="display:flex;align-items:center;height:40px;padding:0 12px;border-radius:6px;font-size:14px;font-weight:{{ t.weight }};background:{{ t.bg }};color:{{ t.color }};text-decoration:none" style-hover="background:#F1F3F6">{{ t.label }}</a></sc-for>
+            </nav>
+            <div style="display:flex;flex-direction:column;gap:16px;min-width:0;max-width:1100px">
+
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:12px"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">النسخة الاحتياطية والمزامنة</h2><span style="font-size:14px;color:#5B6674">ملفات مشفّرة · تنتقل إلى جهاز المالك عبر USB أو Drive</span></div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+                  <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:none;background:#0F766E;color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#115E59"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m8 11 4 4 4-4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>نسخة احتياطية الآن</button>
+                  <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#F1F3F6"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>مزامنة مع Drive</button>
+                  <div style="display:flex;flex-direction:column;gap:4px"><button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:1px solid #E3E6EB;background:#fff;color:#9AA3AF;font:inherit;font-size:14px;font-weight:600"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"></path><path d="m8 13 4-4 4 4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>استيراد نسخة</button><span style="font-size:12px;color:#5B6674;text-align:center">متاح على جهاز المالك فقط</span></div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+                  <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#14532D"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg><span>تمت · <span dir="ltr">14:02</span> · <span dir="ltr">12.4 MB</span> · محفوظة في <span dir="ltr">D:\SkyTowersBackups</span></span></div>
+                  <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#14532D"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg><span>رُفعت 2 نسخ · <span dir="ltr">14:03</span> · Drive: <span dir="ltr">skytowers.backup@gmail.com</span></span></div>
+                </div>
+              </section>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+                  <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">الجدولة والاحتفاظ</h2>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">نسخة تلقائية كل</span><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:14px;box-sizing:border-box">6 ساعات<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div></label>
+                    <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">الاحتفاظ بآخر</span><div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:14px;box-sizing:border-box"><span>30 نسخة</span><span style="font-size:12px;color:#5B6674">≈ 7 أيام</span></div></label>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid #E3E6EB"><div><div style="font-size:14px">نسخة عند إغلاق كل وردية</div><div style="font-size:12px;color:#5B6674">إضافة إلى الجدولة الزمنية</div></div><div style="width:40px;height:22px;border-radius:11px;background:#0F766E;position:relative"><div style="position:absolute;top:2px;inset-inline-end:2px;width:18px;height:18px;border-radius:50%;background:#fff"></div></div></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid #E3E6EB"><div><div style="font-size:14px">رفع تلقائي إلى Drive بعد كل نسخة</div><div style="font-size:12px;color:#5B6674">يتخطى بصمت عند غياب الإنترنت ويعيد المحاولة</div></div><div style="width:40px;height:22px;border-radius:11px;background:#0F766E;position:relative"><div style="position:absolute;top:2px;inset-inline-end:2px;width:18px;height:18px;border-radius:50%;background:#fff"></div></div></div>
+                </section>
+                <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+                  <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">الوجهات</h2>
+                  <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">المجلد الرئيسي</span><div style="height:36px;border:1px solid #E3E6EB;border-radius:6px;background:#F1F3F6;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:14px;box-sizing:border-box"><span dir="ltr">D:\SkyTowersBackups</span><span style="font-size:12px;color:#5B6674">متاح · 412 GB حر</span></div></div>
+                  <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">مجلد ثانٍ (USB / قرص خارجي)</span><div style="display:flex;gap:8px"><div style="flex:1;height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:14px;box-sizing:border-box"><span dir="ltr">E:\Backup\SkyTowers</span><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;background:#FEE2E2;color:#7F1D1D">غير متصل</span></div><button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #C9CED6;background:#fff;font:inherit;font-size:14px;font-weight:500;color:#1B2430">تغيير</button></div></div>
+                  <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#5B6674">حساب Drive</span><div style="height:36px;border:1px solid #E3E6EB;border-radius:6px;background:#F1F3F6;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:14px;box-sizing:border-box"><span dir="ltr">skytowers.backup@gmail.com</span><a href="#" style="font-size:12px;font-weight:500">فصل الحساب</a></div></div>
+                </section>
+              </div>
+
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border-bottom:1px solid #E3E6EB"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">سجل التشغيل</h2><span style="font-size:14px;color:#5B6674">آخر 7 أيام · 29 عملية · فشلت 2</span></div>
+                <div style="display:grid;grid-template-columns:200px 120px 110px 1fr 140px 140px;height:40px;align-items:center;background:#F1F3F6;font-size:12px;font-weight:500;color:#5B6674;padding:0 16px;gap:16px;border-bottom:1px solid #E3E6EB"><div>الوقت</div><div>النوع</div><div>الحجم</div><div>الوجهة / الرسالة</div><div>الحالة</div><div>بواسطة</div></div>
+                <sc-for list="{{ runs }}" as="r" hint-placeholder-count="7">
+                  <div style="display:grid;grid-template-columns:200px 120px 110px 1fr 140px 140px;height:40px;align-items:center;font-size:14px;padding:0 16px;gap:16px;border-bottom:1px solid #E3E6EB;background:{{ r.bg }}" style-hover="background:#F6F7F9"><div>{{ r.time }}</div><div><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;background:#F1F3F6">{{ r.kind }}</span></div><div dir="ltr" style="text-align:right;color:#5B6674">{{ r.size }}</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ r.msgColor }}"><span dir="ltr">{{ r.msg }}</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:600;background:{{ r.stBg }};color:{{ r.stColor }}"><span style="width:8px;height:8px;border-radius:50%;background:{{ r.stDot }}"></span>{{ r.status }}</span></div><div style="color:#5B6674">{{ r.by }}</div></div>
+                </sc-for>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== B: Owner PC — backup & import page (1920) ===== -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#1B2430;color:#fff;font-size:12px;font-weight:600">6.13 B</span><span style="font-size:14px;font-weight:600">جهاز المالك — النسخ والاستيراد — 1920×1080</span><span style="font-size:12px;color:#5B6674">شريط كهرماني دائم بدل الشريط العلوي · ثلاثة أزرار · تنبيه «توجد نسخة أحدث على Drive»</span></div>
+    <div data-screen-label="6.13 B النسخ والاستيراد مالك" style="width:1920px;height:1080px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+      <dc-import name="Shell Sidebar" active="backup" owner="{{ true }}" followups="{{ 0 }}" hint-size="240px,1080px"></dc-import>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <div style="height:56px;flex:none;background:#FFEDD5;color:#B45309;display:flex;align-items:center;gap:12px;padding:0 24px;font-size:14px;font-weight:600;border-bottom:1px solid #E3E6EB"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>بيانات حتى 25 سبتمبر 2026 – <span dir="ltr">22:10</span> · للعرض فقط</span><div style="flex:1"></div><span style="font-weight:500">آخر استيراد: أمس <span dir="ltr">22:15</span> · النسخة رقم 117 · بواسطة المدير</span></div>
+        <div style="height:44px;display:flex;align-items:center;gap:12px;padding:0 24px;background:#DBEAFE;color:#1E3A8A;font-size:14px;font-weight:500;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg><span>توجد نسخة أحدث على Drive — النسخة رقم 118 · اليوم <span dir="ltr">14:03</span> · <span dir="ltr">12.4 MB</span></span><a href="#" style="color:#1E3A8A;text-decoration:underline">استيرادها الآن</a></div>
+        <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box">
+          <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">النسخ والاستيراد</h1></div>
+          <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px;flex:1;min-height:0">
+            <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:12px"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">النسخة الاحتياطية والمزامنة والاستيراد</h2></div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+                  <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:600"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m8 11 4 4 4-4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>نسخة احتياطية الآن</button>
+                  <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:600"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>مزامنة مع Drive</button>
+                  <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:none;background:#0F766E;color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#115E59"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"></path><path d="m8 13 4-4 4 4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>استيراد نسخة</button>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+                  <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#14532D"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg><span>نسخة جهاز المالك: تمت · أمس <span dir="ltr">22:20</span> · <span dir="ltr">12.1 MB</span> · <span dir="ltr">C:\SkyTowersOwner\Backups</span></span></div>
+                  <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#14532D"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg><span>نُزّلت نسخة جديدة (رقم 118) · <span dir="ltr">14:05</span></span></div>
+                </div>
+                <div style="font-size:12px;color:#5B6674;line-height:16px">الاستيراد يدمج بيانات جهاز الاستقبال في هذه النسخة للعرض فقط؛ لا تُنشأ أي عملية فندقية من هذا الجهاز. يتطلب دور المدير.</div>
+              </section>
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border-bottom:1px solid #E3E6EB"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">سجل الاستيراد</h2><span style="font-size:14px;color:#5B6674">آخر 30 يومًا</span></div>
+                <div style="display:grid;grid-template-columns:200px 100px 110px 1fr 140px 120px;height:40px;align-items:center;background:#F1F3F6;font-size:12px;font-weight:500;color:#5B6674;padding:0 16px;gap:16px;border-bottom:1px solid #E3E6EB"><div>الوقت</div><div>النسخة</div><div>المصدر</div><div>النتيجة</div><div>الحالة</div><div>بواسطة</div></div>
+                <sc-for list="{{ imports }}" as="r" hint-placeholder-count="6">
+                  <div style="display:grid;grid-template-columns:200px 100px 110px 1fr 140px 120px;height:40px;align-items:center;font-size:14px;padding:0 16px;gap:16px;border-bottom:1px solid #E3E6EB;background:{{ r.bg }}"><div>{{ r.time }}</div><div style="font-weight:600">{{ r.no }}</div><div>{{ r.src }}</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ r.msgColor }}">{{ r.msg }}</div><div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:600;background:{{ r.stBg }};color:{{ r.stColor }}"><span style="width:8px;height:8px;border-radius:50%;background:{{ r.stDot }}"></span>{{ r.status }}</span></div><div style="color:#5B6674">{{ r.by }}</div></div>
+                </sc-for>
+              </section>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+                <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">النسخ المتاحة على Drive</h2>
+                <sc-for list="{{ driveFiles }}" as="f" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:12px;height:52px;padding:0 12px;border:1px solid {{ f.border }};border-radius:6px;background:{{ f.bg }}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">النسخة رقم {{ f.no }} <span style="font-size:12px;font-weight:500;color:{{ f.tagColor }}">{{ f.tag }}</span></div><div style="font-size:12px;color:#5B6674">{{ f.when }} · <span dir="ltr">{{ f.size }}</span> · من جهاز الاستقبال</div></div>
+                    <button style="height:32px;padding:0 12px;border-radius:6px;border:1px solid {{ f.btnBorder }};background:#fff;color:{{ f.btnColor }};font:inherit;font-size:12px;font-weight:500">{{ f.btn }}</button>
+                  </div>
+                </sc-for>
+              </section>
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+                <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">حالة البيانات المحلية</h2>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                  <div style="border:1px solid #E3E6EB;border-radius:8px;padding:12px 16px"><div style="font-size:12px;font-weight:500;color:#5B6674">آخر نسخة مستوردة</div><div style="font-size:28px;font-weight:700;line-height:34px">117</div><div style="font-size:12px;color:#5B6674">أمس <span dir="ltr">22:15</span></div></div>
+                  <div style="border:1px solid #E3E6EB;border-radius:8px;padding:12px 16px"><div style="font-size:12px;font-weight:500;color:#5B6674">عمر البيانات</div><div style="font-size:28px;font-weight:700;line-height:34px;color:#D97706">16 <span style="font-size:16px;font-weight:600">ساعة</span></div><div style="font-size:12px;color:#5B6674">التنبيه بعد 72 ساعة</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#5B6674"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>سلسلة التدقيق متصلة من النسخة 101 إلى 117 — لا فجوات.</div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== C: import stepper modals ===== -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#1B2430;color:#fff;font-size:12px;font-weight:600">6.13 C</span><span style="font-size:14px;font-weight:600">نافذة الاستيراد — أربع خطوات + متغيّر التحذير (ملف أقدم من البيانات الحالية)</span></div>
+    <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;max-width:1920px">
+
+      <div data-screen-label="6.13 C1 اختيار الملف" role="dialog" style="width:640px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(27,36,48,0.12);display:flex;flex-direction:column;border:1px solid #E3E6EB">
+        <div style="padding:20px 24px;border-bottom:1px solid #E3E6EB;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0;font-size:20px;font-weight:600;line-height:28px">استيراد نسخة</h2><button aria-label="إغلاق" style="width:36px;height:36px;border-radius:6px;border:none;background:transparent;color:#5B6674;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+          <div style="display:flex;align-items:center;gap:8px"><sc-for list="{{ steps1 }}" as="s" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:{{ s.bg }};color:{{ s.color }};border:1px solid {{ s.border }}">{{ s.n }}</span><span style="font-size:14px;font-weight:{{ s.weight }};color:{{ s.textColor }}">{{ s.label }}</span><span style="width:24px;height:1px;background:#E3E6EB;display:{{ s.lineShow }}"></span></div></sc-for></div>
+        </div>
+        <div style="padding:20px 24px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:12px;font-weight:500;color:#5B6674">من Drive</div>
+          <sc-for list="{{ pick }}" as="f" hint-placeholder-count="3">
+            <label style="display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;border:1px solid {{ f.border }};border-radius:6px;background:{{ f.bg }};box-sizing:border-box;cursor:pointer"><span style="width:18px;height:18px;border-radius:50%;border:{{ f.radio }};box-sizing:border-box;background:#fff;flex:none"></span><div style="flex:1"><div style="font-size:14px;font-weight:600">النسخة رقم {{ f.no }} <span style="font-size:12px;font-weight:500;color:{{ f.tagColor }}">{{ f.tag }}</span></div><div style="font-size:12px;color:#5B6674">{{ f.when }} · <span dir="ltr">{{ f.size }}</span> · جهاز الاستقبال</div></div></label>
+          </sc-for>
+          <div style="display:flex;align-items:center;gap:12px;padding-top:4px"><span style="flex:1;height:1px;background:#E3E6EB"></span><span style="font-size:12px;color:#9AA3AF">أو</span><span style="flex:1;height:1px;background:#E3E6EB"></span></div>
+          <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:1px dashed #C9CED6;background:#F6F7F9;color:#1B2430;font:inherit;font-size:14px;font-weight:500"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>اختيار ملف محلي (USB)…<span style="font-size:12px;color:#5B6674">.stbk</span></button>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid #E3E6EB;display:flex;gap:8px;align-items:center"><button style="height:44px;padding:0 24px;border-radius:6px;border:none;background:#0F766E;color:#fff;font:inherit;font-size:14px;font-weight:600">التالي: التحقق</button><div style="flex:1"></div><button style="height:44px;padding:0 16px;border-radius:6px;border:none;background:transparent;color:#5B6674;font:inherit;font-size:14px;font-weight:500">إلغاء</button></div>
+      </div>
+
+      <div data-screen-label="6.13 C2 التحقق" role="dialog" style="width:640px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(27,36,48,0.12);display:flex;flex-direction:column;border:1px solid #E3E6EB">
+        <div style="padding:20px 24px;border-bottom:1px solid #E3E6EB;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between"><h2 style="margin:0;font-size:20px;font-weight:600;line-height:28px">استيراد نسخة — النسخة رقم 118</h2></div>
+          <div style="display:flex;align-items:center;gap:8px"><sc-for list="{{ steps2 }}" as="s" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:{{ s.bg }};color:{{ s.color }};border:1px solid {{ s.border }}">{{ s.n }}</span><span style="font-size:14px;font-weight:{{ s.weight }};color:{{ s.textColor }}">{{ s.label }}</span><span style="width:24px;height:1px;background:#E3E6EB;display:{{ s.lineShow }}"></span></div></sc-for></div>
+        </div>
+        <div style="padding:20px 24px;display:flex;flex-direction:column;gap:4px">
+          <sc-for list="{{ checks }}" as="c" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;gap:12px;height:44px;border-bottom:1px solid #E3E6EB"><span style="width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:{{ c.bg }};color:{{ c.color }};flex:none">{{ c.icon }}</span><span style="font-size:14px;font-weight:500;flex:1">{{ c.label }}</span><span style="font-size:12px;color:#5B6674"><span dir="ltr">{{ c.detail }}</span></span></div>
+          </sc-for>
+          <div style="font-size:12px;color:#5B6674;padding-top:12px;line-height:16px">لا يبدأ الدمج قبل نجاح الفحوص الخمسة. عند فشل أي فحص تُرفض النسخة ولا تُلمس البيانات المحلية.</div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid #E3E6EB;display:flex;gap:8px;align-items:center"><button style="height:44px;padding:0 24px;border-radius:6px;border:none;background:#F1F3F6;color:#9AA3AF;font:inherit;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px"><span style="width:16px;height:16px;border:2px solid #E3E6EB;border-top-color:#0F766E;border-radius:50%;animation:spin .8s linear infinite;display:inline-block"></span>جارٍ التحقق…</button><button style="height:44px;padding:0 16px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:500">رجوع</button><div style="flex:1"></div><button style="height:44px;padding:0 16px;border-radius:6px;border:none;background:transparent;color:#5B6674;font:inherit;font-size:14px;font-weight:500">إلغاء</button></div>
+      </div>
+
+      <div data-screen-label="6.13 C3 الدمج" role="dialog" style="width:640px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(27,36,48,0.12);display:flex;flex-direction:column;border:1px solid #E3E6EB">
+        <div style="padding:20px 24px;border-bottom:1px solid #E3E6EB;display:flex;flex-direction:column;gap:12px">
+          <h2 style="margin:0;font-size:20px;font-weight:600;line-height:28px">استيراد نسخة — النسخة رقم 118</h2>
+          <div style="display:flex;align-items:center;gap:8px"><sc-for list="{{ steps3 }}" as="s" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:{{ s.bg }};color:{{ s.color }};border:1px solid {{ s.border }}">{{ s.n }}</span><span style="font-size:14px;font-weight:{{ s.weight }};color:{{ s.textColor }}">{{ s.label }}</span><span style="width:24px;height:1px;background:#E3E6EB;display:{{ s.lineShow }}"></span></div></sc-for></div>
+        </div>
+        <div style="padding:32px 24px;display:flex;flex-direction:column;gap:16px;align-items:stretch">
+          <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-size:16px;font-weight:600">جارٍ دمج جدول الدفعات…</span><span style="font-size:28px;font-weight:700;line-height:34px">64٪</span></div>
+          <div style="height:8px;border-radius:4px;background:#F1F3F6;overflow:hidden;direction:rtl"><div style="width:64%;height:100%;background:#0F766E;border-radius:4px"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:#5B6674"><span>7 من 11 جدولًا · 1,284 سجلًا حتى الآن</span><span>الوقت المتبقي ≈ 20 ثانية</span></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#F1F3F6;border-radius:6px;font-size:12px;color:#5B6674;line-height:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>لا تُغلق البرنامج. الدمج يجري داخل معاملة واحدة ويُلغى بالكامل إذا انقطع.</div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid #E3E6EB;display:flex;gap:8px;align-items:center"><button style="height:44px;padding:0 24px;border-radius:6px;border:none;background:#F1F3F6;color:#9AA3AF;font:inherit;font-size:14px;font-weight:600">التالي</button><div style="flex:1"></div><button style="height:44px;padding:0 16px;border-radius:6px;border:none;background:transparent;color:#9AA3AF;font:inherit;font-size:14px;font-weight:500">إلغاء</button></div>
+      </div>
+
+      <div data-screen-label="6.13 C4 النتيجة" role="dialog" style="width:640px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(27,36,48,0.12);display:flex;flex-direction:column;border:1px solid #E3E6EB">
+        <div style="padding:20px 24px;border-bottom:1px solid #E3E6EB;display:flex;flex-direction:column;gap:12px">
+          <h2 style="margin:0;font-size:20px;font-weight:600;line-height:28px">استيراد نسخة — النسخة رقم 118</h2>
+          <div style="display:flex;align-items:center;gap:8px"><sc-for list="{{ steps4 }}" as="s" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:{{ s.bg }};color:{{ s.color }};border:1px solid {{ s.border }}">{{ s.n }}</span><span style="font-size:14px;font-weight:{{ s.weight }};color:{{ s.textColor }}">{{ s.label }}</span><span style="width:24px;height:1px;background:#E3E6EB;display:{{ s.lineShow }}"></span></div></sc-for></div>
+        </div>
+        <div style="padding:20px 24px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#DCFCE7;border-radius:8px;color:#14532D"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg><div><div style="font-size:14px;font-weight:600">اكتمل الاستيراد</div><div style="font-size:14px">البيانات الآن حتى السبت 26 سبتمبر 2026 – <span dir="ltr">14:02</span></div></div></div>
+          <div style="border:1px solid #E3E6EB;border-radius:8px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:1fr 100px 100px 100px;height:40px;align-items:center;background:#F1F3F6;font-size:12px;font-weight:500;color:#5B6674;padding:0 16px;gap:12px"><div>الجدول</div><div>أُضيف</div><div>حُدِّث</div><div>تُجاهل</div></div>
+            <sc-for list="{{ result }}" as="r" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:1fr 100px 100px 100px;height:40px;align-items:center;font-size:14px;padding:0 16px;gap:12px;border-top:1px solid #E3E6EB;background:{{ r.bg }}"><div>{{ r.table }}</div><div style="font-weight:600">{{ r.added }}</div><div>{{ r.updated }}</div><div style="color:#9AA3AF">{{ r.skipped }}</div></div></sc-for>
+            <div style="display:grid;grid-template-columns:1fr 100px 100px 100px;height:40px;align-items:center;font-size:14px;padding:0 16px;gap:12px;border-top:1px solid #E3E6EB;font-weight:600"><div>الإجمالي</div><div>69</div><div>5</div><div style="color:#9AA3AF">0</div></div>
+          </div>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid #E3E6EB;display:flex;gap:8px;align-items:center"><button style="height:44px;padding:0 24px;border-radius:6px;border:none;background:#0F766E;color:#fff;font:inherit;font-size:14px;font-weight:600">فتح لوحة المالك</button><button style="height:44px;padding:0 16px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:500">إغلاق</button></div>
+      </div>
+
+      <div data-screen-label="6.13 C5 تحذير ملف أقدم" role="dialog" style="width:640px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(27,36,48,0.12);display:flex;flex-direction:column;border:1px solid #E3E6EB">
+        <div style="padding:20px 24px;border-bottom:1px solid #E3E6EB;display:flex;flex-direction:column;gap:12px">
+          <h2 style="margin:0;font-size:20px;font-weight:600;line-height:28px">استيراد نسخة — النسخة رقم 112</h2>
+          <div style="display:flex;align-items:center;gap:8px"><sc-for list="{{ steps2 }}" as="s" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:8px"><span style="width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:{{ s.bg }};color:{{ s.color }};border:1px solid {{ s.border }}">{{ s.n }}</span><span style="font-size:14px;font-weight:{{ s.weight }};color:{{ s.textColor }}">{{ s.label }}</span><span style="width:24px;height:1px;background:#E3E6EB;display:{{ s.lineShow }}"></span></div></sc-for></div>
+        </div>
+        <div style="padding:20px 24px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:12px;padding:12px 16px;background:#FEF3C7;border-radius:8px;color:#78350F"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg><div><div style="font-size:14px;font-weight:600;line-height:22px">هذا الملف أقدم من البيانات الحالية</div><div style="font-size:14px;line-height:22px">النسخة 112 بتاريخ 22 سبتمبر <span dir="ltr">08:00</span>، وبياناتك حتى 25 سبتمبر <span dir="ltr">22:10</span>. الاستيراد لن يحذف السجلات الأحدث، لكنه لن يضيف شيئًا جديدًا غالبًا.</div></div></div>
+          <sc-for list="{{ checksOld }}" as="c" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;gap:12px;height:40px;border-bottom:1px solid #E3E6EB"><span style="width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:{{ c.bg }};color:{{ c.color }};flex:none">{{ c.icon }}</span><span style="font-size:14px;font-weight:500;flex:1">{{ c.label }}</span><span style="font-size:12px;color:#5B6674"><span dir="ltr">{{ c.detail }}</span></span></div>
+          </sc-for>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid #E3E6EB;display:flex;gap:8px;align-items:center"><button style="height:44px;padding:0 24px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:600">متابعة رغم ذلك</button><button style="height:44px;padding:0 24px;border-radius:6px;border:none;background:#0F766E;color:#fff;font:inherit;font-size:14px;font-weight:600">اختيار النسخة الأحدث (118)</button><div style="flex:1"></div><button style="height:44px;padding:0 16px;border-radius:6px;border:none;background:transparent;color:#5B6674;font:inherit;font-size:14px;font-weight:500">إلغاء</button></div>
+      </div>
+
+      <div data-screen-label="6.13 D حالات Drive" style="width:640px;background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-size:16px;font-weight:600;line-height:24px">حالات زر «مزامنة مع Drive» وسطر النتيجة</div>
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:12px 16px;align-items:center">
+          <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#5B6674;font:inherit;font-size:14px;font-weight:600"><span style="width:16px;height:16px;border:2px solid #E3E6EB;border-top-color:#0F766E;border-radius:50%;animation:spin .8s linear infinite;display:inline-block"></span>جارٍ المزامنة…</button><div style="font-size:14px;color:#5B6674">يرفع النسخ المحلية غير المرفوعة ثم يتحقق من نسخ أحدث؛ الأزرار الأخرى تبقى فعّالة.</div>
+          <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:600">مزامنة مع Drive</button><div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#14532D"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>رُفعت 2 نسخ · <span dir="ltr">14:03</span></div>
+          <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:600">مزامنة مع Drive</button><div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#14532D"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>نُزّلت نسخة جديدة (رقم 118) · <a href="#">استيرادها</a></div>
+          <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:600">مزامنة مع Drive</button><div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#DC2626;font-weight:500"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>لا يوجد اتصال بالإنترنت — النسخ المحلية محفوظة وسيُعاد الرفع تلقائيًا · <a href="#" style="color:#DC2626;text-decoration:underline">إعادة المحاولة</a></div>
+          <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:600">مزامنة مع Drive</button><div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#5B6674">لا جديد — كل النسخ مرفوعة · آخر فحص <span dir="ltr">14:03</span></div>
+          <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;border:1px solid #E3E6EB;background:#fff;color:#9AA3AF;font:inherit;font-size:14px;font-weight:600">مزامنة مع Drive</button><div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#5B6674">لم يُربط حساب Drive — <a href="#">ربط حساب</a> (دور المدير)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== E / F / G states ===== -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#1B2430;color:#fff;font-size:12px;font-weight:600">6.13 E · F · G</span><span style="font-size:14px;font-weight:600">حالات الشاشة (1366)</span><span style="font-size:12px;color:#5B6674">أول تشغيل — سجل فارغ · تحميل · الخادم غير متاح (النسخ الاحتياطي معطّل، الاستيراد غير معنيّ)</span></div>
+    <div style="display:flex;gap:32px">
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:12px;font-weight:500;color:#5B6674">E — أول تشغيل: لا نسخ بعد، Drive غير مربوط</span>
+        <div data-screen-label="6.13 E فارغ" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+          <dc-import name="Shell Sidebar" active="settings" collapsed="{{ true }}" followups="{{ 0 }}" user-name="المدير" role-name="مدير" hint-size="64px,768px"></dc-import>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+            <dc-import name="Shell TopBar" alerts="{{ 0 }}" user-name="المدير" backup-stale="{{ true }}" hint-size="100%,56px"></dc-import>
+            <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+              <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">الإعدادات</h1><span style="color:#9AA3AF">/</span><span style="font-size:16px;font-weight:600">النسخ الاحتياطي</span></div>
+              <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;flex:1;min-height:0">
+                <nav style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:2px;align-self:start"><sc-for list="{{ settingsTabs }}" as="t" hint-placeholder-count="7"><div style="display:flex;align-items:center;height:40px;padding:0 12px;border-radius:6px;font-size:14px;font-weight:{{ t.weight }};background:{{ t.bg }};color:{{ t.color }}">{{ t.label }}</div></sc-for></nav>
+                <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+                  <div style="display:flex;align-items:center;gap:12px;height:44px;padding:0 16px;background:#FEE2E2;border-radius:8px;color:#7F1D1D;font-size:14px;font-weight:500"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg><span>لم تُنشأ أي نسخة احتياطية بعد — أنشئ الأولى الآن واختر مجلدًا ثانيًا على USB.</span></div>
+                  <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+                    <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">النسخة الاحتياطية والمزامنة</h2>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+                      <button style="height:44px;border-radius:6px;border:none;background:#0F766E;color:#fff;font:inherit;font-size:14px;font-weight:600">نسخة احتياطية الآن</button>
+                      <button style="height:44px;border-radius:6px;border:1px solid #E3E6EB;background:#fff;color:#9AA3AF;font:inherit;font-size:14px;font-weight:600">مزامنة مع Drive</button>
+                      <button style="height:44px;border-radius:6px;border:1px solid #E3E6EB;background:#fff;color:#9AA3AF;font:inherit;font-size:14px;font-weight:600">استيراد نسخة</button>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-size:12px;color:#5B6674;text-align:center"><span>لم تُنشأ نسخة بعد</span><span>لم يُربط حساب Drive — <a href="#">ربط حساب</a></span><span>متاح على جهاز المالك فقط</span></div>
+                  </section>
+                  <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9AA3AF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m8 11 4 4 4-4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>
+                    <div style="font-size:14px;line-height:22px;color:#5B6674">سجل التشغيل فارغ — ستظهر كل عملية نسخ أو رفع هنا بحالتها ووقتها</div>
+                  </section>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:12px;font-weight:500;color:#5B6674">F — تحميل</span>
+        <div data-screen-label="6.13 F تحميل" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+          <dc-import name="Shell Sidebar" active="settings" collapsed="{{ true }}" followups="{{ 5 }}" user-name="المدير" role-name="مدير" hint-size="64px,768px"></dc-import>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+            <dc-import name="Shell TopBar" alerts="{{ 5 }}" user-name="المدير" hint-size="100%,56px"></dc-import>
+            <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+              <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">الإعدادات</h1><span style="color:#9AA3AF">/</span><span style="font-size:16px;font-weight:600">النسخ الاحتياطي</span></div>
+              <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;flex:1;min-height:0">
+                <nav style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:2px;align-self:start"><sc-for list="{{ settingsTabs }}" as="t" hint-placeholder-count="7"><div style="display:flex;align-items:center;height:40px;padding:0 12px;border-radius:6px;font-size:14px;font-weight:{{ t.weight }};background:{{ t.bg }};color:{{ t.color }}">{{ t.label }}</div></sc-for></nav>
+                <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+                  <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px"><div style="width:220px;height:16px;border-radius:4px;background:#F1F3F6"></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"><div style="height:44px;border-radius:6px;background:linear-gradient(90deg,#F1F3F6 25%,#E3E6EB 50%,#F1F3F6 75%);background-size:200% 100%;animation:sk 1.4s linear infinite"></div><div style="height:44px;border-radius:6px;background:#F1F3F6"></div><div style="height:44px;border-radius:6px;background:#F1F3F6"></div></div><div style="width:60%;height:12px;border-radius:4px;background:#F1F3F6"></div></section>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;height:160px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px"><div style="width:140px;height:16px;border-radius:4px;background:#F1F3F6"></div><div style="height:36px;border-radius:6px;background:#F1F3F6"></div><div style="height:36px;border-radius:6px;background:#F1F3F6"></div></section><section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;height:160px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px"><div style="width:100px;height:16px;border-radius:4px;background:#F1F3F6"></div><div style="height:36px;border-radius:6px;background:#F1F3F6"></div><div style="height:36px;border-radius:6px;background:#F1F3F6"></div></section></div>
+                  <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;flex:1;overflow:hidden"><div style="height:48px;border-bottom:1px solid #E3E6EB"></div><div style="height:40px;background:#F1F3F6;border-bottom:1px solid #E3E6EB"></div><sc-for list="{{ four }}" as="i" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:160px 100px 90px 1fr 120px 120px;gap:16px;height:40px;align-items:center;padding:0 16px;border-bottom:1px solid #E3E6EB"><div style="height:12px;border-radius:4px;background:#F1F3F6"></div><div style="height:24px;border-radius:6px;background:#F1F3F6"></div><div style="height:12px;border-radius:4px;background:#F1F3F6"></div><div style="height:14px;width:60%;border-radius:4px;background:linear-gradient(90deg,#F1F3F6 25%,#E3E6EB 50%,#F1F3F6 75%);background-size:200% 100%;animation:sk 1.4s linear infinite"></div><div style="height:24px;border-radius:6px;background:#F1F3F6"></div><div style="height:12px;border-radius:4px;background:#F1F3F6"></div></div></sc-for></section>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:12px;font-weight:500;color:#5B6674">G — الخادم غير متاح: لا يمكن إنشاء نسخة؛ Drive يظل يرفع ما هو موجود</span>
+        <div data-screen-label="6.13 G الخادم غير متاح" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+          <dc-import name="Shell Sidebar" active="settings" collapsed="{{ true }}" followups="{{ 5 }}" user-name="المدير" role-name="مدير" hint-size="64px,768px"></dc-import>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+            <dc-import name="Shell TopBar" alerts="{{ 5 }}" user-name="المدير" backup-stale="{{ true }}" hint-size="100%,56px"></dc-import>
+            <div style="height:44px;display:flex;align-items:center;gap:12px;padding:0 24px;background:#DC2626;color:#fff;font-size:14px;font-weight:500;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"></path><path d="M18.4 6.6a9 9 0 1 1-12.77.04"></path></svg><span style="flex:1">الخادم المحلي غير متاح — العمليات معطلة مؤقتًا</span><button style="height:28px;padding:0 12px;border-radius:6px;border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;font:inherit;font-size:12px;font-weight:500">إعادة المحاولة</button></div>
+            <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+              <div style="display:flex;align-items:center;gap:12px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">الإعدادات</h1><span style="color:#9AA3AF">/</span><span style="font-size:16px;font-weight:600">النسخ الاحتياطي</span></div>
+              <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;flex:1;min-height:0">
+                <nav style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:2px;align-self:start"><sc-for list="{{ settingsTabs }}" as="t" hint-placeholder-count="7"><div style="display:flex;align-items:center;height:40px;padding:0 12px;border-radius:6px;font-size:14px;font-weight:{{ t.weight }};background:{{ t.bg }};color:{{ t.color }}">{{ t.label }}</div></sc-for></nav>
+                <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+                  <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;display:flex;flex-direction:column;gap:12px">
+                    <h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">النسخة الاحتياطية والمزامنة</h2>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+                      <button style="height:44px;border-radius:6px;border:none;background:#F1F3F6;color:#9AA3AF;font:inherit;font-size:14px;font-weight:600">نسخة احتياطية الآن</button>
+                      <button style="height:44px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:600">مزامنة مع Drive</button>
+                      <button style="height:44px;border-radius:6px;border:1px solid #E3E6EB;background:#fff;color:#9AA3AF;font:inherit;font-size:14px;font-weight:600">استيراد نسخة</button>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-size:12px;text-align:center"><span style="color:#DC2626;font-weight:500">يتطلب الخادم المحلي — آخر نسخة أمس <span dir="ltr">12:00</span></span><span style="color:#14532D">رُفعت نسخة واحدة · <span dir="ltr">14:03</span></span><span style="color:#5B6674">متاح على جهاز المالك فقط</span></div>
+                  </section>
+                  <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+                    <div style="display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border-bottom:1px solid #E3E6EB"><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">سجل التشغيل</h2><span style="font-size:12px;color:#5B6674">آخر تحديث <span dir="ltr">14:32</span></span></div>
+                    <div style="display:grid;grid-template-columns:160px 100px 90px 1fr 130px 110px;height:40px;align-items:center;background:#F1F3F6;font-size:12px;font-weight:500;color:#5B6674;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB"><div>الوقت</div><div>النوع</div><div>الحجم</div><div>الوجهة / الرسالة</div><div>الحالة</div><div>بواسطة</div></div>
+                    <sc-for list="{{ runsShort }}" as="r" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:160px 100px 90px 1fr 130px 110px;height:40px;align-items:center;font-size:14px;padding:0 16px;gap:12px;border-bottom:1px solid #E3E6EB;background:{{ r.bg }}"><div>{{ r.time }}</div><div><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;background:#F1F3F6">{{ r.kind }}</span></div><div dir="ltr" style="text-align:right;color:#5B6674">{{ r.size }}</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ r.msgColor }}"><span dir="ltr">{{ r.msg }}</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:600;background:{{ r.stBg }};color:{{ r.stColor }}"><span style="width:8px;height:8px;border-radius:50%;background:{{ r.stDot }}"></span>{{ r.status }}</span></div><div style="color:#5B6674">{{ r.by }}</div></div></sc-for>
+                  </section>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1920px;background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;font-size:14px;line-height:22px;display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:16px;font-weight:600;line-height:24px">ملاحظات القرارات (6.13)</div>
+    <div>• البطاقة واحدة على الجهازين بثلاثة أزرار متساوية 44 بكسل؛ الزر الأساسي (teal) هو الإجراء الأهم لكل جهاز: «نسخة احتياطية الآن» في الاستقبال، «استيراد نسخة» عند المالك — الوحيد المسموح بالـ primary في وضع المالك (§4).</div>
+    <div>• الزر غير المتاح لا يُخفى بل يُعطَّل مع سطر توضيحي تحته («متاح على جهاز المالك فقط» / «لم يُربط حساب Drive») كي يتعلم الموظف مكان الوظيفة.</div>
+    <div>• سطر النتيجة تحت الأزرار دائمًا؛ النجاح بلون success مع ✓، الخطأ بلون danger مع رابط إعادة المحاولة؛ لا تنبيهات منبثقة تختفي.</div>
+    <div>• الاستيراد: التقدم في الخطوات من اليمين إلى اليسار؛ لا يبدأ الدمج قبل نجاح الفحوص الخمسة؛ الملف الأقدم يعطي تحذيرًا كهرمانيًا مع اقتراح النسخة الأحدث كإجراء أساسي.</div>
+    <div>• المسارات والأحجام وحسابات البريد مقاطع LTR معزولة؛ أرقام النسخ أرقام عادية.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const h = React.createElement;
+    const ok = h('svg',{width:14,height:14,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2.5,strokeLinecap:'round',strokeLinejoin:'round'},h('path',{d:'M20 6 9 17l-5-5'}));
+    const spin = h('span',{style:{width:12,height:12,border:'2px solid #E3E6EB',borderTopColor:'#0F766E',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}});
+    const warn = h('svg',{width:14,height:14,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2.5,strokeLinecap:'round',strokeLinejoin:'round'},h('path',{d:'M12 9v4'}),h('path',{d:'M12 17h.01'}),h('path',{d:'m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'}));
+
+    const settingsTabs = ['المستخدمون','أنواع الغرف والأسعار','الغرف','قواعد التنبيه','النسخ الاحتياطي','بيانات الفندق','سجل التدقيق'].map(label => {
+      const a = label==='النسخ الاحتياطي'; return {label,bg:a?'#CCFBF1':'transparent',color:a?'#0F766E':'#1B2430',weight:a?600:500};
+    });
+    const ST = { ok:{status:'تمت',stBg:'#DCFCE7',stColor:'#14532D',stDot:'#16A34A'}, fail:{status:'فشلت',stBg:'#FEE2E2',stColor:'#7F1D1D',stDot:'#DC2626'}, skip:{status:'تخطّي',stBg:'#F1F3F6',stColor:'#5B6674',stDot:'#9AA3AF'} };
+    const run = (time,kind,size,msg,st,by,z) => ({time,kind,size,msg,by,bg:z?'#F1F3F6':'#fff',msgColor:st==='fail'?'#DC2626':'#1B2430',...ST[st]});
+    const runs = [
+      run('اليوم 14:03','Drive','12.4 MB','رُفعت 2 نسخ · skytowers.backup@gmail.com','ok','تلقائي',false),
+      run('اليوم 14:02','يدوي','12.4 MB','D:\\SkyTowersBackups\\ST-2026-09-26-1402.stbk','ok','المدير',true),
+      run('اليوم 14:02','يدوي','—','E:\\Backup\\SkyTowers — القرص غير متصل','fail','المدير',false),
+      run('اليوم 08:01','مجدول','12.3 MB','D:\\SkyTowersBackups\\ST-2026-09-26-0801.stbk','ok','تلقائي',true),
+      run('اليوم 08:02','Drive','—','لا يوجد اتصال بالإنترنت — أُعيدت المحاولة 14:03','fail','تلقائي',false),
+      run('أمس 23:06','عند الإغلاق','12.2 MB','D:\\SkyTowersBackups\\ST-2026-09-25-2306.stbk','ok','تلقائي',true),
+      run('أمس 20:00','مجدول','—','لا تغييرات منذ آخر نسخة','skip','تلقائي',false)
+    ];
+    const imp = (time,no,src,msg,st,by,z) => ({time,no,src,msg,by,bg:z?'#F1F3F6':'#fff',msgColor:st==='fail'?'#DC2626':'#1B2430',...ST[st],status:st==='ok'?'اكتمل':st==='fail'?'مرفوض':'أُلغي'});
+    const imports = [
+      imp('أمس 22:15','117','Drive','أُضيف 54 · حُدِّث 6 · تُجاهل 0','ok','المدير',false),
+      imp('الخميس 24 · 21:40','115','USB','أُضيف 71 · حُدِّث 2 · تُجاهل 0','ok','المدير',true),
+      imp('الأربعاء 23 · 22:05','114','Drive','أُضيف 48 · حُدِّث 4 · تُجاهل 1 (مكرر)','ok','المدير',false),
+      imp('الثلاثاء 22 · 21:50','113','USB','فشل فحص التوقيع — الملف مُعدَّل أو غير مكتمل','fail','المدير',true),
+      imp('الثلاثاء 22 · 21:30','112','Drive','أُضيف 39 · حُدِّث 1 · تُجاهل 0','ok','المدير',false),
+      imp('الاثنين 21 · 22:10','111','Drive','أُضيف 62 · حُدِّث 3 · تُجاهل 0','ok','المدير',true)
+    ];
+    const df = (no,when,size,state) => {
+      const isNew = state==='new', imported = state==='imported';
+      return {no,when,size,tag:isNew?'جديدة':imported?'مستوردة':'أقدم من بياناتك',tagColor:isNew?'#0F766E':imported?'#14532D':'#78350F',
+        border:isNew?'#0F766E':'#E3E6EB',bg:isNew?'#CCFBF1':'#fff',btn:isNew?'استيراد':imported?'مستوردة':'استيراد',btnBorder:imported?'#E3E6EB':'#C9CED6',btnColor:imported?'#9AA3AF':'#1B2430'};
+    };
+    const driveFiles = [df('118','اليوم 14:03','12.4 MB','new'),df('117','أمس 23:06','12.2 MB','imported'),df('116','أمس 12:00','12.1 MB','imported'),df('112','22 سبتمبر 08:00','11.6 MB','old')];
+    const pick = [
+      {no:'118',when:'اليوم 14:03',size:'12.4 MB',tag:'جديدة',tagColor:'#0F766E',border:'#0F766E',bg:'#CCFBF1',radio:'5px solid #0F766E'},
+      {no:'117',when:'أمس 23:06',size:'12.2 MB',tag:'مستوردة',tagColor:'#14532D',border:'#C9CED6',bg:'#fff',radio:'1.5px solid #C9CED6'},
+      {no:'116',when:'أمس 12:00',size:'12.1 MB',tag:'مستوردة',tagColor:'#14532D',border:'#C9CED6',bg:'#fff',radio:'1.5px solid #C9CED6'}
+    ];
+    const mkSteps = cur => ['اختيار الملف','التحقق','الدمج','النتيجة'].map((label,i) => {
+      const n=i+1, done=n<cur, act=n===cur;
+      return {n:done?'✓':String(n),label,bg:done?'#0F766E':act?'#CCFBF1':'#fff',color:done?'#fff':act?'#0F766E':'#9AA3AF',border:done||act?'#0F766E':'#C9CED6',weight:act?600:500,textColor:act?'#1B2430':done?'#5B6674':'#9AA3AF',lineShow:n<4?'block':'none'};
+    });
+    const ck = (label,detail,state) => ({label,detail,icon:state==='ok'?ok:state==='warn'?warn:spin,bg:state==='ok'?'#DCFCE7':state==='warn'?'#FEF3C7':'#F1F3F6',color:state==='ok'?'#16A34A':state==='warn'?'#D97706':'#5B6674'});
+    const checks = [ck('التوقيع','SHA-256 · مطابق','ok'),ck('سلامة القاعدة','PRAGMA integrity_check · ok','ok'),ck('معرف الفندق','HTL-SKT-001','ok'),ck('الإصدار','v1.4.2 → v1.4.2','ok'),ck('سلسلة التدقيق','117 → 118 · جارٍ الفحص','run')];
+    const checksOld = [ck('التوقيع','SHA-256 · مطابق','ok'),ck('سلامة القاعدة','ok','ok'),ck('معرف الفندق','HTL-SKT-001','ok'),ck('الإصدار','v1.4.0 → v1.4.2 · متوافق','ok'),ck('سلسلة التدقيق','112 < 117 · أقدم من البيانات الحالية','warn')];
+    const result = [['الإقامات','3','2','0'],['الدفعات','12','0','0'],['المصروفات','4','0','0'],['التنبيهات والاستجابة','9','3','0'],['الورديات','2','0','0'],['سجل التدقيق','39','0','0']].map(([table,added,updated,skipped],i)=>({table,added,updated,skipped,bg:i%2?'#F1F3F6':'#fff'}));
+    return { settingsTabs, runs, runsShort: runs.slice(0,5), imports, driveFiles, pick, steps1:mkSteps(1), steps2:mkSteps(2), steps3:mkSteps(3), steps4:mkSteps(4), checks, checksOld, result, four:[1,2,3,4] };
+  }
+}
+</script>
+</body>
+</html>

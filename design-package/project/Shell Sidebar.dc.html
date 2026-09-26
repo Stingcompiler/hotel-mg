@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>body{margin:0}a{color:#0F766E;text-decoration:none}a:hover{color:#115E59}</style>
+</helmet>
+<aside dir="rtl" style="width:{{ width }};height:100%;box-sizing:border-box;background:#fff;border-inline-end:1px solid #E3E6EB;display:flex;flex-direction:column;font-family:'IBM Plex Sans Arabic','Noto Sans Arabic',sans-serif;color:#1B2430;flex:none;overflow:hidden">
+  <div style="height:56px;display:flex;align-items:center;gap:10px;padding:0 {{ padX }};border-bottom:1px solid #E3E6EB;box-sizing:border-box">
+    <div style="width:32px;height:32px;border-radius:6px;background:#0F766E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none;direction:ltr">ST</div>
+    <sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}">
+      <div style="min-width:0"><div style="font-size:16px;font-weight:600;line-height:20px;direction:ltr;text-align:right">Sky Towers</div><div style="font-size:12px;line-height:16px;color:#5B6674">نظام إدارة الفندق</div></div>
+    </sc-if>
+  </div>
+  <nav style="display:flex;flex-direction:column;gap:2px;padding:12px {{ padNav }};flex:1">
+    <sc-for list="{{ items }}" as="it" hint-placeholder-count="8">
+      <a href="#" style="display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:6px;background:{{ it.bg }};color:{{ it.color }};font-size:14px;font-weight:{{ it.weight }};text-decoration:none;position:relative;justify-content:{{ justify }}" style-hover="background:#F1F3F6">
+        <span style="display:flex;flex:none;width:20px;height:20px">{{ it.icon }}</span>
+        <sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}"><span style="flex:1;white-space:nowrap">{{ it.label }}</span></sc-if>
+        <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#DC2626;color:#fff;font-size:12px;font-weight:600;position:{{ badgePos }};top:4px;inset-inline-start:6px">{{ it.badge }}</span></sc-if>
+      </a>
+    </sc-for>
+  </nav>
+  <div style="border-top:1px solid #E3E6EB;padding:12px {{ padNav }};display:flex;flex-direction:column;gap:8px">
+    <div style="display:flex;align-items:center;gap:10px;padding:0 12px;height:40px;justify-content:{{ justify }}">
+      <div style="width:32px;height:32px;border-radius:50%;background:#CCFBF1;color:#0F766E;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex:none">{{ initial }}</div>
+      <sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}"><div style="min-width:0"><div style="font-size:14px;font-weight:500;line-height:20px;white-space:nowrap">{{ userName }}</div><div style="font-size:12px;line-height:16px;color:#5B6674;white-space:nowrap">{{ roleName }}</div></div></sc-if>
+    </div>
+    <a href="#" style="display:flex;align-items:center;gap:12px;height:36px;padding:0 12px;border-radius:6px;color:#5B6674;font-size:14px;font-weight:500;text-decoration:none;justify-content:{{ justify }}" style-hover="background:#F1F3F6">
+      <span style="display:flex;flex:none;width:20px;height:20px">{{ logoutIcon }}</span>
+      <sc-if value="{{ expanded }}" hint-placeholder-val="{{ true }}"><span>تسجيل الخروج</span></sc-if>
+    </a>
+  </div>
+</aside>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:240,&quot;height&quot;:1080},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;rooms&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;rooms&quot;,&quot;reservations&quot;,&quot;guests&quot;,&quot;followups&quot;,&quot;cash&quot;,&quot;expenses&quot;,&quot;reports&quot;,&quot;settings&quot;,&quot;owner&quot;,&quot;backup&quot;]},&quot;collapsed&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;owner&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;followups&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:0,&quot;max&quot;:99},&quot;userName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;أحمد علي&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;roleName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;موظف استقبال&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  icon(paths) {
+    const h = React.createElement;
+    return h('svg', {width:20,height:20,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.75,strokeLinecap:'round',strokeLinejoin:'round'},
+      ...paths.map((d,i)=>h('path',{key:i,d})));
+  }
+  renderVals() {
+    const p = this.props;
+    const collapsed = !!p.collapsed;
+    const owner = !!p.owner;
+    const active = p.active ?? 'rooms';
+    const I = {
+      rooms:['M3 3h7v7H3z','M14 3h7v7h-7z','M14 14h7v7h-7z','M3 14h7v7H3z'],
+      owner:['M3 3v18h18','M7 16l4-6 4 4 5-8'],
+      reservations:['M8 2v4','M16 2v4','M3 6h18v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z','M3 10h18'],
+      guests:['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2','M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8','M22 21v-2a4 4 0 0 0-3-3.87','M16 3.13a4 4 0 0 1 0 7.75'],
+      followups:['M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9','M10.3 21a1.94 1.94 0 0 0 3.4 0'],
+      cash:['M21 12V7H5a2 2 0 0 1 0-4h14v4','M3 5v14a2 2 0 0 0 2 2h16v-5','M18 12a2 2 0 0 0 0 4h4v-4z'],
+      expenses:['M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z','M8 7h8','M8 11h8','M8 15h5'],
+      reports:['M3 3v18h18','M18 17V9','M13 17V5','M8 17v-3'],
+      backup:['M12 3v12','m8 11 4 4 4-4','M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2'],
+      settings:['M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z','M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0'],
+      logout:['M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4','m16 17 5-5-5-5','M21 12H9']
+    };
+    const list = owner
+      ? [['owner','لوحة المالك'],['reports','التقارير'],['guests','النزلاء'],['backup','النسخ والاستيراد'],['settings','الإعدادات']]
+      : [['rooms','لوحة الغرف'],['reservations','الحجوزات'],['guests','النزلاء'],['followups','المتابعة'],['cash','الصندوق'],['expenses','المصروفات'],['reports','التقارير'],['settings','الإعدادات']];
+    const followups = p.followups ?? 5;
+    const items = list.map(([key,label]) => {
+      const a = key === active;
+      return { key, label, icon: this.icon(I[key]), bg: a ? '#CCFBF1' : 'transparent', color: a ? '#0F766E' : '#1B2430', weight: a ? 600 : 500, badge: key==='followups' && followups>0 ? followups : false };
+    });
+    const userName = p.userName ?? (owner ? 'المالك' : 'أحمد علي');
+    return {
+      expanded: !collapsed, items, width: collapsed ? '64px' : '240px', padX: collapsed ? '16px' : '16px', padNav: collapsed ? '8px' : '12px',
+      justify: collapsed ? 'center' : 'flex-start', badgePos: collapsed ? 'absolute' : 'static',
+      userName, roleName: p.roleName ?? (owner ? 'مالك' : 'موظف استقبال'), initial: userName.trim().charAt(0), logoutIcon: this.icon(I.logout)
+    };
+  }
+}
+</script>
+</body>
+</html>

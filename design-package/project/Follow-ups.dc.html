@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9ECF0;font-family:"IBM Plex Sans Arabic","Noto Sans Arabic",sans-serif;color:#1B2430}
+a{color:#0F766E;text-decoration:none}a:hover{color:#115E59;text-decoration:underline}
+@keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+</style>
+</helmet>
+<div dir="rtl" style="padding:48px;display:flex;flex-direction:column;gap:56px;font-family:'IBM Plex Sans Arabic','Noto Sans Arabic',sans-serif;font-variant-numeric:tabular-nums;color:#1B2430;text-align:right;width:max-content">
+
+  <!-- ===== A: 1920 default ===== -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#1B2430;color:#fff;font-size:12px;font-weight:600">6.6 A</span><span style="font-size:14px;font-weight:600">المتابعة — 1920×1080 — ثلاث مجموعات · صف مُهمَل · صف بانتظار الرد · قائمة التأجيل مفتوحة</span></div>
+    <div data-screen-label="6.6 A المتابعة 1920" style="width:1920px;height:1080px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+      <dc-import name="Shell Sidebar" active="followups" followups="{{ 5 }}" hint-size="240px,1080px"></dc-import>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <dc-import name="Shell TopBar" alerts="{{ 5 }}" hint-size="100%,56px"></dc-import>
+        <div style="height:44px;display:flex;align-items:center;gap:12px;padding:0 24px;background:#FEE2E2;color:#7F1D1D;font-size:14px;font-weight:500;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg><span>2 إقامات انتهت دون إجراء</span><a href="#" style="color:#7F1D1D;text-decoration:underline">عرض</a></div>
+        <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box">
+          <div style="display:flex;align-items:center;gap:24px;height:36px">
+            <h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">المتابعة</h1>
+            <div style="display:flex;gap:8px">
+              <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:6px;background:#FEE2E2;color:#7F1D1D;font-size:14px;font-weight:600">متأخرة <span style="font-size:16px;font-weight:700">2</span></span>
+              <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:6px;background:#FEF3C7;color:#78350F;font-size:14px;font-weight:600">اليوم <span style="font-size:16px;font-weight:700">3</span></span>
+              <span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:6px;background:#F1F3F6;color:#5B6674;font-size:14px;font-weight:600">القادمة <span style="font-size:16px;font-weight:700">3</span></span>
+            </div>
+            <div style="flex:1"></div>
+            <div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:14px;box-sizing:border-box;min-width:200px;justify-content:space-between"><span>كل القواعد</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div>
+            <div style="display:inline-flex;height:36px;border:1px solid #C9CED6;border-radius:6px;overflow:hidden;background:#fff">
+              <div style="display:flex;align-items:center;padding:0 16px;font-size:14px;font-weight:600;background:#CCFBF1;color:#0F766E">الكل</div>
+              <div style="display:flex;align-items:center;padding:0 16px;font-size:14px;border-inline-start:1px solid #E3E6EB">يومي</div>
+              <div style="display:flex;align-items:center;padding:0 16px;font-size:14px;border-inline-start:1px solid #E3E6EB">أسبوعي</div>
+              <div style="display:flex;align-items:center;padding:0 16px;font-size:14px;border-inline-start:1px solid #E3E6EB">شهري</div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:16px;flex:1;min-height:0;overflow:hidden">
+            <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;overflow:visible;display:flex;flex-direction:column">
+                <div style="display:flex;align-items:center;gap:12px;height:44px;padding:0 16px;border-bottom:1px solid #E3E6EB"><span style="width:10px;height:10px;border-radius:50%;background:{{ g.dot }}"></span><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">{{ g.title }}</h2><span style="font-size:14px;color:#5B6674">{{ g.subtitle }}</span></div>
+                <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+                  <div style="display:grid;grid-template-columns:72px 280px 1fr auto;gap:16px;align-items:center;height:64px;padding:0 16px;border-bottom:1px solid #E3E6EB;background:{{ r.bg }};position:relative">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;height:32px;border-radius:6px;background:{{ r.roomBg }};color:{{ r.roomColor }};font-size:16px;font-weight:700">{{ r.room }}</span>
+                    <div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.guest }}</span><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;background:#F1F3F6;color:#1B2430;flex:none">{{ r.type }}</span></div>
+                    <div style="min-width:0;display:flex;flex-direction:column;gap:2px">
+                      <div style="display:flex;align-items:center;gap:8px;font-size:14px;line-height:20px;font-weight:500;color:{{ r.whenColor }}"><span>{{ r.when }}</span><span style="display:{{ r.neglectedShow }};align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:6px;background:#DC2626;color:#fff;font-size:12px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>{{ r.neglected }}</span><span style="display:{{ r.waitingShow }};align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:6px;background:#FEF3C7;color:#78350F;font-size:12px;font-weight:600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>{{ r.waiting }}</span></div>
+                      <div style="font-size:12px;line-height:16px;color:#5B6674;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.rule }}</div>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <button style="height:36px;padding:0 14px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap" style-hover="background:#F1F3F6">تمديد</button>
+                      <button style="height:36px;padding:0 14px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap" style-hover="background:#F1F3F6">تأكيد المغادرة</button>
+                      <button style="height:36px;padding:0 14px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap" style-hover="background:#F1F3F6">بانتظار الرد</button>
+                      <button style="height:36px;padding:0 14px;border-radius:6px;border:1px solid {{ r.snoozeBorder }};background:{{ r.snoozeBg }};color:{{ r.snoozeColor }};font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap">{{ r.snooze }}</button>
+                    </div>
+                    <sc-if value="{{ r.popover }}" hint-placeholder-val="{{ false }}">
+                      <div style="position:absolute;top:56px;left:16px;width:280px;background:#fff;border:1px solid #E3E6EB;border-radius:8px;box-shadow:0 8px 24px rgba(27,36,48,0.12);padding:8px;display:flex;flex-direction:column;gap:2px;z-index:5">
+                        <div style="padding:6px 12px;font-size:12px;font-weight:500;color:#5B6674">تأجيل إلى — التأجيل 2 من 3</div>
+                        <button style="height:36px;padding:0 12px;border-radius:6px;border:none;background:transparent;font:inherit;font-size:14px;text-align:right;display:flex;justify-content:space-between;align-items:center;color:#1B2430" style-hover="background:#F1F3F6"><span>بعد ساعة</span><span dir="ltr" style="font-size:12px;color:#5B6674">15:30</span></button>
+                        <button style="height:36px;padding:0 12px;border-radius:6px;border:none;background:#CCFBF1;font:inherit;font-size:14px;text-align:right;display:flex;justify-content:space-between;align-items:center;color:#0F766E;font-weight:600"><span>بعد 3 ساعات</span><span dir="ltr" style="font-size:12px">17:30</span></button>
+                        <button style="height:36px;padding:0 12px;border-radius:6px;border:none;background:transparent;font:inherit;font-size:14px;text-align:right;display:flex;justify-content:space-between;align-items:center;color:#1B2430" style-hover="background:#F1F3F6"><span>غدًا صباحًا</span><span dir="ltr" style="font-size:12px;color:#5B6674">09:00</span></button>
+                        <button style="height:36px;padding:0 12px;border-radius:6px;border:none;background:transparent;font:inherit;font-size:14px;text-align:right;display:flex;justify-content:space-between;align-items:center;color:#1B2430" style-hover="background:#F1F3F6"><span>وقت محدد…</span></button>
+                        <div style="border-top:1px solid #E3E6EB;margin:4px 0 0;padding:8px 12px 4px;font-size:12px;color:#5B6674;line-height:16px">التأجيل لا يُغلق المهمة؛ تُسجَّل باسمك في سجل الاستجابة.</div>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </section>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== B: toast spec + C: 1366 ===== -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#1B2430;color:#fff;font-size:12px;font-weight:600">6.6 B · C</span><span style="font-size:14px;font-weight:600">مواصفة إشعار ويندوز (ليس إطارًا) · 1366×768</span></div>
+    <div style="display:flex;gap:32px;align-items:flex-start">
+      <div data-screen-label="6.6 B إشعار ويندوز" style="width:520px;background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-size:16px;font-weight:600;line-height:24px">إشعار ويندوز الأصلي — محتوى فقط</div>
+        <div style="font-size:12px;color:#5B6674;line-height:16px">يُعرض بمظهر نظام التشغيل؛ نتحكم في النص والأيقونة والإجراء فقط. المعاينة أدناه تقريبية.</div>
+        <div dir="rtl" style="width:364px;background:#F6F7F9;border:1px solid #E3E6EB;border-radius:8px;padding:16px;display:flex;gap:12px;align-self:center">
+          <div style="width:40px;height:40px;border-radius:6px;background:#0F766E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex:none;direction:ltr">ST</div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+            <div style="font-size:14px;font-weight:600;line-height:20px">غرفة 305 — تنتهي بعد يومين</div>
+            <div style="font-size:14px;line-height:20px;color:#5B6674">محمد عثمان · شهري · انقر للفتح</div>
+            <div style="font-size:12px;line-height:16px;color:#9AA3AF;margin-top:4px">Sky Towers · الآن</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:8px 16px;font-size:14px;line-height:22px">
+          <div style="color:#5B6674">العنوان</div><div>«غرفة {رقم} — {نص الموعد}» · ≤ 40 حرفًا · نفس نص عمود الموعد في الشاشة</div>
+          <div style="color:#5B6674">النص</div><div>«{اسم النزيل المختصر} · {نوع الإقامة} · انقر للفتح» · اسم من كلمتين</div>
+          <div style="color:#5B6674">النقر</div><div>يفتح شاشة المتابعة على الصف المعني (مظلَّل primary-soft لثانيتين)</div>
+          <div style="color:#5B6674">الإلغاء</div><div>إغلاق الإشعار لا يُنهي المهمة (§2.5) — تبقى في القائمة حتى إجراء صريح</div>
+          <div style="color:#5B6674">التكرار</div><div>وفق «التكرار» في قاعدة التنبيه؛ لا صوت مخصص، صوت النظام الافتراضي</div>
+          <div style="color:#5B6674">المتأخرة</div><div>عنوان «غرفة 305 — متجاوزة منذ يومين»؛ لا لون أحمر متاح في الإشعار الأصلي فيُعوَّض بالنص</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div data-screen-label="6.6 C المتابعة 1366" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+          <dc-import name="Shell Sidebar" active="followups" collapsed="{{ true }}" followups="{{ 5 }}" hint-size="64px,768px"></dc-import>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+            <dc-import name="Shell TopBar" alerts="{{ 5 }}" hint-size="100%,56px"></dc-import>
+            <div style="height:44px;display:flex;align-items:center;gap:12px;padding:0 24px;background:#FEE2E2;color:#7F1D1D;font-size:14px;font-weight:500;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg><span>2 إقامات انتهت دون إجراء</span><a href="#" style="color:#7F1D1D;text-decoration:underline">عرض</a></div>
+            <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+              <div style="display:flex;align-items:center;gap:16px;height:36px">
+                <h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">المتابعة</h1>
+                <div style="display:flex;gap:8px">
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:6px;background:#FEE2E2;color:#7F1D1D;font-size:14px;font-weight:600">متأخرة <span style="font-weight:700">2</span></span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:6px;background:#FEF3C7;color:#78350F;font-size:14px;font-weight:600">اليوم <span style="font-weight:700">3</span></span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:6px;background:#F1F3F6;color:#5B6674;font-size:14px;font-weight:600">القادمة <span style="font-weight:700">3</span></span>
+                </div>
+                <div style="flex:1"></div>
+                <div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:14px;box-sizing:border-box;min-width:160px;justify-content:space-between"><span>كل القواعد</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div>
+                <div style="height:36px;border:1px solid #C9CED6;border-radius:6px;background:#fff;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:14px;box-sizing:border-box;min-width:140px;justify-content:space-between"><span>كل الأنواع</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B6674" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;overflow:hidden">
+                <sc-for list="{{ groupsCompact }}" as="g" hint-placeholder-count="3">
+                  <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+                    <div style="display:flex;align-items:center;gap:12px;height:40px;padding:0 16px;border-bottom:1px solid #E3E6EB"><span style="width:10px;height:10px;border-radius:50%;background:{{ g.dot }}"></span><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">{{ g.title }}</h2></div>
+                    <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="2">
+                      <div style="display:grid;grid-template-columns:64px 220px 1fr auto;gap:12px;align-items:center;height:64px;padding:0 16px;border-bottom:1px solid #E3E6EB;background:{{ r.bg }}">
+                        <span style="display:inline-flex;align-items:center;justify-content:center;height:32px;border-radius:6px;background:{{ r.roomBg }};color:{{ r.roomColor }};font-size:16px;font-weight:700">{{ r.room }}</span>
+                        <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.guest }}</span><span style="font-size:12px;color:#5B6674">{{ r.type }}</span></div>
+                        <div style="min-width:0;display:flex;flex-direction:column;gap:2px">
+                          <div style="display:flex;align-items:center;gap:8px;font-size:14px;line-height:20px;font-weight:500;color:{{ r.whenColor }}"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.when }}</span><span style="display:{{ r.neglectedShow }};align-items:center;height:22px;padding:0 8px;border-radius:6px;background:#DC2626;color:#fff;font-size:12px;font-weight:600;white-space:nowrap">{{ r.neglected }}</span><span style="display:{{ r.waitingShow }};align-items:center;height:22px;padding:0 8px;border-radius:6px;background:#FEF3C7;color:#78350F;font-size:12px;font-weight:600;white-space:nowrap">{{ r.waiting }}</span></div>
+                          <div style="font-size:12px;line-height:16px;color:#5B6674;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.rule }}</div>
+                        </div>
+                        <div style="display:flex;gap:6px;align-items:center">
+                          <button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:500;white-space:nowrap">تمديد</button>
+                          <button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:500;white-space:nowrap">تأكيد المغادرة</button>
+                          <button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:500;white-space:nowrap">بانتظار الرد</button>
+                          <button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid {{ r.snoozeBorder }};background:{{ r.snoozeBg }};color:{{ r.snoozeColor }};font:inherit;font-size:14px;font-weight:500;white-space:nowrap">{{ r.snooze }}</button>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </section>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== D / E / F ===== -->
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;align-items:center"><span style="display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:6px;background:#1B2430;color:#fff;font-size:12px;font-weight:600">6.6 D · E · F</span><span style="font-size:14px;font-weight:600">حالات الشاشة</span><span style="font-size:12px;color:#5B6674">تحميل · لا مهام (كل شيء منجز) · الخادم غير متاح</span></div>
+    <div style="display:flex;gap:32px">
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:12px;font-weight:500;color:#5B6674">D — تحميل</span>
+        <div data-screen-label="6.6 D تحميل" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+          <dc-import name="Shell Sidebar" active="followups" collapsed="{{ true }}" followups="{{ 5 }}" hint-size="64px,768px"></dc-import>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+            <dc-import name="Shell TopBar" alerts="{{ 5 }}" hint-size="100%,56px"></dc-import>
+            <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+              <div style="display:flex;align-items:center;gap:16px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">المتابعة</h1><div style="display:flex;gap:8px"><div style="width:96px;height:32px;border-radius:6px;background:#F1F3F6"></div><div style="width:80px;height:32px;border-radius:6px;background:#F1F3F6"></div><div style="width:96px;height:32px;border-radius:6px;background:#F1F3F6"></div></div></div>
+              <sc-for list="{{ three }}" as="i" hint-placeholder-count="3">
+                <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;overflow:hidden">
+                  <div style="height:40px;border-bottom:1px solid #E3E6EB;display:flex;align-items:center;gap:12px;padding:0 16px"><div style="width:10px;height:10px;border-radius:50%;background:#E3E6EB"></div><div style="width:72px;height:14px;border-radius:4px;background:#E3E6EB"></div></div>
+                  <div style="display:grid;grid-template-columns:64px 220px 1fr 380px;gap:12px;align-items:center;height:64px;padding:0 16px;border-bottom:1px solid #E3E6EB"><div style="height:32px;border-radius:6px;background:linear-gradient(90deg,#F1F3F6 25%,#E3E6EB 50%,#F1F3F6 75%);background-size:200% 100%;animation:sk 1.4s linear infinite"></div><div style="height:14px;width:70%;border-radius:4px;background:linear-gradient(90deg,#F1F3F6 25%,#E3E6EB 50%,#F1F3F6 75%);background-size:200% 100%;animation:sk 1.4s linear infinite"></div><div style="height:14px;width:50%;border-radius:4px;background:#F1F3F6"></div><div style="display:flex;gap:6px;justify-content:flex-end"><div style="width:70px;height:36px;border-radius:6px;background:#F1F3F6"></div><div style="width:110px;height:36px;border-radius:6px;background:#F1F3F6"></div><div style="width:100px;height:36px;border-radius:6px;background:#F1F3F6"></div><div style="width:70px;height:36px;border-radius:6px;background:#F1F3F6"></div></div></div>
+                  <div style="display:grid;grid-template-columns:64px 220px 1fr 380px;gap:12px;align-items:center;height:64px;padding:0 16px"><div style="height:32px;border-radius:6px;background:#F1F3F6"></div><div style="height:14px;width:55%;border-radius:4px;background:#F1F3F6"></div><div style="height:14px;width:40%;border-radius:4px;background:#F1F3F6"></div><div></div></div>
+                </section>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:12px;font-weight:500;color:#5B6674">E — لا مهام مستحقة (القادمة تبقى ظاهرة)</span>
+        <div data-screen-label="6.6 E فارغة" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+          <dc-import name="Shell Sidebar" active="followups" followups="{{ 0 }}" collapsed="{{ true }}" hint-size="64px,768px"></dc-import>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+            <dc-import name="Shell TopBar" alerts="{{ 0 }}" hint-size="100%,56px"></dc-import>
+            <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+              <div style="display:flex;align-items:center;gap:16px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">المتابعة</h1><div style="display:flex;gap:8px"><span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:6px;background:#F1F3F6;color:#5B6674;font-size:14px;font-weight:600">متأخرة <span style="font-weight:700">0</span></span><span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:6px;background:#F1F3F6;color:#5B6674;font-size:14px;font-weight:600">اليوم <span style="font-weight:700">0</span></span><span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:6px;background:#F1F3F6;color:#5B6674;font-size:14px;font-weight:600">القادمة <span style="font-weight:700">1</span></span></div></div>
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:40px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center">
+                <span style="width:48px;height:48px;border-radius:50%;background:#DCFCE7;color:#16A34A;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+                <div style="font-size:16px;font-weight:600;line-height:24px">لا مهام متابعة مستحقة اليوم</div>
+                <div style="font-size:14px;line-height:22px;color:#5B6674">آخر إجراء: تأكيد مغادرة غرفة 204 · أحمد علي · <span dir="ltr">13:42</span></div>
+              </section>
+              <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px;height:40px;padding:0 16px;border-bottom:1px solid #E3E6EB"><span style="width:10px;height:10px;border-radius:50%;background:#9AA3AF"></span><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">القادمة</h2></div>
+                <div style="display:grid;grid-template-columns:64px 220px 1fr auto;gap:12px;align-items:center;height:64px;padding:0 16px">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;height:32px;border-radius:6px;background:#F1F3F6;color:#1B2430;font-size:16px;font-weight:700">411</span>
+                  <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-weight:600">سارة عمر الشيخ</span><span style="font-size:12px;color:#5B6674">شهري</span></div>
+                  <div><div style="font-size:14px;font-weight:500">تنتهي بعد 18 يومًا (الأربعاء 14 أكتوبر)</div><div style="font-size:12px;color:#5B6674">قاعدة: شهري – قبل 5 أيام · سيُنبَّه الجمعة 9 أكتوبر 09:00</div></div>
+                  <button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #C9CED6;background:#fff;color:#1B2430;font:inherit;font-size:14px;font-weight:500">تمديد</button>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:12px;font-weight:500;color:#5B6674">F — الخادم غير متاح: القائمة من آخر تحديث، الإجراءات معطّلة</span>
+        <div data-screen-label="6.6 F الخادم غير متاح" style="width:1366px;height:768px;background:#F6F7F9;display:flex;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,48,0.12)">
+          <dc-import name="Shell Sidebar" active="followups" collapsed="{{ true }}" followups="{{ 5 }}" hint-size="64px,768px"></dc-import>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+            <dc-import name="Shell TopBar" alerts="{{ 5 }}" backup-stale="{{ true }}" hint-size="100%,56px"></dc-import>
+            <div style="height:44px;display:flex;align-items:center;gap:12px;padding:0 24px;background:#DC2626;color:#fff;font-size:14px;font-weight:500;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"></path><path d="M18.4 6.6a9 9 0 1 1-12.77.04"></path></svg><span style="flex:1">الخادم المحلي غير متاح — العمليات معطلة مؤقتًا</span><button style="height:28px;padding:0 12px;border-radius:6px;border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;font:inherit;font-size:12px;font-weight:500">إعادة المحاولة</button></div>
+            <div style="flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:12px;box-sizing:border-box">
+              <div style="display:flex;align-items:center;gap:16px;height:36px"><h1 style="margin:0;font-size:20px;font-weight:600;line-height:28px">المتابعة</h1><div style="display:flex;gap:8px"><span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:6px;background:#FEE2E2;color:#7F1D1D;font-size:14px;font-weight:600">متأخرة <span style="font-weight:700">2</span></span><span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:6px;background:#FEF3C7;color:#78350F;font-size:14px;font-weight:600">اليوم <span style="font-weight:700">3</span></span></div><div style="flex:1"></div><span style="font-size:12px;color:#5B6674">آخر تحديث: <span dir="ltr">14:32</span></span></div>
+              <sc-for list="{{ groupsOffline }}" as="g" hint-placeholder-count="2">
+                <section style="background:#fff;border:1px solid #E3E6EB;border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+                  <div style="display:flex;align-items:center;gap:12px;height:40px;padding:0 16px;border-bottom:1px solid #E3E6EB"><span style="width:10px;height:10px;border-radius:50%;background:{{ g.dot }}"></span><h2 style="margin:0;font-size:16px;font-weight:600;line-height:24px">{{ g.title }}</h2></div>
+                  <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="2">
+                    <div style="display:grid;grid-template-columns:64px 220px 1fr auto;gap:12px;align-items:center;height:64px;padding:0 16px;border-bottom:1px solid #E3E6EB;background:{{ r.bg }}">
+                      <span style="display:inline-flex;align-items:center;justify-content:center;height:32px;border-radius:6px;background:{{ r.roomBg }};color:{{ r.roomColor }};font-size:16px;font-weight:700">{{ r.room }}</span>
+                      <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.guest }}</span><span style="font-size:12px;color:#5B6674">{{ r.type }}</span></div>
+                      <div style="min-width:0"><div style="font-size:14px;font-weight:500;color:{{ r.whenColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.when }}</div><div style="font-size:12px;color:#5B6674;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.rule }}</div></div>
+                      <div style="display:flex;gap:6px"><button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #E3E6EB;background:#fff;color:#9AA3AF;font:inherit;font-size:14px;font-weight:500">تمديد</button><button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #E3E6EB;background:#fff;color:#9AA3AF;font:inherit;font-size:14px;font-weight:500">تأكيد المغادرة</button><button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #E3E6EB;background:#fff;color:#9AA3AF;font:inherit;font-size:14px;font-weight:500">بانتظار الرد</button><button style="height:36px;padding:0 12px;border-radius:6px;border:1px solid #E3E6EB;background:#fff;color:#9AA3AF;font:inherit;font-size:14px;font-weight:500">تأجيل</button></div>
+                    </div>
+                  </sc-for>
+                </section>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1920px;background:#fff;border:1px solid #E3E6EB;border-radius:8px;padding:16px 24px;font-size:14px;line-height:22px;display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:16px;font-weight:600;line-height:24px">ملاحظات القرارات (6.6)</div>
+    <div>• الأزرار الأربعة ظاهرة دائمًا في كل صف (لا إجراءات عند التمرير — §Don't). ترتيبها من اليمين: تمديد · تأكيد المغادرة · بانتظار الرد · تأجيل، والتأجيل آخرها لأنه الأقل حسمًا.</div>
+    <div>• «تأجيل (n من 3)» يعرض العدّاد دائمًا ويُعطَّل عند النفاد؛ القائمة المنبثقة تفتح تحت الزر من اليسار وتؤكد أن التأجيل لا يُنهي المهمة (§2.5).</div>
+    <div>• الصف المُهمَل: خلفية overdue-soft + شارة حمراء صلبة «مُهمَلة — وردية: أحمد»؛ تُسجَّل الوردية المسؤولة لا الشخص الحالي.</div>
+    <div>• شريحة رقم الغرفة تأخذ اللون الناعم لحالة الغرفة (متجاوزة/مشغولة) — استخدام دلالي لا تزييني.</div>
+    <div>• عدّادات الرأس: متأخرة = danger-soft، اليوم = warning-soft، القادمة = surface-2؛ تتحول جميعها إلى رمادي عند الصفر.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const R = (room, roomState, guest, type, when, rule, o={}) => {
+      const exhausted = o.snoozed >= 3;
+      return {
+        room, guest, type, when, rule,
+        roomBg: roomState==='overdue' ? '#FEE2E2' : '#DBEAFE', roomColor: roomState==='overdue' ? '#7F1D1D' : '#1E3A8A',
+        whenColor: o.overdue ? '#DC2626' : '#1B2430',
+        bg: o.overdue ? '#FEE2E2' : '#fff',
+        neglected: o.neglected || '', neglectedShow: o.neglected ? 'inline-flex' : 'none',
+        waiting: o.waiting || '', waitingShow: o.waiting ? 'inline-flex' : 'none',
+        snooze: `تأجيل (${o.snoozed ?? 0} من 3)`,
+        snoozeBorder: exhausted ? '#E3E6EB' : (o.popover ? '#0F766E' : '#C9CED6'),
+        snoozeBg: exhausted ? '#fff' : (o.popover ? '#CCFBF1' : '#fff'),
+        snoozeColor: exhausted ? '#9AA3AF' : (o.popover ? '#0F766E' : '#1B2430'),
+        popover: !!o.popover
+      };
+    };
+    const late = [
+      R('305','overdue','عبدالله حسن موسى','أسبوعي','انتهت منذ يومين (الخميس 24 سبتمبر)','قاعدة: أسبوعي – يوم النهاية · نُبِّه 3 مرات دون إجراء',{overdue:true,neglected:'مُهمَلة — وردية: أحمد',snoozed:3}),
+      R('207','overdue','حسن آدم إسحق','يومي','انتهت منذ يوم (الجمعة 25 سبتمبر)','قاعدة: يومي – يوم النهاية',{overdue:true,snoozed:2,popover:true})
+    ];
+    const today = [
+      R('204','occupied','فاطمة أحمد النور','يومي','تنتهي اليوم (السبت 26 سبتمبر)','قاعدة: يومي – يوم النهاية · 09:00',{snoozed:0}),
+      R('108','occupied','نادية صالح عبدالله','يومي','تنتهي اليوم (السبت 26 سبتمبر)','قاعدة: يومي – يوم النهاية · 09:00',{snoozed:1}),
+      R('203','occupied','محمد عثمان الطيب','شهري','تنتهي بعد 3 أيام (الجمعة 30 أكتوبر)','قاعدة: شهري – قبل 5 أيام · «قال سيؤكد التمديد بعد الظهر» — أحمد علي 11:20',{waiting:'بانتظار الرد · المتابعة 17:00',snoozed:0})
+    ];
+    const upcoming = [
+      R('201','occupied','يوسف الطاهر محمد','يومي','تنتهي بعد يومين (الاثنين 28 سبتمبر)','قاعدة: يومي – يوم النهاية · سيُنبَّه الاثنين 09:00',{snoozed:0}),
+      R('408','occupied','وفاء الزين أحمد','يومي','تنتهي بعد يومين (الاثنين 28 سبتمبر)','قاعدة: يومي – يوم النهاية · سيُنبَّه الاثنين 09:00',{snoozed:0}),
+      R('411','occupied','سارة عمر الشيخ','شهري','تنتهي بعد 18 يومًا (الأربعاء 14 أكتوبر)','قاعدة: شهري – قبل 5 أيام · سيُنبَّه الجمعة 9 أكتوبر 09:00',{snoozed:0})
+    ];
+    const groups = [
+      {title:'متأخرة',subtitle:'انتهت الإقامة دون إجراء',dot:'#DC2626',rows:late},
+      {title:'اليوم',subtitle:'مستحقة خلال هذه الوردية',dot:'#D97706',rows:today},
+      {title:'القادمة',subtitle:'ستُنبَّه لاحقًا وفق القاعدة',dot:'#9AA3AF',rows:upcoming}
+    ];
+    const groupsCompact = [
+      {title:'متأخرة',dot:'#DC2626',rows:late.map(r=>({...r,popover:false}))},
+      {title:'اليوم',dot:'#D97706',rows:today.slice(0,2)},
+      {title:'القادمة',dot:'#9AA3AF',rows:upcoming.slice(0,1)}
+    ];
+    const groupsOffline = [
+      {title:'متأخرة',dot:'#DC2626',rows:late.map(r=>({...r,popover:false}))},
+      {title:'اليوم',dot:'#D97706',rows:today.slice(0,2)}
+    ];
+    return { groups, groupsCompact, groupsOffline, three:[1,2,3] };
+  }
+}
+</script>
+</body>
+</html>
