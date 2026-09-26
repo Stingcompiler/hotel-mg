@@ -15,8 +15,20 @@ from apps.rooms.models import Room, RoomStatus, RoomType
 from . import rules
 from .models import Reservation, ReservationStatus
 
-RESERVATION_FIELDS = ["guest", "room_type", "room", "check_in_date", "check_out_date", "duration_kind",
-                      "duration_count", "status", "total", "rate_snapshot", "notes", "status_reason"]  # fmt: skip
+RESERVATION_FIELDS = [
+    "guest",
+    "room_type",
+    "room",
+    "check_in_date",
+    "check_out_date",
+    "duration_kind",
+    "duration_count",
+    "status",
+    "total",
+    "rate_snapshot",
+    "notes",
+    "status_reason",
+]
 
 
 def today() -> date:
@@ -24,7 +36,7 @@ def today() -> date:
     return timezone.localdate()
 
 
-def _prices(room_type: RoomType) -> dict[str, int]:
+def prices_of(room_type: RoomType) -> dict[str, int]:
     return {"nightly": room_type.nightly_price, "weekly": room_type.weekly_price, "monthly": room_type.monthly_price}
 
 
@@ -51,7 +63,7 @@ def quote(room_type: RoomType, check_in_date: date, duration_kind: str, count: i
     nights = rules.nights_for(duration_kind, count)
     if nights > rules.MAX_NIGHTS:
         raise ApiError("duration_too_long", 400)
-    prices = _prices(room_type)
+    prices = prices_of(room_type)
     options = sorted(
         (
             QuoteOption(
@@ -61,7 +73,7 @@ def quote(room_type: RoomType, check_in_date: date, duration_kind: str, count: i
                 units=o.units(),
                 duration_kind=rules.duration_kind_of(o),
                 total=rules.price(o, prices),
-            )  # fmt: skip
+            )
             for o in rules.options_for(duration_kind, count)
         ),
         key=lambda o: o.total,
@@ -99,7 +111,7 @@ def available_rooms(room_type: RoomType | None, check_in: date, check_out: date)
     return qs.select_related("room_type").order_by("number")
 
 
-def _lock_room_for(room: Room, check_in: date, check_out: date, *, exclude_pk=None) -> Room:
+def lock_room_for(room: Room, check_in: date, check_out: date, *, exclude_pk=None) -> Room:
     """Lock the room row and refuse if another reservation holds it for the period."""
     room = Room.objects.select_for_update().get(pk=room.pk)  # row lock on PostgreSQL; IMMEDIATE txn on SQLite
     if not room.in_service:
@@ -111,26 +123,37 @@ def _lock_room_for(room: Room, check_in: date, check_out: date, *, exclude_pk=No
         clash = clash.exclude(pk=exclude_pk)
     if other := clash.select_related("guest").first():
         raise ApiError(
-            "room_unavailable", 409,
+            "room_unavailable",
+            409,
             detail=f"الغرفة {room.number} محجوزة من {other.check_in_date:%d/%m} إلى {other.check_out_date:%d/%m}.",
             conflict=str(other.pk),
-        )  # fmt: skip
+        )
     return room
 
 
 # --- Reservations ------------------------------------------------------------------
 
 
-def _snapshot(reservation: Reservation) -> dict:
+def snapshot(reservation: Reservation) -> dict:
     return audit.snapshot(reservation, RESERVATION_FIELDS)
 
 
 @transaction.atomic
 def create_reservation(
-    actor, *, guest, room_type: RoomType, room: Room | None = None, check_in_date: date, duration_kind: str,
-    count: int, option_key: str | None = None, final_total: int | None = None, override_reason: str = "",
-    notes: str = "", allow_past: bool = False,
-) -> Reservation:  # fmt: skip
+    actor,
+    *,
+    guest,
+    room_type: RoomType,
+    room: Room | None = None,
+    check_in_date: date,
+    duration_kind: str,
+    count: int,
+    option_key: str | None = None,
+    final_total: int | None = None,
+    override_reason: str = "",
+    notes: str = "",
+    allow_past: bool = False,
+) -> Reservation:
     if check_in_date < today() and not allow_past:
         raise ApiError("date_in_past", 400)
     q = quote(room_type, check_in_date, duration_kind, count)
@@ -150,23 +173,37 @@ def create_reservation(
     if room is not None:
         if room.room_type_id != room_type.pk:
             raise ApiError("room_type_mismatch", 400)
-        room = _lock_room_for(room, q.check_in_date, q.check_out_date)
+        room = lock_room_for(room, q.check_in_date, q.check_out_date)
 
     reservation = Reservation.objects.create(
-        guest=guest, room_type=room_type, room=room,
-        check_in_date=q.check_in_date, check_out_date=q.check_out_date,
+        guest=guest,
+        room_type=room_type,
+        room=room,
+        check_in_date=q.check_in_date,
+        check_out_date=q.check_out_date,
         duration_kind=option.duration_kind,
         duration_count=q.nights if option.duration_kind == "mixed" else count,
         rate_snapshot={
-            "room_type": room_type.name, "prices": _prices(room_type), "option": option.key,
-            "label": option.label, "units": option.units, "base_total": base_total,
+            "room_type": room_type.name,
+            "prices": prices_of(room_type),
+            "option": option.key,
+            "label": option.label,
+            "units": option.units,
+            "base_total": base_total,
             "override_total": final_total if final_total != base_total else None,
             "override_reason": override_reason if final_total != base_total else "",
         },
-        total=final_total, notes=notes, created_by=actor,
-    )  # fmt: skip
-    audit.record(actor=actor, action="reservation.create", entity="reservation", entity_id=reservation.pk,
-                 after=_snapshot(reservation))  # fmt: skip
+        total=final_total,
+        notes=notes,
+        created_by=actor,
+    )
+    audit.record(
+        actor=actor,
+        action="reservation.create",
+        entity="reservation",
+        entity_id=reservation.pk,
+        after=snapshot(reservation),
+    )
     return reservation
 
 
@@ -182,12 +219,18 @@ def cancel_reservation(actor, reservation_id, *, reason: str, version: int | Non
         raise ApiError("invalid_reservation_status", 409)
     if not reason.strip():
         raise ApiError("reason_required", 400, detail="سبب الإلغاء مطلوب.")
-    before = _snapshot(reservation)
+    before = snapshot(reservation)
     reservation.status = ReservationStatus.CANCELLED
     reservation.status_reason = reason.strip()
     reservation.save()
-    audit.record(actor=actor, action="reservation.cancel", entity="reservation", entity_id=reservation.pk,
-                 before=before, after=_snapshot(reservation))  # fmt: skip
+    audit.record(
+        actor=actor,
+        action="reservation.cancel",
+        entity="reservation",
+        entity_id=reservation.pk,
+        before=before,
+        after=snapshot(reservation),
+    )
     return reservation
 
 
@@ -198,11 +241,17 @@ def mark_no_show(actor, reservation_id, *, version: int | None = None) -> Reserv
         raise ApiError("invalid_reservation_status", 409)
     if reservation.check_in_date > today():
         raise ApiError("invalid_reservation_status", 409, detail="لا يمكن تسجيل عدم الحضور قبل تاريخ الوصول.")
-    before = _snapshot(reservation)
+    before = snapshot(reservation)
     reservation.status = ReservationStatus.NO_SHOW
     reservation.save()
-    audit.record(actor=actor, action="reservation.no_show", entity="reservation", entity_id=reservation.pk,
-                 before=before, after=_snapshot(reservation))  # fmt: skip
+    audit.record(
+        actor=actor,
+        action="reservation.no_show",
+        entity="reservation",
+        entity_id=reservation.pk,
+        before=before,
+        after=snapshot(reservation),
+    )
     return reservation
 
 
@@ -213,12 +262,18 @@ def assign_room(actor, reservation_id, room: Room, *, version: int | None = None
         raise ApiError("invalid_reservation_status", 409)
     if room.room_type_id != reservation.room_type_id:
         raise ApiError("room_type_mismatch", 400)
-    _lock_room_for(room, reservation.check_in_date, reservation.check_out_date, exclude_pk=reservation.pk)
-    before = _snapshot(reservation)
+    lock_room_for(room, reservation.check_in_date, reservation.check_out_date, exclude_pk=reservation.pk)
+    before = snapshot(reservation)
     reservation.room = room
     reservation.save()
-    audit.record(actor=actor, action="reservation.assign_room", entity="reservation", entity_id=reservation.pk,
-                 before=before, after=_snapshot(reservation))  # fmt: skip
+    audit.record(
+        actor=actor,
+        action="reservation.assign_room",
+        entity="reservation",
+        entity_id=reservation.pk,
+        before=before,
+        after=snapshot(reservation),
+    )
     return reservation
 
 

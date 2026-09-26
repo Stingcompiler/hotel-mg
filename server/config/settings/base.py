@@ -129,6 +129,7 @@ SPECTACULAR_SETTINGS = {
         "RoomStatusEnum": "apps.rooms.models.RoomStatus",
         "DurationKindEnum": "apps.stays.models.DurationKind",
         "BookingDurationKindEnum": "apps.stays.serializers.BOOKING_KINDS",
+        "AfterRoomStatusEnum": "apps.stays.serializers.AFTER_ROOM_STATUS",
     },
 }
 

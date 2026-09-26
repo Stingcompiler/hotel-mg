@@ -12,9 +12,16 @@ AT = datetime(2026, 9, 26, 8, 0, tzinfo=UTC)
 
 def _payload(seq, **over):
     base = {
-        "seq": seq, "hotel_id": "h", "actor_id": None, "action": "a", "entity": "e",
-        "entity_id": "1", "before": None, "after": {"x": 1}, "at": AT,
-    }  # fmt: skip
+        "seq": seq,
+        "hotel_id": "h",
+        "actor_id": None,
+        "action": "a",
+        "entity": "e",
+        "entity_id": "1",
+        "before": None,
+        "after": {"x": 1},
+        "at": AT,
+    }
     return {**base, **over}
 
 
@@ -76,8 +83,14 @@ def test_record_requires_transaction():
 class TestRecord:
     def test_rows_form_a_verified_chain(self, reception):
         with transaction.atomic():
-            first = services.record(actor=reception, action="room.set_status", entity="room", entity_id="203",
-                                    before={"status": "ready"}, after={"status": "occupied"})  # fmt: skip
+            first = services.record(
+                actor=reception,
+                action="room.set_status",
+                entity="room",
+                entity_id="203",
+                before={"status": "ready"},
+                after={"status": "occupied"},
+            )
         with transaction.atomic():
             second = services.record(actor=None, action="system.x", entity="system", after={"n": 1})
         assert (first.seq, second.seq) == (1, 2)

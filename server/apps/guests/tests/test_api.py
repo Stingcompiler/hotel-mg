@@ -64,8 +64,9 @@ def test_search(reception_api, guest, q):
 
 
 def test_warning_filter(reception_api, guest):
-    reception_api.post("/api/v1/guests/", {"full_name": "خالد إبراهيم", "warning_note": "دين سابق 8,000 ج.س"},
-                       format="json")  # fmt: skip
+    reception_api.post(
+        "/api/v1/guests/", {"full_name": "خالد إبراهيم", "warning_note": "دين سابق 8,000 ج.س"}, format="json"
+    )
     res = reception_api.get("/api/v1/guests/", {"warning": "1"}).json()["results"]
     assert [g["full_name"] for g in res] == ["خالد إبراهيم"]
 

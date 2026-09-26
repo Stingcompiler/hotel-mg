@@ -54,3 +54,39 @@ class Reservation(BaseModel):
     @property
     def nights(self) -> int:
         return (self.check_out_date - self.check_in_date).days
+
+
+class Stay(BaseModel):
+    """Created at check-in (spec §5). Its state follows the reservation's status."""
+
+    reservation = models.OneToOneField(Reservation, on_delete=models.PROTECT, related_name="stay")
+    checked_in_at = models.DateTimeField()
+    checked_out_at = models.DateTimeField(null=True, blank=True)
+    # Filled when checkout or cancellation was forced through by a manager (e.g. leaving with a balance).
+    override_by = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
+    override_reason = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        ordering = ["-checked_in_at"]
+
+    def __str__(self):
+        return f"Stay {self.reservation}"
+
+
+class StaySegment(BaseModel):
+    """The room occupied over a date range. A room change closes one segment and opens the next."""
+
+    stay = models.ForeignKey(Stay, on_delete=models.PROTECT, related_name="segments")
+    room = models.ForeignKey("rooms.Room", on_delete=models.PROTECT, related_name="+")
+    from_date = models.DateField()
+    to_date = models.DateField(help_text="Exclusive.")
+    reason = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        ordering = ["from_date", "created_at"]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(to_date__gte=models.F("from_date")), name="segment_dates_ordered")
+        ]
+
+    def __str__(self):
+        return f"{self.room} {self.from_date}→{self.to_date}"

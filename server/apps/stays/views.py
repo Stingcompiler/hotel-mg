@@ -9,16 +9,26 @@ from rest_framework.views import APIView
 
 from apps.rooms.models import RoomType
 
-from . import services
-from .models import Reservation
+from . import rules, services, stay_services
+from .models import Reservation, Stay
 from .serializers import (
     AssignRoomSerializer,
     AvailableRoomSerializer,
+    CancelOptionsSerializer,
+    CancelStaySerializer,
+    ChangeRoomOptionSerializer,
+    ChangeRoomSerializer,
+    CheckInSerializer,
+    CheckoutSerializer,
+    ExtendQuoteRequestSerializer,
+    ExtendQuoteSerializer,
+    ExtendSerializer,
     QuoteRequestSerializer,
     QuoteSerializer,
     ReasonSerializer,
     ReservationCreateSerializer,
     ReservationSerializer,
+    StaySerializer,
     VersionSerializer,
 )
 
@@ -90,9 +100,14 @@ class ReservationListView(ListAPIView):
     def post(self, request):
         data = ReservationCreateSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        reservation = services.create_reservation(request.user, **data.validated_data)
-        return Response(ReservationSerializer(_reservations().get(pk=reservation.pk)).data,
-                        status=status.HTTP_201_CREATED)  # fmt: skip
+        booking = dict(data.validated_data)
+        if booking.pop("check_in_now"):
+            reservation = stay_services.book_and_check_in(request.user, **booking).reservation
+        else:
+            reservation = services.create_reservation(request.user, **booking)
+        return Response(
+            ReservationSerializer(_reservations().get(pk=reservation.pk)).data, status=status.HTTP_201_CREATED
+        )
 
 
 class ReservationDetailView(APIView):
@@ -137,3 +152,129 @@ class AssignRoomView(APIView):
         data.is_valid(raise_exception=True)
         services.assign_room(request.user, pk, **data.validated_data)
         return Response(ReservationSerializer(_reservations().get(pk=pk)).data)
+
+
+# --- Stays -----------------------------------------------------------------------------------
+
+
+def _stays():
+    return Stay.objects.select_related(
+        "reservation__guest", "reservation__room", "reservation__room_type", "override_by"
+    ).prefetch_related("segments__room")
+
+
+def _stay_response(stay_id, code=status.HTTP_200_OK):
+    return Response(StaySerializer(_stays().get(pk=stay_id)).data, status=code)
+
+
+class CurrentStaysView(ListAPIView):
+    """Guests in house now."""
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = StaySerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return _stays().filter(reservation__status="checked_in").order_by("reservation__room__number")
+
+
+class CheckInView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=CheckInSerializer, responses={201: StaySerializer})
+    def post(self, request):
+        data = CheckInSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        v = data.validated_data
+        stay = stay_services.check_in(request.user, v["reservation"].pk, room=v.get("room"), version=v.get("version"))
+        return _stay_response(stay.pk, status.HTTP_201_CREATED)
+
+
+class StayDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=StaySerializer)
+    def get(self, request, pk):
+        get_object_or_404(Stay, pk=pk)
+        return _stay_response(pk)
+
+
+class ExtendQuoteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=ExtendQuoteRequestSerializer, responses=ExtendQuoteSerializer)
+    def post(self, request, pk):
+        stay = get_object_or_404(_stays(), pk=pk)
+        data = ExtendQuoteRequestSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        return Response(ExtendQuoteSerializer(stay_services.extension_quote(stay, **data.validated_data)).data)
+
+
+class ExtendView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=ExtendSerializer, responses=StaySerializer)
+    def post(self, request, pk):
+        get_object_or_404(Stay, pk=pk)
+        data = ExtendSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        stay_services.extend(request.user, pk, **data.validated_data)
+        return _stay_response(pk)
+
+
+class ChangeRoomView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=ChangeRoomOptionSerializer(many=True))
+    def get(self, request, pk):
+        """Rooms the guest can move to, same type first, with the price difference."""
+        stay = get_object_or_404(_stays(), pk=pk)
+        options = [{"room": room, "difference": diff} for room, diff in stay_services.change_room_candidates(stay)]
+        return Response(ChangeRoomOptionSerializer(options, many=True).data)
+
+    @extend_schema(request=ChangeRoomSerializer, responses=StaySerializer)
+    def post(self, request, pk):
+        get_object_or_404(Stay, pk=pk)
+        data = ChangeRoomSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        stay_services.change_room(request.user, pk, **data.validated_data)
+        return _stay_response(pk)
+
+
+class CheckoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=CheckoutSerializer, responses=StaySerializer)
+    def post(self, request, pk):
+        get_object_or_404(Stay, pk=pk)
+        data = CheckoutSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        stay_services.checkout(request.user, pk, **data.validated_data)
+        return _stay_response(pk)
+
+
+class CancelStayView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=CancelOptionsSerializer)
+    def get(self, request, pk):
+        """Settlement choices for the nights already used."""
+        stay = get_object_or_404(_stays(), pk=pk)
+        used, options = stay_services.cancel_options(stay)
+        return Response(
+            CancelOptionsSerializer(
+                {
+                    "nights_used": used,
+                    "current_total": stay.reservation.total,
+                    "options": [{"key": o.key, "label": rules.option_label(o), "total": total} for o, total in options],
+                }
+            ).data
+        )
+
+    @extend_schema(request=CancelStaySerializer, responses=StaySerializer)
+    def post(self, request, pk):
+        get_object_or_404(Stay, pk=pk)
+        data = CancelStaySerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        stay_services.cancel_stay(request.user, pk, **data.validated_data)
+        return _stay_response(pk)
