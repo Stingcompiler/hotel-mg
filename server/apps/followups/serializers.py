@@ -45,6 +45,10 @@ class CountsSerializer(serializers.Serializer):
     system = serializers.IntegerField()
 
 
+class TaskCountSerializer(CountsSerializer):
+    count = serializers.IntegerField(help_text="Open tasks (open, snoozed, waiting, neglected): the badge number.")
+
+
 class LastActionSerializer(serializers.Serializer):
     text = serializers.CharField()
     by = serializers.CharField()

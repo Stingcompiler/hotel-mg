@@ -1,0 +1,20 @@
+@import "./tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply m-0 bg-bg-page font-sans text-body text-text-primary;
+    font-variant-numeric: tabular-nums;
+  }
+  a {
+    @apply text-primary no-underline hover:text-primary-hover;
+  }
+  /* Focus ring outside the element, 2 + 2 px on every side (RTL notes «الشطب والتركيز»). */
+  :focus-visible {
+    outline: var(--focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+}

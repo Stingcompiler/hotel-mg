@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -19,6 +20,9 @@ class SystemStatusSerializer(serializers.Serializer):
     hotel_id = serializers.UUIDField(allow_null=True)
     last_backup = serializers.DateTimeField(allow_null=True)
     data_as_of = serializers.DateTimeField(allow_null=True)
+    backup_stale_hours = serializers.IntegerField(
+        allow_null=True, help_text="Hours since the last backup once past the «no backup» alert threshold."
+    )
     clock_blocked = serializers.BooleanField()
     version = serializers.CharField()
     schema_version = serializers.IntegerField()
@@ -31,14 +35,20 @@ class SystemStatusView(APIView):
 
     @extend_schema(responses=SystemStatusSerializer)
     def get(self, request):
-        from apps.backup.export import last_backup_at  # core must not import backup at module load
+        from apps.backup import rules as backup_rules  # core must not import backup at module load
+        from apps.backup.export import last_backup_at
         from apps.backup.merge import last_imported
+        from apps.followups.models import AlertRule, TriggerKind
 
         last_import = last_imported() if settings.SKYTOWERS_ROLE == "owner" else None
+        last_backup = last_backup_at()
+        rule = AlertRule.objects.filter(trigger_kind=TriggerKind.NO_BACKUP, is_active=True).first()
+        limit = (rule.threshold_hours if rule else None) or 24
         data = {
             "role": settings.SKYTOWERS_ROLE,
             "hotel_id": settings.RUNTIME.hotel_id,
-            "last_backup": last_backup_at(),
+            "last_backup": last_backup,
+            "backup_stale_hours": backup_rules.stale_hours(last_backup, timezone.now(), limit),
             "data_as_of": last_import.data_as_of if last_import else None,
             "clock_blocked": is_clock_blocked(),
             "version": settings.APP_VERSION,

@@ -55,3 +55,17 @@ python -m service.run_waitress             # serve on 127.0.0.1:8471
 ## Frontend rules (for F1+, §10)
 
 Tokens only (CI fails on hex colours outside `tokens.css`); Tailwind logical utilities only (CI fails on `ml-/mr-/pl-/pr-/left-/right-`); strings from `ar.json`, copied verbatim from the design; `stateColor(status)` is the only user of state colours; no business logic in the SPA.
+
+Commands (from `web/`, Node 22):
+
+```
+npm ci
+npm run dev            # Vite on :5173, proxies /api to the Django server on :8471
+npm run check:ui       # the CI greps (build/web-checks.mjs)
+npm run typecheck && npm test && npm run build
+node ../build/tokens-to-tailwind.ts   # after a new design-package/tokens.json
+```
+
+Types come from `api/schema.d.ts` (`@api/schema`); after an API change regenerate `api/` (see `api/README.md`).
+Tailwind has no default palette: only token colours exist. `errors` in `ar.json` must equal the server's `MESSAGES`
+(test `core/tests/test_ar_json.py`).

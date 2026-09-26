@@ -1116,6 +1116,29 @@
           }
         },
         {
+          "name": "followups_tasks_count_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/followups/tasks/count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "followups",
+                "tasks",
+                "count"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Badge numbers for the login screen, sidebar and top bar (spec §10.4 ``tasks?status=open&count``)."
+          }
+        },
+        {
           "name": "followups_task_history",
           "request": {
             "method": "GET",

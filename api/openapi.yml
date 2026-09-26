@@ -878,6 +878,7 @@ paths:
         name: count
         schema:
           type: boolean
+        description: 'Deprecated: returns the TaskCount shape; use tasks/count.'
       - in: query
         name: status
         schema:
@@ -957,6 +958,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskRow'
+          description: ''
+  /api/v1/followups/tasks/count:
+    get:
+      operationId: followups_tasks_count_retrieve
+      description: Badge numbers for the login screen, sidebar and top bar (spec §10.4
+        ``tasks?status=open&count``).
+      tags:
+      - followups
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskCount'
           description: ''
   /api/v1/followups/toasts:
     get:
@@ -3003,6 +3021,17 @@ components:
       - id
       - name
       - trigger_kind
+      - duration_kind
+      - days_before
+      - second_days_before
+      - at_time
+      - repeat_hours
+      - max_snoozes
+      - escalate_after_hours
+      - threshold_hours
+      - threshold
+      - windows_notification
+      - is_active
       - version
     AlertRuleRequest:
       type: object
@@ -3174,15 +3203,19 @@ components:
           type: string
           maxLength: 64
       required:
-      - action
-      - actor_name
+      - id
+      - seq
       - at
+      - actor
+      - actor_name
+      - action
       - category
       - category_label
       - entity
+      - entity_id
+      - before
+      - after
       - hash
-      - id
-      - seq
     AuditVerify:
       type: object
       properties:
@@ -3194,8 +3227,8 @@ components:
         rows:
           type: integer
       required:
-      - first_broken_seq
       - ok
+      - first_broken_seq
       - rows
     AuthUrl:
       type: object
@@ -3228,11 +3261,12 @@ components:
         status:
           $ref: '#/components/schemas/RoomStatusEnum'
       required:
-      - floor
       - id
       - number
+      - floor
       - room_type
       - room_type_name
+      - status
     BackupRun:
       type: object
       properties:
@@ -3285,12 +3319,20 @@ components:
           type: boolean
           readOnly: true
       required:
-      - by
       - id
+      - created_at
       - kind
       - kind_label
       - status
       - status_label
+      - seq
+      - full
+      - path
+      - second_path
+      - second_error
+      - size
+      - message
+      - by
       - uploaded
     BackupRunKindEnum:
       enum:
@@ -3341,6 +3383,12 @@ components:
           type: integer
           readOnly: true
       required:
+      - owner_recipient
+      - interval_hours
+      - keep_count
+      - on_shift_close
+      - auto_drive
+      - second_dir
       - version
     BlankEnum:
       enum:
@@ -3372,11 +3420,11 @@ components:
           nullable: true
       required:
       - counts
-      - last_action
       - late
-      - system
       - today
       - upcoming
+      - system
+      - last_action
     BookingDurationKindEnum:
       enum:
       - daily
@@ -3412,8 +3460,8 @@ components:
           items:
             $ref: '#/components/schemas/CancelOption'
       required:
-      - current_total
       - nights_used
+      - current_total
       - options
     CancelReservationRequest:
       type: object
@@ -3480,11 +3528,11 @@ components:
             * `imported` - imported
             * `older` - older
       required:
-      - drive_file_id
-      - local
       - name
       - seq
       - size
+      - drive_file_id
+      - local
       - state
     ChangeRoomOption:
       type: object
@@ -3495,8 +3543,8 @@ components:
           type: integer
           description: Price difference for the remaining nights; 0 for the same type.
       required:
-      - difference
       - room
+      - difference
     ChangeRoomRequest:
       type: object
       properties:
@@ -3589,8 +3637,8 @@ components:
         of_revenue_percent:
           type: integer
       required:
-      - of_revenue_percent
       - value
+      - of_revenue_percent
     CompanionRequest:
       type: object
       properties:
@@ -3636,9 +3684,9 @@ components:
           type: integer
       required:
       - late
-      - system
       - today
       - upcoming
+      - system
     CurrentShift:
       type: object
       properties:
@@ -3661,11 +3709,11 @@ components:
         suggested_opening:
           type: integer
       required:
-      - last_closed
-      - movements
       - shift
-      - suggested_opening
       - totals
+      - movements
+      - last_closed
+      - suggested_opening
     DebtsKpi:
       type: object
       properties:
@@ -3678,9 +3726,9 @@ components:
           - $ref: '#/components/schemas/LargestDebt'
           nullable: true
       required:
+      - value
       - count
       - largest
-      - value
     DeviceRoleEnum:
       enum:
       - reception
@@ -3738,10 +3786,10 @@ components:
           nullable: true
       required:
       - configured
-      - email
-      - last_upload_at
       - linked
+      - email
       - pending_uploads
+      - last_upload_at
     DurationKindEnum:
       enum:
       - daily
@@ -3813,19 +3861,23 @@ components:
           type: string
           readOnly: true
       required:
-      - amount
-      - attachment_missing
-      - attachments
-      - by
+      - id
+      - shift
       - category
       - category_label
-      - id
-      - method
+      - amount
       - note
-      - reversed
+      - method
+      - reference
+      - room
       - room_number
-      - shift
       - spent_at
+      - reverses
+      - reason
+      - reversed
+      - attachments
+      - attachment_missing
+      - by
     ExpenseCategoryEnum:
       enum:
       - supplies
@@ -3886,12 +3938,12 @@ components:
         awaiting_attachment:
           type: integer
       required:
-      - awaiting_attachment
-      - month_total
-      - shift_count
       - shift_total
+      - shift_count
+      - month_total
       - top_category
       - top_category_total
+      - awaiting_attachment
     ExtendQuote:
       type: object
       properties:
@@ -3907,8 +3959,8 @@ components:
       required:
       - current_check_out
       - quote
-      - room_available
       - total_nights
+      - room_available
     ExtendQuoteRequestRequest:
       type: object
       properties:
@@ -3985,14 +4037,15 @@ components:
             $ref: '#/components/schemas/LedgerEntry'
           readOnly: true
       required:
-      - guest_name
       - id
       - invoice
       - invoice_no
-      - ledger
       - reservation
+      - guest_name
       - room_number
+      - status
       - totals
+      - ledger
     FolioStatusEnum:
       enum:
       - open
@@ -4016,11 +4069,11 @@ components:
           type: integer
           description: '> 0 the guest owes; < 0 the hotel owes the guest.'
       required:
-      - balance
       - charges
       - discounts
-      - paid
       - total
+      - paid
+      - balance
     Guest:
       type: object
       properties:
@@ -4069,11 +4122,17 @@ components:
           type: string
           format: date-time
       required:
+      - id
+      - full_name
+      - phone
+      - nationality
+      - id_type
+      - id_number
+      - warning_note
       - companions
       - documents
-      - full_name
-      - id
-      - id_number
+      - version
+      - created_at
     GuestDocument:
       type: object
       properties:
@@ -4093,9 +4152,10 @@ components:
           type: string
           readOnly: true
       required:
-      - added_by
       - id
       - size
+      - created_at
+      - added_by
     GuestHistoryItem:
       type: object
       properties:
@@ -4120,14 +4180,14 @@ components:
         balance:
           type: integer
       required:
-      - balance
+      - reservation_id
+      - room
       - check_in_date
       - check_out_date
       - nights
-      - reservation_id
-      - room
       - status
       - status_label
+      - balance
     GuestListItem:
       type: object
       description: 'Guest list row (artboard 6.8): history numbers come from ``context["stats"]``
@@ -4193,15 +4253,21 @@ components:
           type: boolean
           readOnly: true
       required:
-      - companions
-      - debt
-      - documents
-      - full_name
       - id
+      - full_name
+      - phone
+      - nationality
+      - id_type
       - id_number
-      - in_house
-      - last_stay
+      - warning_note
+      - companions
+      - documents
+      - version
+      - created_at
       - stays_count
+      - last_stay
+      - debt
+      - in_house
     GuestWriteRequest:
       type: object
       properties:
@@ -4294,11 +4360,23 @@ components:
           format: date-time
           readOnly: true
       required:
+      - name_ar
+      - name_latin
+      - address
+      - phone
       - currency
+      - digits
+      - money_decimals
+      - stay_day_end
+      - session_lock_minutes
       - expense_attachment_threshold
+      - max_discount_percent
+      - debt_attention_threshold
+      - auto_print_receipt
+      - thermal_printer
       - hotel_id
-      - updated_at
       - version
+      - updated_at
     IdTypeEnum:
       enum:
       - national_id
@@ -4323,9 +4401,9 @@ components:
         status:
           $ref: '#/components/schemas/ImportCheckStatusEnum'
       required:
-      - detail
       - key
       - label
+      - detail
       - status
     ImportCheckStatusEnum:
       enum:
@@ -4394,11 +4472,18 @@ components:
         by:
           type: string
       required:
-      - checks
-      - file_name
       - id
+      - created_at
       - source
+      - file_name
+      - backup_seq
+      - data_as_of
       - status
+      - counts
+      - checks
+      - audit_chain_ok
+      - error
+      - by
     ImportRunStatusEnum:
       enum:
       - ok
@@ -4431,11 +4516,11 @@ components:
         neglected_alerts:
           $ref: '#/components/schemas/NeglectedKpi'
       required:
+      - occupancy_today
+      - revenue
       - collected
       - debts
       - neglected_alerts
-      - occupancy_today
-      - revenue
     LargestDebt:
       type: object
       properties:
@@ -4444,8 +4529,8 @@ components:
         amount:
           type: integer
       required:
-      - amount
       - room
+      - amount
     LastAction:
       type: object
       properties:
@@ -4457,9 +4542,9 @@ components:
           type: string
           format: date-time
       required:
-      - at
-      - by
       - text
+      - by
+      - at
     LastStay:
       type: object
       properties:
@@ -4472,8 +4557,8 @@ components:
         room:
           type: string
       required:
-      - check_in_date
       - reservation_id
+      - check_in_date
       - room
     LedgerEntry:
       type: object
@@ -4508,17 +4593,17 @@ components:
           type: string
       required:
       - at
-      - balance
-      - by
-      - credit
-      - debit
+      - type
       - id
       - kind
-      - reason
-      - reference
-      - reverses
       - text
-      - type
+      - debit
+      - credit
+      - balance
+      - reference
+      - reason
+      - reverses
+      - by
     LedgerEntryTypeEnum:
       enum:
       - line
@@ -4577,8 +4662,8 @@ components:
         role:
           $ref: '#/components/schemas/UserRoleEnum'
       required:
-      - full_name
       - id
+      - full_name
       - role
     MethodTotals:
       type: object
@@ -4592,10 +4677,10 @@ components:
         total:
           type: integer
       required:
-      - bankak
       - cash
-      - total
+      - bankak
       - transfer
+      - total
     Movement:
       type: object
       properties:
@@ -4618,14 +4703,14 @@ components:
         ref_id:
           type: string
       required:
-      - amount
       - at
-      - by
       - kind
-      - method
-      - ref_id
-      - reference
       - text
+      - amount
+      - method
+      - reference
+      - by
+      - ref_id
     MovementKindEnum:
       enum:
       - open
@@ -4649,9 +4734,9 @@ components:
           format: date-time
           nullable: true
       required:
-      - latest_at
-      - latest_shift_user
       - value
+      - latest_shift_user
+      - latest_at
     Occupancy:
       type: object
       properties:
@@ -4665,9 +4750,9 @@ components:
         peak:
           $ref: '#/components/schemas/Peak'
       required:
+      - series
       - average
       - peak
-      - series
     OccupancyPoint:
       type: object
       properties:
@@ -4683,8 +4768,8 @@ components:
       required:
       - date
       - occupied
-      - percent
       - rooms
+      - percent
     OccupancyToday:
       type: object
       properties:
@@ -4698,10 +4783,10 @@ components:
         period_average:
           type: integer
       required:
-      - occupied
-      - period_average
-      - rooms
       - value
+      - occupied
+      - rooms
+      - period_average
     OpenShiftRequest:
       type: object
       properties:
@@ -4736,14 +4821,14 @@ components:
         overdue_stays:
           type: integer
       required:
-      - attention
-      - kpis
-      - occupancy
-      - overdue_stays
       - period
       - rooms
-      - staff
+      - kpis
+      - occupancy
       - weeks
+      - attention
+      - staff
+      - overdue_stays
     OwnerStatus:
       type: object
       properties:
@@ -4764,13 +4849,15 @@ components:
           description: Enter it in the reception's backup settings.
       required:
       - data_as_of
-      - hours_old
       - last_import
+      - hours_old
       - public_key
     PaginatedAuditLogList:
       type: object
       required:
       - count
+      - next
+      - previous
       - results
       properties:
         count:
@@ -4794,6 +4881,8 @@ components:
       type: object
       required:
       - count
+      - next
+      - previous
       - results
       properties:
         count:
@@ -4817,6 +4906,8 @@ components:
       type: object
       required:
       - count
+      - next
+      - previous
       - results
       properties:
         count:
@@ -4840,6 +4931,8 @@ components:
       type: object
       required:
       - count
+      - next
+      - previous
       - results
       properties:
         count:
@@ -4863,6 +4956,8 @@ components:
       type: object
       required:
       - count
+      - next
+      - previous
       - results
       properties:
         count:
@@ -4886,6 +4981,8 @@ components:
       type: object
       required:
       - count
+      - next
+      - previous
       - results
       properties:
         count:
@@ -5205,16 +5302,19 @@ components:
           type: string
           readOnly: true
       required:
-      - amount
-      - by
-      - folio
       - id
-      - kind
-      - method
       - receipt
       - receipt_no
-      - received_at
+      - folio
       - shift
+      - kind
+      - method
+      - amount
+      - reference
+      - reverses
+      - reason
+      - received_at
+      - by
     PaymentCreateRequest:
       type: object
       properties:
@@ -5277,10 +5377,10 @@ components:
           type: string
           format: date
       required:
-      - date_from
-      - date_to
       - key
       - label
+      - date_from
+      - date_to
     PinLoginRequest:
       type: object
       properties:
@@ -5312,11 +5412,11 @@ components:
         affected_stays:
           type: integer
       required:
-      - affected_stays
-      - first_at
       - last_night
-      - repeat_hours
+      - first_at
       - second_at
+      - repeat_hours
+      - affected_stays
     PreviewRequestRequest:
       type: object
       properties:
@@ -5392,12 +5492,12 @@ components:
         total:
           type: integer
       required:
-      - duration_kind
-      - formula
       - key
       - label
-      - total
+      - formula
       - units
+      - duration_kind
+      - total
     QuoteRequestRequest:
       type: object
       properties:
@@ -5467,10 +5567,10 @@ components:
           additionalProperties: {}
           description: title, as_of, date_from, date_to, formula, note, tiles, totals
       required:
-      - columns
-      - meta
       - name
+      - columns
       - rows
+      - meta
     ReportColumn:
       type: object
       properties:
@@ -5512,9 +5612,9 @@ components:
           nullable: true
           description: Items needing attention (red count in the index).
       required:
-      - badge
       - name
       - title
+      - badge
     Reservation:
       type: object
       properties:
@@ -5599,28 +5699,28 @@ components:
           format: date-time
           readOnly: true
       required:
-      - balance
-      - check_in_date
-      - check_out_date
-      - created_at
-      - duration_count
-      - duration_kind
-      - folio
+      - id
       - guest
       - guest_name
-      - id
-      - invoice
-      - nights
-      - notes
-      - rate_snapshot
-      - room
-      - room_number
       - room_type
       - room_type_name
+      - room
+      - room_number
+      - check_in_date
+      - check_out_date
+      - nights
+      - duration_kind
+      - duration_count
       - status
-      - status_reason
       - total
+      - rate_snapshot
+      - notes
+      - status_reason
+      - folio
+      - invoice
+      - balance
       - version
+      - created_at
     ReservationCreateRequest:
       type: object
       properties:
@@ -5734,8 +5834,8 @@ components:
           nullable: true
           description: Against the month before the period; null without data.
       required:
-      - change_percent
       - value
+      - change_percent
     Room:
       type: object
       properties:
@@ -5778,14 +5878,16 @@ components:
           type: integer
           readOnly: true
       required:
-      - floor
       - id
-      - maintenance_reason
       - number
+      - floor
       - room_type
       - room_type_name
       - status
       - status_changed_at
+      - maintenance_reason
+      - in_service
+      - note
       - version
     RoomCreateRequest:
       type: object
@@ -5842,11 +5944,12 @@ components:
           type: string
           readOnly: true
       required:
-      - at
-      - by_name
-      - from_status
       - id
+      - from_status
       - to_status
+      - at
+      - reason
+      - by_name
     RoomType:
       type: object
       properties:
@@ -5881,12 +5984,14 @@ components:
           readOnly: true
       required:
       - id
-      - monthly_price
       - name
+      - capacity
       - nightly_price
+      - weekly_price
+      - monthly_price
+      - is_active
       - room_count
       - version
-      - weekly_price
     RoomTypeRequest:
       type: object
       properties:
@@ -5986,15 +6091,18 @@ components:
           minimum: 0
           format: int64
       required:
-      - closed_by_name
-      - counted
-      - device
-      - difference
-      - expected
       - id
+      - device
       - opened_at
       - opened_by
       - opening
+      - closed_at
+      - closed_by_name
+      - expected
+      - counted
+      - difference
+      - difference_reason
+      - version
     ShiftDetail:
       type: object
       properties:
@@ -6007,9 +6115,9 @@ components:
           items:
             $ref: '#/components/schemas/Movement'
       required:
-      - movements
       - shift
       - totals
+      - movements
     ShiftHistory:
       type: object
       properties:
@@ -6025,9 +6133,9 @@ components:
             $ref: '#/components/schemas/ShiftHistoryRow'
       required:
       - count
+      - with_difference
       - net_difference
       - shifts
-      - with_difference
     ShiftHistoryRow:
       type: object
       properties:
@@ -6082,17 +6190,20 @@ components:
           type: integer
           readOnly: true
       required:
-      - cash_expenses
-      - closed_by_name
-      - counted
-      - device
-      - difference
-      - expected
       - id
+      - device
       - opened_at
       - opened_by
       - opening
+      - closed_at
+      - closed_by_name
+      - expected
+      - counted
+      - difference
+      - difference_reason
+      - version
       - receipts
+      - cash_expenses
     ShiftTotals:
       type: object
       properties:
@@ -6106,10 +6217,10 @@ components:
           type: integer
           description: Opening + cash receipts − cash expenses.
       required:
-      - expected
-      - expenses
       - opening
       - receipts
+      - expenses
+      - expected
     SourceEnum:
       enum:
       - drive
@@ -6135,12 +6246,12 @@ components:
           type: integer
           nullable: true
       required:
-      - average_delay_minutes
+      - name
+      - total
       - handled
       - handled_percent
-      - name
       - neglected
-      - total
+      - average_delay_minutes
     StateEnum:
       enum:
       - new
@@ -6190,12 +6301,15 @@ components:
           minimum: 0
           format: int64
       required:
-      - checked_in_at
       - id
-      - last_night
-      - override_by_name
       - reservation
+      - checked_in_at
+      - checked_out_at
+      - last_night
       - segments
+      - override_by_name
+      - override_reason
+      - version
     StayActionParamsRequest:
       type: object
       description: 'extend: duration_kind, count, option_key…; confirm_checkout: room_status,
@@ -6250,11 +6364,12 @@ components:
           type: string
           maxLength: 300
       required:
-      - from_date
       - id
       - room
       - room_number
+      - from_date
       - to_date
+      - reason
     SyncResult:
       type: object
       properties:
@@ -6269,9 +6384,9 @@ components:
         message:
           type: string
       required:
+      - uploaded
       - downloaded
       - message
-      - uploaded
     SystemStatus:
       type: object
       properties:
@@ -6289,6 +6404,11 @@ components:
           type: string
           format: date-time
           nullable: true
+        backup_stale_hours:
+          type: integer
+          nullable: true
+          description: Hours since the last backup once past the «no backup» alert
+            threshold.
         clock_blocked:
           type: boolean
         version:
@@ -6296,13 +6416,14 @@ components:
         schema_version:
           type: integer
       required:
-      - clock_blocked
-      - data_as_of
+      - role
       - hotel_id
       - last_backup
-      - role
-      - schema_version
+      - data_as_of
+      - backup_stale_hours
+      - clock_blocked
       - version
+      - schema_version
     TaskAction:
       type: object
       properties:
@@ -6327,10 +6448,34 @@ components:
         by:
           type: string
       required:
-      - action
-      - at
       - id
+      - action
       - label
+      - at
+      - note
+      - next_at
+      - by
+    TaskCount:
+      type: object
+      properties:
+        late:
+          type: integer
+        today:
+          type: integer
+        upcoming:
+          type: integer
+        system:
+          type: integer
+        count:
+          type: integer
+          description: 'Open tasks (open, snoozed, waiting, neglected): the badge
+            number.'
+      required:
+      - late
+      - today
+      - upcoming
+      - system
+      - count
     TaskRow:
       type: object
       properties:
@@ -6390,21 +6535,26 @@ components:
         version:
           type: integer
       required:
-      - can_snooze
-      - due_at
+      - stay
+      - room
+      - room_state
+      - guest
+      - kind
+      - last_night
+      - when
       - id
+      - rule
+      - trigger_kind
+      - title
+      - status
+      - due_at
+      - snooze_count
       - max_snoozes
-      - neglected_shift_user
+      - snooze_label
+      - can_snooze
       - next_at
       - note
-      - room
-      - rule
-      - snooze_count
-      - snooze_label
-      - status
-      - stay
-      - title
-      - trigger_kind
+      - neglected_shift_user
       - version
     Toast:
       type: object
@@ -6428,11 +6578,11 @@ components:
           type: string
           format: date-time
       required:
-      - at
-      - body
       - seq
       - task
       - title
+      - body
+      - at
     ToastBatch:
       type: object
       properties:
@@ -6495,10 +6645,15 @@ components:
           format: date-time
           description: «سيُنبَّه الجمعة 9 أكتوبر 09:00»
       required:
-      - alert_at
-      - room
-      - rule
       - stay
+      - room
+      - room_state
+      - guest
+      - kind
+      - last_night
+      - when
+      - rule
+      - alert_at
     UploadRequest:
       type: object
       properties:
@@ -6550,16 +6705,16 @@ components:
           format: date-time
           readOnly: true
       required:
-      - created_at
-      - full_name
       - id
+      - username
+      - full_name
+      - role
       - is_active
       - last_login
       - locked_until
-      - role
-      - updated_at
-      - username
       - version
+      - created_at
+      - updated_at
     UserCreateRequest:
       type: object
       properties:
@@ -6618,11 +6773,11 @@ components:
         collected:
           type: integer
       required:
-      - collected
+      - label
       - date_from
       - date_to
-      - label
       - revenue
+      - collected
   securitySchemes:
     cookieAuth:
       type: apiKey

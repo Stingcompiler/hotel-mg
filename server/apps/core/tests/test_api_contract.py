@@ -11,8 +11,16 @@ P = "/api/v1/"
 
 # Screen (design) → [(method, path in the schema)]
 SCREENS = {
-    "Login": [("post", "auth/pin"), ("post", "auth/password"), ("get", "auth/users"), ("get", "followups/tasks")],
+    "Login": [("post", "auth/pin"), ("post", "auth/password"), ("get", "auth/users"), ("get", "followups/tasks/count")],
     "Room board": [("get", "rooms/"), ("post", "rooms/{id}/set-status"), ("get", "followups/toasts")],
+    "Shell (sidebar, top bar, owner banner)": [
+        ("get", "system/status"),
+        ("get", "auth/me"),
+        ("post", "auth/logout"),
+        ("get", "system/settings"),
+        ("get", "shifts/current"),
+        ("get", "followups/tasks/count"),
+    ],
     "Reservations": [("get", "reservations/"), ("get", "rooms/")],
     "New reservation": [
         ("get", "guests/"),
@@ -118,3 +126,10 @@ def test_operation_ids_are_unique(schema):
     """Every operation has an operationId (the generated client names functions by it)."""
     ids = [op["operationId"] for item in schema["paths"].values() for op in item.values() if isinstance(op, dict)]
     assert len(ids) == len(set(ids))
+
+
+def test_response_components_require_every_field(schema):
+    settings = schema["components"]["schemas"]["HotelSettings"]
+    assert "digits" in settings["required"] and "money_decimals" in settings["required"]
+    request = schema["components"]["schemas"]["PatchedHotelSettingsUpdateRequest"]
+    assert "digits" not in request.get("required", [])

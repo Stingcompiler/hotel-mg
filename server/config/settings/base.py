@@ -126,6 +126,10 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "COMPONENT_SPLIT_REQUEST": True,
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+        "apps.core.schema.response_fields_required",
+    ],
     "ENUM_NAME_OVERRIDES": {
         "UserRoleEnum": "apps.accounts.models.Role",
         "DeviceRoleEnum": ["reception", "owner"],

@@ -75,3 +75,34 @@ jobs:
             echo "::error::api/ is out of date with the code. Regenerate (see api/README.md) and commit.";
             exit 1;
           }
+
+  web:
+    # F1 foundation (spec §12): tokens from the design package, UI greps, types against api/, tests, build.
+    name: web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Tokens are generated from design-package/tokens.json
+        run: |
+          node ../build/tokens-to-tailwind.ts
+          git diff --exit-code -- src/design/tokens.css tailwind.preset.ts || {
+            echo "::error::tokens.css / tailwind.preset.ts are stale. Run node build/tokens-to-tailwind.ts and commit.";
+            exit 1;
+          }
+      - name: UI rules (hex, physical direction, Latin strings)
+        run: npm run check:ui
+      - name: Types
+        run: npm run typecheck
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npx vite build
