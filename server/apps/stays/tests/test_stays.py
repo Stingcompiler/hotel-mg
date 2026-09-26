@@ -3,6 +3,7 @@ from datetime import date, timedelta
 import pytest
 import time_machine
 from django.utils import timezone
+from rest_framework.test import APIClient
 
 from apps.accounts.services import login_with_password
 from apps.audit.models import AuditLog
@@ -267,3 +268,22 @@ def test_board(reception_api, guest, single, double, rooms):
     assert (s["rooms"], s["occupied"], s["occupancy_percent"]) == (5, 1, 20)
     assert s["by_status"] == {"ready": 3, "occupied": 1, "cleaning": 0, "maintenance": 1}
     assert date.fromisoformat(board["date"]) == date(2026, 9, 26)
+
+
+class TestOverrideLockout:
+    def test_wrong_override_passwords_lock_the_manager(self, reception_api, guest, single, double, rooms, manager):
+        """Spec §5: 5 failed attempts → 5-minute lock — also for the manager password typed as an override."""
+        stay = stay_of(walk_in(reception_api, guest, double, rooms["202"]))
+        url = f"/api/v1/stays/{stay.pk}/change-room"
+        body = {"room": str(rooms["101"].pk), "reason": "طلب النزيل", "override_reason": "x"}
+        for _ in range(5):
+            res = reception_api.post(url, {**body, "override_password": "wrong"}, format="json")
+            assert res.json()["code"] == "override_invalid"
+        manager.refresh_from_db()
+        assert manager.locked_until is not None
+        assert AuditLog.objects.filter(action="auth.locked", entity_id=str(manager.pk)).exists()
+        # The right password is refused while locked, and login is locked too.
+        res = reception_api.post(url, {**body, "override_password": PASSWORD}, format="json")
+        assert res.json()["code"] == "override_invalid"
+        login = APIClient().post("/api/v1/auth/password", {"username": "manager", "password": PASSWORD}, format="json")
+        assert login.status_code == 423 and login.json()["code"] == "account_locked"

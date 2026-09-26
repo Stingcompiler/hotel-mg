@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from django.conf import settings
+from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
@@ -13,6 +14,8 @@ from rest_framework.views import APIView
 
 from apps.accounts.models import User
 from apps.accounts.permissions import IsManager
+from apps.accounts.services import require_confirmation
+from apps.audit import services as audit
 from apps.core.errors import ApiError
 
 from . import drive, export, keys, merge, rules, services
@@ -40,6 +43,14 @@ class BackupRunView(APIView):
     @extend_schema(request=None, responses={201: BackupRunSerializer})
     def post(self, request):
         run = export.run_backup(request.user, BackupRun.Kind.MANUAL)
+        with transaction.atomic():
+            audit.record(
+                actor=request.user,
+                action="backup.manual",
+                entity="backup_run",
+                entity_id=run.pk,
+                after={"status": run.status, "seq": run.seq, "path": run.path, "message": run.message},
+            )
         return Response(BackupRunSerializer(run).data, status=status.HTTP_201_CREATED)
 
 
@@ -102,6 +113,13 @@ class OwnerStatusView(APIView):
         )
 
 
+def _confirm_unless_first_import(request) -> None:
+    """Spec §6.8: importing a backup is a sensitive action (X-Confirm-Token) — except the very first import
+    on an empty owner PC, where nobody can sign in yet."""
+    if User.objects.exists():
+        require_confirmation(request)
+
+
 class OwnerImportView(APIView):
     """Import a backup file (USB). Runs the five checks; merges only if all pass (artboard 6.13 C)."""
 
@@ -110,6 +128,7 @@ class OwnerImportView(APIView):
 
     @extend_schema(request=ImportRequestSerializer, responses={201: ImportRunSerializer})
     def post(self, request):
+        _confirm_unless_first_import(request)
         data = ImportRequestSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         upload = data.validated_data["file"]
@@ -149,6 +168,14 @@ class OwnerBackupView(APIView):
     @extend_schema(request=None, responses={201: BackupRunSerializer})
     def post(self, request):
         run = export.run_backup(request.user, BackupRun.Kind.MANUAL)
+        with transaction.atomic():
+            audit.record(
+                actor=request.user,
+                action="backup.manual",
+                entity="backup_run",
+                entity_id=run.pk,
+                after={"status": run.status, "seq": run.seq, "path": run.path, "message": run.message},
+            )
         return Response(BackupRunSerializer(run).data, status=status.HTTP_201_CREATED)
 
 
@@ -217,7 +244,12 @@ class DriveUnlinkView(APIView):
 
     @extend_schema(request=None, responses=DriveStatusSerializer)
     def post(self, request):
+        before = _drive_status()
         drive.unlink_account()
+        with transaction.atomic():
+            audit.record(
+                actor=request.user, action="backup.drive_unlink", entity="drive", before={"email": before.get("email")}
+            )
         return Response(DriveStatusSerializer(_drive_status()).data)
 
 
@@ -291,6 +323,7 @@ class OwnerImportFromDriveView(APIView):
 
     @extend_schema(request=DriveImportSerializer, responses={201: ImportRunSerializer})
     def post(self, request):
+        _confirm_unless_first_import(request)
         data = DriveImportSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         v = data.validated_data

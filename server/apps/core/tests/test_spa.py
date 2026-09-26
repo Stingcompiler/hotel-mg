@@ -33,7 +33,8 @@ def test_assets_are_cached_and_top_level_files_served(client, built):
 def test_api_paths_are_not_swallowed_by_the_spa(client, built):
     res = client.get("/api/v1/nope")
     assert res.status_code == 404
-    assert b"root" not in res.content
+    assert res["Content-Type"].startswith("application/json")
+    assert res.json() == {"code": "not_found", "detail": "العنصر غير موجود."}
 
 
 def test_no_build_yet_explains_what_to_do(client, tmp_path):

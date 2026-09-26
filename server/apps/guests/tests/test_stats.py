@@ -19,3 +19,9 @@ def test_guest_list_carries_history_numbers_and_filters(api_as_manager):
     assert history[0]["status_label"] == "مسكّن"
     assert history[0]["total"] - history[0]["paid"] == history[0]["balance"]
     assert history[0]["stay"] and history[0]["duration_label"]
+
+
+def test_page_size_is_a_query_parameter_with_a_ceiling(api_as_manager):
+    page = api_as_manager.get("/api/v1/guests/", {"page_size": 2}).json()
+    assert len(page["results"]) == 2 and page["next"]
+    assert len(api_as_manager.get("/api/v1/guests/", {"page_size": 9999}).json()["results"]) <= 500

@@ -86,6 +86,11 @@
                   "disabled": true
                 },
                 {
+                  "key": "page_size",
+                  "value": "",
+                  "disabled": true
+                },
+                {
                   "key": "q",
                   "value": "",
                   "disabled": true
@@ -453,6 +458,11 @@
                   "key": "page",
                   "value": "",
                   "disabled": true
+                },
+                {
+                  "key": "page_size",
+                  "value": "",
+                  "disabled": true
                 }
               ],
               "variable": []
@@ -509,7 +519,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"owner_recipient\": \"\",\n  \"interval_hours\": 0,\n  \"keep_count\": 0,\n  \"on_shift_close\": false,\n  \"auto_drive\": false,\n  \"second_dir\": \"\",\n  \"version\": 0\n}"
+              "raw": "{\n  \"owner_recipient\": \"\",\n  \"interval_hours\": 0,\n  \"keep_count\": 0,\n  \"keep_days\": 0,\n  \"on_shift_close\": false,\n  \"auto_drive\": false,\n  \"second_dir\": \"\",\n  \"version\": 0\n}"
             }
           }
         }
@@ -542,6 +552,11 @@
                 },
                 {
                   "key": "page",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "page_size",
                   "value": "",
                   "disabled": true
                 },
@@ -1301,6 +1316,11 @@
                   "disabled": true
                 },
                 {
+                  "key": "page_size",
+                  "value": "",
+                  "disabled": true
+                },
+                {
                   "key": "q",
                   "value": "",
                   "disabled": true
@@ -1748,11 +1768,69 @@
                   "key": "page",
                   "value": "",
                   "disabled": true
+                },
+                {
+                  "key": "page_size",
+                  "value": "",
+                  "disabled": true
                 }
               ],
               "variable": []
             },
             "description": "«سجل الاستيراد»."
+          }
+        },
+        {
+          "name": "owner_settings_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/owner/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "owner",
+                "settings"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "owner_settings_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/owner/settings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "owner",
+                "settings"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"owner_recipient\": \"\",\n  \"interval_hours\": 0,\n  \"keep_count\": 0,\n  \"keep_days\": 0,\n  \"on_shift_close\": false,\n  \"auto_drive\": false,\n  \"second_dir\": \"\",\n  \"version\": 0\n}"
+            }
           }
         },
         {
@@ -2647,6 +2725,11 @@
               "query": [
                 {
                   "key": "page",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "page_size",
                   "value": "",
                   "disabled": true
                 }

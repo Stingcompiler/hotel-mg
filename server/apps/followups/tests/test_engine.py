@@ -302,3 +302,27 @@ def test_alert_response_report(monthly_stay, reception_api, manager_api):
         "أحمد علي",
     )
     assert report["meta"]["tiles"][1]["value"] == 30
+
+
+def test_change_room_replans_the_stay_alerts(monthly_stay, reception_api, rooms):
+    """Spec §6.6: a room change supersedes pending tasks *and generates new ones* (same due date)."""
+    tick(at(20))
+    before = the_task()
+    assert before.status == "open"
+    with time_machine.travel(at(20, 10), tick=False):
+        signed_in(reception_api, User.objects.get(username="ahmed.ali"))
+        res = reception_api.post(
+            f"/api/v1/stays/{monthly_stay.pk}/change-room",
+            {"room": str(rooms["205"].pk), "reason": "عطل في التكييف", "old_room_status": "cleaning"},
+            format="json",
+        )
+        assert res.status_code == 200, res.json()
+    before.refresh_from_db()
+    assert before.status == "superseded"
+    tick(at(20, 10, 5))
+    open_tasks = FollowupTask.objects.filter(stay=monthly_stay, rule__duration_kind="monthly", status="open")
+    assert open_tasks.count() == 1
+    assert open_tasks.get().room.number == "205"
+    # Re-running never duplicates the replacement either.
+    tick(at(20, 11))
+    assert FollowupTask.objects.filter(stay=monthly_stay, rule__duration_kind="monthly").count() == 2
