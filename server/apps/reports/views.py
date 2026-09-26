@@ -19,6 +19,12 @@ from apps.core.models import HotelSettings
 from . import documents, exporters, queries  # noqa: F401  (queries registers the reports)
 from .dashboard import owner_dashboard
 from .dashboard_serializers import OwnerDashboardSerializer
+from .document_serializers import (
+    ExpenseReceiptDocumentSerializer,
+    InvoiceDocumentSerializer,
+    PaymentReceiptDocumentSerializer,
+    ShiftStatementDocumentSerializer,
+)
 from .framework import REGISTRY, build
 
 
@@ -111,18 +117,21 @@ class ReportExportView(APIView):
 class InvoiceView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses=OpenApiTypes.OBJECT, description="Data for the A4 invoice (artboard 7.1).")
+    @extend_schema(responses=InvoiceDocumentSerializer, description="Data for the A4 invoice (artboard 7.1).")
     def get(self, request, pk):
         folio = get_object_or_404(
             Folio.objects.select_related("reservation__guest", "reservation__room", "reservation__room_type"), pk=pk
         )
-        return Response(documents.invoice(folio, request.user))
+        return Response(InvoiceDocumentSerializer(documents.invoice(folio, request.user)).data)
 
 
 class PaymentReceiptView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses=OpenApiTypes.OBJECT, description="Data for the 80 mm payment receipt (artboard 7.2).")
+    @extend_schema(
+        responses=PaymentReceiptDocumentSerializer,
+        description="Data for the 80 mm payment receipt (artboard 7.2).",
+    )
     def get(self, request, pk):
         payment = get_object_or_404(
             Payment.objects.select_related(
@@ -130,26 +139,31 @@ class PaymentReceiptView(APIView):
             ),
             pk=pk,
         )
-        return Response(documents.payment_receipt(payment))
+        return Response(PaymentReceiptDocumentSerializer(documents.payment_receipt(payment)).data)
 
 
 class ExpenseReceiptView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses=OpenApiTypes.OBJECT, description="Data for the 80 mm expense slip (artboard 7.2).")
+    @extend_schema(
+        responses=ExpenseReceiptDocumentSerializer,
+        description="Data for the 80 mm expense slip (artboard 7.2).",
+    )
     def get(self, request, pk):
-        return Response(
-            documents.expense_receipt(get_object_or_404(Expense.objects.select_related("room", "created_by"), pk=pk))
-        )
+        expense = get_object_or_404(Expense.objects.select_related("room", "created_by"), pk=pk)
+        return Response(ExpenseReceiptDocumentSerializer(documents.expense_receipt(expense)).data)
 
 
 class ShiftStatementView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(responses=OpenApiTypes.OBJECT, description="Data for the A4 shift statement (artboard 7.3).")
+    @extend_schema(
+        responses=ShiftStatementDocumentSerializer,
+        description="Data for the A4 shift statement (artboard 7.3).",
+    )
     def get(self, request, pk):
         shift = get_object_or_404(Shift.objects.select_related("created_by", "closed_by"), pk=pk)
-        return Response(documents.shift_statement(shift, request.user))
+        return Response(ShiftStatementDocumentSerializer(documents.shift_statement(shift, request.user)).data)
 
 
 class OwnerDashboardView(APIView):

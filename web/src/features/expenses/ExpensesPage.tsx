@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ImageUp, Info, Plus, Undo2 } from "lucide-react";
+import { ImageUp, Info, Plus, Printer, Undo2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 import type { components } from "@api/schema";
@@ -9,6 +9,7 @@ import { keys, useCurrentShift, useHotelSettings, useSystemStatus } from "@/api/
 import { Drawer } from "@/components/ui/Drawer";
 import { ErrorBanner, Field, Segmented, Select, TextInput } from "@/components/ui/form";
 import { buttons, Modal } from "@/components/ui/Modal";
+import { openPrint } from "@/features/print/PrintPage";
 import { useRoomBoard } from "@/features/rooms/RoomBoardPage";
 import { formatDayMonth, formatTime } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
@@ -258,22 +259,23 @@ function NewExpenseDrawer({ threshold, onClose, onDone }: { threshold: number; o
   const needsReceipt = minor !== null && minor > threshold;
 
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (print: boolean) => {
       const created = await data(
         api.POST("/api/v1/expenses/", { body: { category, amount: minor!, note: note.trim(), method, reference: reference.trim(), room: room || null } }),
       );
       if (file) await upload(created.id, file);
+      if (print) openPrint("expense", created.id);
     },
     onSuccess: onDone,
     onError: (e) => setError(e instanceof ApiError ? e.message : t("errors.error")),
   });
-  const submit = () => {
+  const submit = (print = false) => {
     if (minor === null || minor <= 0) return setError(t("expenses.errAmount"));
     if (!note.trim()) return setError(t("expenses.errNote"));
     if (method !== "cash" && !reference.trim()) return setError(t("expenses.errReference"));
     if (needsReceipt && !file) return setError(t("expenses.errReceipt"));
     setError(null);
-    save.mutate();
+    save.mutate(print);
   };
 
   return (
@@ -282,8 +284,12 @@ function NewExpenseDrawer({ threshold, onClose, onDone }: { threshold: number; o
       onClose={onClose}
       footer={
         <>
-          <button type="button" disabled={save.isPending} onClick={submit} className={buttons.primary}>
+          <button type="button" disabled={save.isPending} onClick={() => submit()} className={buttons.primary}>
             {t("expenses.save")}
+          </button>
+          <button type="button" disabled={save.isPending} onClick={() => submit(true)} className={buttons.secondary}>
+            <Printer className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
+            {t("print.saveAndPrint")}
           </button>
           <div className="flex-1" />
           <button type="button" onClick={onClose} className={buttons.ghost}>

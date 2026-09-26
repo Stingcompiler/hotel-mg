@@ -13,6 +13,7 @@ import { GuestsPage } from "@/features/guests/GuestsPage";
 import { LoginPage } from "@/features/login/LoginPage";
 import { ReportsPage } from "@/features/reports/ReportsPage";
 import { OwnerDashboardPage } from "@/features/owner/OwnerDashboardPage";
+import { PrintPage } from "@/features/print/PrintPage";
 import { NewReservationPage } from "@/features/reservations/NewReservationPage";
 import { ReservationsPage } from "@/features/reservations/ReservationsPage";
 import { RoomBoardPage } from "@/features/rooms/RoomBoardPage";
@@ -56,8 +57,15 @@ function Root() {
   return <ReceptionShell />;
 }
 
+/** Print windows have no shell; they still need a signed-in session. */
+function PrintRoute() {
+  const signedIn = useSignedIn();
+  return signedIn ? <PrintPage /> : <Navigate to="/login" replace />;
+}
+
 const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
+  { path: "/print/:kind/:id", element: <PrintRoute /> },
   {
     element: <Root />,
     children: [
