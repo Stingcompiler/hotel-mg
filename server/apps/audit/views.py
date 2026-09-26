@@ -17,6 +17,8 @@ class AuditLogSerializer(serializers.ModelSerializer):
     actor_name = serializers.CharField(source="actor.full_name", default=None, read_only=True)
     category = serializers.SerializerMethodField()
     category_label = serializers.SerializerMethodField()
+    action_label = serializers.SerializerMethodField()
+    summary = serializers.SerializerMethodField()
 
     class Meta:
         model = AuditLog
@@ -29,6 +31,8 @@ class AuditLogSerializer(serializers.ModelSerializer):
             "action",
             "category",
             "category_label",
+            "action_label",
+            "summary",
             "entity",
             "entity_id",
             "before",
@@ -42,6 +46,13 @@ class AuditLogSerializer(serializers.ModelSerializer):
 
     def get_category_label(self, row) -> str:
         return rules.CATEGORIES[self.get_category(row)]
+
+    def get_action_label(self, row) -> str:
+        return rules.action_label(row.action)
+
+    def get_summary(self, row) -> str:
+        """«قبل ← بعد» of the changed fields (V2 artboard 6.11 E)."""
+        return rules.summary(row.before, row.after)
 
 
 class AuditVerifySerializer(serializers.Serializer):

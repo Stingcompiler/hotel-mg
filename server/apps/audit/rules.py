@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import re
 from datetime import datetime
 from uuid import UUID
 
@@ -131,7 +132,132 @@ ACTION_LABELS = {
     "guest.update": "تعديل بيانات النزيل",
     "guest.add_document": "إضافة صورة هوية",
     "guest.view_document": "عرض صورة هوية",
+    "auth.login_pin": "دخول بالرمز",
+    "auth.login_password": "دخول بكلمة المرور",
+    "auth.logout": "تسجيل خروج من النظام",
+    "auth.locked": "قفل الحساب بعد محاولات خاطئة",
+    "user.create": "إنشاء مستخدم",
+    "user.update": "تعديل مستخدم",
+    "user.reset_pin": "إعادة تعيين الرمز",
+    "user.unlock": "فك قفل مستخدم",
+    "room.create": "إضافة غرفة",
+    "room.update": "تعديل غرفة",
+    "room.set_status": "تغيير حالة الغرفة",
+    "room_type.create": "إضافة نوع غرفة",
+    "room_type.update_prices": "تعديل أسعار النوع",
+    "settings.update": "تعديل بيانات الفندق",
+    "backup.settings": "تعديل إعدادات النسخ",
+    "followup.rule_create": "إضافة قاعدة تنبيه",
+    "followup.rule_update": "تعديل قاعدة تنبيه",
+    "shift.open": "فتح وردية",
+    "shift.close": "إغلاق وردية",
+    "expense.create": "تسجيل مصروف",
+    "expense.attach": "إرفاق إيصال مصروف",
+    "expense.reverse": "عكس مصروف",
+    "system.clock_rollback": "رجوع ساعة الجهاز",
+    "system.clock_approve": "موافقة على ساعة الجهاز",
 }
+
+# Field names shown in «التفاصيل (قبل ← بعد)»; unknown keys are shown as they are.
+FIELD_LABELS = {
+    "amount": "المبلغ",
+    "method": "الطريقة",
+    "reason": "السبب",
+    "status": "الحالة",
+    "role": "الدور",
+    "is_active": "مفعّل",
+    "full_name": "الاسم",
+    "number": "الرقم",
+    "floor": "الطابق",
+    "note": "ملاحظة",
+    "in_service": "في الخدمة",
+    "room": "الغرفة",
+    "room_type": "النوع",
+    "name": "الاسم",
+    "nightly_price": "يومي",
+    "weekly_price": "أسبوعي",
+    "monthly_price": "شهري",
+    "days_before": "التنبيه الأول",
+    "second_days_before": "التنبيه الثاني",
+    "at_time": "الوقت",
+    "repeat_hours": "التكرار",
+    "planned_end": "النهاية",
+    "opening_float": "الرصيد الافتتاحي",
+    "counted": "المعدود",
+    "opening": "الرصيد الافتتاحي",
+    "expected": "المتوقع",
+    "category": "الفئة",
+    "threshold": "الحد",
+    "threshold_hours": "الحد بالساعات",
+    "is_active_rule": "مفعّلة",
+    "phone": "الهاتف",
+    "price": "السعر",
+    "discount": "الخصم",
+    "difference": "الفرق",
+}
+# Money fields are integer minor units (spec §5); shown in currency units in the log.
+MONEY_FIELDS = {
+    "amount", "opening", "opening_float", "expected", "counted", "price", "discount", "difference", "threshold",
+    "nightly_price", "weekly_price", "monthly_price", "total", "paid", "balance", "deposit",
+}  # fmt: skip
+_SKIP_FIELDS = {
+    "id",
+    "version",
+    "updated_at",
+    "created_at",
+    "hotel_id",
+    "device",
+    "hash",
+    "is_staff",
+    "is_superuser",
+    "password",
+}
+VALUE_LABELS = {
+    "role": {"reception": "موظف استقبال", "manager": "مدير", "owner": "مالك"},
+    "method": {"cash": "نقدي", "bankak": "بنكك", "transfer": "تحويل"},
+    "status": {"ready": "جاهزة", "occupied": "مشغولة", "cleaning": "تحتاج تنظيف", "maintenance": "صيانة"},
+}
+_SKIP_SUFFIXES = ("_at", "_by", "_id")
+_UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+
+def _money(value: int) -> str:
+    units, cents = divmod(abs(value), 100)
+    text = f"{units:,}" + (f".{cents:02d}" if cents else "")
+    return f"{'-' if value < 0 else ''}{text} ج.س"
+
+
+def _text(key: str, value) -> str:
+    if value is None or value == "":
+        return "—"
+    if isinstance(value, bool):
+        return "نعم" if value else "لا"
+    if key in MONEY_FIELDS and isinstance(value, int):
+        return _money(value)
+    return VALUE_LABELS.get(key, {}).get(value, str(value)) if isinstance(value, str) else str(value)
+
+
+def _shown(key: str, value) -> bool:
+    if key in _SKIP_FIELDS or key.endswith(_SKIP_SUFFIXES) or isinstance(value, (dict, list)):
+        return False
+    return not (isinstance(value, str) and _UUID.match(value))
+
+
+def summary(before, after, limit: int = 4) -> str:
+    """«field: old ← new» for changed keys, or «field: value» for a new row; at most ``limit`` parts."""
+    before = before if isinstance(before, dict) else {}
+    after = after if isinstance(after, dict) else {}
+    parts = []
+    for key in after:
+        if not _shown(key, after[key]):
+            continue
+        label = FIELD_LABELS.get(key, key)
+        if key in before:
+            if before[key] != after[key]:
+                parts.append(f"{label}: {_text(key, before[key])} ← {_text(key, after[key])}")
+        else:
+            parts.append(f"{label}: {_text(key, after[key])}")
+    return " · ".join(parts[:limit])
 
 
 def action_label(action: str) -> str:

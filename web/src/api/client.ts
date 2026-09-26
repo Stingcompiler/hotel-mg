@@ -19,6 +19,7 @@ export class ApiError extends Error {
   }
 }
 
+const CREDENTIAL_PATHS = ["/api/v1/auth/password", "/api/v1/auth/pin", "/api/v1/auth/confirm"];
 const OWNER_WRITABLE = ["/api/v1/auth/", "/api/v1/owner/"];
 
 const middleware: Middleware = {
@@ -34,7 +35,7 @@ const middleware: Middleware = {
     if (session.token) request.headers.set("Authorization", `Token ${session.token}`);
     return request;
   },
-  async onResponse({ response }) {
+  async onResponse({ request, response }) {
     if (response.ok) return response;
     let body: Record<string, unknown> = {};
     try {
@@ -49,7 +50,9 @@ const middleware: Middleware = {
           ? "server_unavailable"
           : "validation_error";
     const detail = typeof body.detail === "string" ? body.detail : undefined;
-    if (response.status === 401) session.signOut();
+    // A wrong password on login or on the sensitive-action confirmation is not an expired session.
+    const credentialsCheck = CREDENTIAL_PATHS.some((p) => new URL(request.url).pathname === p);
+    if (response.status === 401 && !credentialsCheck) session.signOut();
     const { code: _code, detail: _detail, ...extra } = body;
     throw new ApiError(response.status, code, errorMessage(code, detail), extra);
   },
@@ -72,4 +75,31 @@ api.use(middleware);
 export async function data<T>(promise: Promise<{ data?: T }>): Promise<T> {
   const result = await promise;
   return result.data as T;
+}
+
+/** Downloads a file endpoint (report exports) with the session token; the server's filename is kept. */
+export async function download(path: string, fallbackName: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await globalThis.fetch(`${window.location.origin}${path}`, { headers: session.token ? { Authorization: `Token ${session.token}` } : {} });
+  } catch {
+    throw new ApiError(0, "server_unavailable", errorMessage("server_unavailable"));
+  }
+  if (!res.ok) {
+    let body: Record<string, unknown> = {};
+    try {
+      body = await res.json();
+    } catch {
+      // not JSON
+    }
+    const code = typeof body.code === "string" ? body.code : "error";
+    throw new ApiError(res.status, code, errorMessage(code, typeof body.detail === "string" ? body.detail : undefined));
+  }
+  const blob = await res.blob();
+  const name = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? fallbackName;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
 }

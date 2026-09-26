@@ -3208,6 +3208,13 @@ components:
         category_label:
           type: string
           readOnly: true
+        action_label:
+          type: string
+          readOnly: true
+        summary:
+          type: string
+          description: «قبل ← بعد» of the changed fields (V2 artboard 6.11 E).
+          readOnly: true
         entity:
           type: string
           maxLength: 64
@@ -3230,6 +3237,8 @@ components:
       - action
       - category
       - category_label
+      - action_label
+      - summary
       - entity
       - entity_id
       - before

@@ -1691,6 +1691,9 @@ export interface components {
             action: string;
             readonly category: components["schemas"]["AuditCategoryEnum"];
             readonly category_label: string;
+            readonly action_label: string;
+            /** @description «قبل ← بعد» of the changed fields (V2 artboard 6.11 E). */
+            readonly summary: string;
             entity: string;
             entity_id: string;
             before: unknown;
