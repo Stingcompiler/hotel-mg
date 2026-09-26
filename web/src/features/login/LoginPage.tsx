@@ -7,6 +7,8 @@ import { api, ApiError, data } from "@/api/client";
 import { useSystemStatus } from "@/api/queries";
 import { session } from "@/api/session";
 import { Brand } from "@/components/ui/Brand";
+import { buttons } from "@/components/ui/Modal";
+import { ImportModal } from "@/features/backup/ImportModal";
 import { PIN_LENGTH, PinDots, PinPad } from "@/components/ui/PinPad";
 import { formatDayDate, formatTime } from "@/i18n/dates";
 import { digits, toWestern } from "@/i18n/digits";
@@ -184,7 +186,9 @@ export function LoginPage() {
               <div className="text-body text-text-secondary">{hint}</div>
             </div>
 
-            {list.length === 0 && users.isSuccess ? (
+            {list.length === 0 && users.isSuccess && owner ? (
+              <FirstImport onDone={() => void users.refetch()} />
+            ) : list.length === 0 && users.isSuccess ? (
               <div className="text-body text-text-secondary">{t("login.noUsers")}</div>
             ) : (
               <div className="flex w-full flex-wrap justify-center gap-2" role="radiogroup">
@@ -319,5 +323,26 @@ function PasswordForm({ onDone, onBack }: { onDone: (token: string, userId: stri
         {t("login.usePin")}
       </button>
     </form>
+  );
+}
+
+/** New owner PC: no users until the first backup is imported (spec §9.3); the server allows that one import. */
+function FirstImport({ onDone }: { onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex w-full flex-col items-center gap-3 text-center">
+      <div className="text-body text-text-secondary">{t("login.ownerFirstImport")}</div>
+      <button type="button" className={`${buttons.primary} w-full`} onClick={() => setOpen(true)}>
+        {t("login.ownerFirstImportButton")}
+      </button>
+      {open && (
+        <ImportModal
+          onClose={() => {
+            setOpen(false);
+            onDone();
+          }}
+        />
+      )}
+    </div>
   );
 }

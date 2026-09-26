@@ -22,20 +22,32 @@ const button = (primary: boolean) =>
   }`;
 
 /**
- * 6.13 A «النسخة الاحتياطية والمزامنة» on the reception PC: three equal buttons, a result line under each.
- * Import is shown disabled here (owner PC only) so staff learn where it lives.
+ * 6.13 «النسخة الاحتياطية والمزامنة»: three equal buttons with a result line under each. The primary button is
+ * each device's main job: «نسخة احتياطية الآن» at reception, «استيراد نسخة» on the owner PC. Import is shown
+ * disabled at reception (owner PC only) so staff learn where it lives.
  */
 export function BackupCard({ onImport }: { onImport?: () => void }) {
   const queryClient = useQueryClient();
   const offline = useSystemStatus().isError;
+  const owner = !!onImport;
   const runs = useQuery({ queryKey: BACKUP_RUNS, queryFn: () => data(api.GET("/api/v1/backup/runs")) });
-  const drive = useQuery({ queryKey: DRIVE_STATUS, queryFn: () => data(api.GET("/api/v1/backup/drive/status")) });
+  const drive = useQuery({
+    queryKey: DRIVE_STATUS,
+    queryFn: () => data(owner ? api.GET("/api/v1/owner/drive/status") : api.GET("/api/v1/backup/drive/status")),
+  });
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["backup"] });
+    void queryClient.invalidateQueries({ queryKey: ["owner"] });
     void queryClient.invalidateQueries({ queryKey: keys.systemStatus });
   };
-  const run = useMutation({ mutationFn: () => data(api.POST("/api/v1/backup/run")), onSettled: refresh });
-  const sync = useMutation({ mutationFn: () => data(api.POST("/api/v1/backup/drive/sync")), onSettled: refresh });
+  const run = useMutation({
+    mutationFn: () => data(owner ? api.POST("/api/v1/owner/backup/run") : api.POST("/api/v1/backup/run")),
+    onSettled: refresh,
+  });
+  const sync = useMutation({
+    mutationFn: () => data(owner ? api.POST("/api/v1/owner/drive/sync") : api.POST("/api/v1/backup/drive/sync")),
+    onSettled: refresh,
+  });
 
   const last = runs.data?.results[0];
   const d = drive.data;
@@ -64,6 +76,7 @@ export function BackupCard({ onImport }: { onImport?: () => void }) {
       return (
         <Line tone="success">
           {sync.data.uploaded ? t("backup.uploaded", { n: digits(String(sync.data.uploaded)) }) : t("backup.nothingNew")}
+          {sync.data.downloaded.length > 0 && ` · ${t("backup.downloaded", { n: digits(String(sync.data.downloaded.length)) })}`}
           {sync.data.message && ` · ${sync.data.message}`}
         </Line>
       );
@@ -87,7 +100,7 @@ export function BackupCard({ onImport }: { onImport?: () => void }) {
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div className="flex flex-col gap-2">
-          <button type="button" disabled={offline || run.isPending} onClick={() => run.mutate()} className={button(true)}>
+          <button type="button" disabled={offline || run.isPending} onClick={() => run.mutate()} className={button(!owner)}>
             <DatabaseBackup className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
             {run.isPending ? t("backup.running") : t("backup.now")}
           </button>
@@ -101,11 +114,11 @@ export function BackupCard({ onImport }: { onImport?: () => void }) {
           {syncLine()}
         </div>
         <div className="flex flex-col gap-2">
-          <button type="button" disabled={!onImport} onClick={onImport} className={button(false)}>
+          <button type="button" disabled={!onImport} onClick={onImport} className={button(owner)}>
             <Download className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
             {t("backup.import")}
           </button>
-          {!onImport && <Line tone="muted">{t("backup.ownerOnly")}</Line>}
+          <Line tone="muted">{owner ? t("backup.importHint") : t("backup.ownerOnly")}</Line>
         </div>
       </div>
     </section>

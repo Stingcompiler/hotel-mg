@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from apps.billing.models import FolioLine, Payment
 from apps.cash.models import Shift
+from apps.core import arabic
 from apps.core.models import HotelSettings
 from apps.followups.models import FollowupTask
 from apps.rooms.models import Room
@@ -77,7 +78,7 @@ def _attention(today: date, debt_limit: int, month: Params) -> list[dict]:
                     "kind": "overdue",
                     "label": "متجاوزة",
                     "report": "ending_soon",
-                    "text": f"غرفة {r.room.number} · {r.guest.full_name} · متجاوزة منذ {days} يوم",
+                    "text": f"غرفة {r.room.number} · {r.guest.full_name} · متجاوزة منذ {arabic.days(days)}",
                 }
             )
     for task in FollowupTask.objects.filter(status="neglected").select_related("shift__created_by", "room"):
@@ -119,7 +120,7 @@ def _attention(today: date, debt_limit: int, month: Params) -> list[dict]:
                 "kind": "maint",
                 "label": "صيانة طويلة" if days >= 7 else "صيانة",
                 "report": "room_status",
-                "text": f"غرفة {room.number} في الصيانة منذ {days} يوم ({room.maintenance_reason})",
+                "text": f"غرفة {room.number} في الصيانة منذ {arabic.days(days)} ({room.maintenance_reason})",
             }
         )
     return items

@@ -11,7 +11,12 @@ export function days(n: number): string {
 
 /** "25 د" / "1 س 20 د" / multi-day spans in days — for «منذ …» since a status change. */
 export function elapsed(fromIso: string, now: Date = new Date()): string {
-  const minutes = Math.max(0, Math.floor((now.getTime() - new Date(fromIso).getTime()) / 60_000));
+  return duration(Math.floor((now.getTime() - new Date(fromIso).getTime()) / 60_000));
+}
+
+/** A span of minutes: "25 د" / "1 س 20 د" / days beyond 24 hours. */
+export function duration(total: number): string {
+  const minutes = Math.max(0, Math.floor(total));
   if (minutes < 60) return t("count.minutes", { m: digits(String(minutes)) });
   if (minutes < 24 * 60) {
     return t("count.hoursMinutes", { h: digits(String(Math.floor(minutes / 60))), m: digits(String(minutes % 60)) });
