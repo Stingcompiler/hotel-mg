@@ -6404,6 +6404,13 @@ components:
           type: string
           format: date-time
           nullable: true
+        imported_seq:
+          type: integer
+          nullable: true
+          description: 'Owner PC: number of the last imported backup.'
+        device_name:
+          type: string
+          description: This PC's name (login footer).
         backup_stale_hours:
           type: integer
           nullable: true
@@ -6420,6 +6427,8 @@ components:
       - hotel_id
       - last_backup
       - data_as_of
+      - imported_seq
+      - device_name
       - backup_stale_hours
       - clock_blocked
       - version

@@ -143,3 +143,9 @@ Append-only. Newest last. Each entry: date, phase, decision, reason.
 98. **Shells** follow «Shell Sidebar» / «Shell TopBar» / the owner banner of 6.12: the shell is picked from `system/status.role`; the owner client refuses writes before sending them (except `auth/` and `owner/`), mirroring the server. The follow-up badge overlaps the bell as drawn (18 px min-width + padding on a 36 px button).
 99. **Login** is a placeholder route in F1 (the auth guard needs a target); it is the first screen ported in F2. Other §10.4 routes show a placeholder until their screen lands.
 100. `ar.json → errors` is a copy of the server's `MESSAGES`, enforced by a server test, so the SPA's fallback messages never drift from the API's.
+
+## 2026-09-26 — F2 Login (6.1)
+
+101. **PIN length**: the spec allows 4–6 digits; the design draws six dots and «6 أرقام». The keypad submits by itself at six digits; a 4–5 digit PIN is submitted with Enter. The demo PIN is now `123456`.
+102. The login screen remembers the last user on this PC (browser storage, per-device convenience only) and preselects them; a wrong PIN shows the attempts left from the API, a lock shows a live countdown to `locked_until` and switches the link to «طلب المدير» (password sign-in, so a manager can unlock). `system/status` gained `device_name` (footer) and `imported_seq` (owner chip «قاعدة محلية · النسخة 117»), both additive.
+103. The API client resolves `fetch` at call time and uses the page origin as base URL (behaves the same in the browser, and lets tests stub `fetch`).

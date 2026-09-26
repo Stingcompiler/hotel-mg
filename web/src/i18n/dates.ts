@@ -23,3 +23,9 @@ export function formatWhen(value: string | Date, now: Date = new Date()): string
   const day = days === 0 ? t("dates.today") : days === 1 ? t("dates.yesterday") : digits(format(date, "d MMMM", { locale: ar }));
   return t("dates.at", { day, time: formatTime(date) });
 }
+
+/** "السبت 26 سبتمبر 2026" — the day name before the date (RTL notes «التواريخ»). */
+export function formatDayDate(value: string | Date): string {
+  const date = asDate(value);
+  return t("dates.weekdayDate", { weekday: format(date, "EEEE", { locale: ar }), date: formatDate(date) });
+}

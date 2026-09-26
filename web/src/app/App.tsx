@@ -1,11 +1,11 @@
 import { DirectionProvider } from "@radix-ui/react-direction";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useSyncExternalStore } from "react";
-import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, RouterProvider, useLocation } from "react-router-dom";
 
 import { useHotelSettings, useSystemStatus } from "@/api/queries";
 import { session } from "@/api/session";
-import { LoginRoute } from "@/features/login/LoginRoute";
+import { LoginPage } from "@/features/login/LoginPage";
 import { Placeholder } from "@/features/placeholder/Placeholder";
 import { setDigits } from "@/i18n/digits";
 import { setMoneyDecimals } from "@/i18n/money";
@@ -27,6 +27,7 @@ function Root() {
   const signedIn = useSignedIn();
   const status = useSystemStatus();
   const settings = useHotelSettings().data;
+  const location = useLocation();
 
   useEffect(() => {
     if (settings) {
@@ -38,13 +39,16 @@ function Root() {
   if (!signedIn) return <Navigate to="/login" replace />;
   if (!status.data) return <div className="p-6 text-text-secondary">{t("common.loading")}</div>;
   session.role = status.data.role;
-  return status.data.role === "owner" ? <OwnerShell /> : <ReceptionShell />;
+  if (status.data.role === "owner") {
+    return location.pathname === "/" ? <Navigate to="/owner" replace /> : <OwnerShell />;
+  }
+  return <ReceptionShell />;
 }
 
 const screen = (path: string, key: string) => ({ path, element: <Placeholder titleKey={`nav.${key}`} /> });
 
 const router = createBrowserRouter([
-  { path: "/login", element: <LoginRoute /> },
+  { path: "/login", element: <LoginPage /> },
   {
     element: <Root />,
     children: [

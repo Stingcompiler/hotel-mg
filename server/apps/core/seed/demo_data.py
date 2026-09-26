@@ -12,7 +12,7 @@ def sdg(pounds: int) -> int:
 
 
 # Dev-only credentials; seed_demo refuses to run on a production (non-DEBUG) install.
-DEMO_PIN = "1234"
+DEMO_PIN = "123456"  # six digits, as the login design draws it
 DEMO_PASSWORD = "skytowers-dev"
 
 # Settings → Users (Gap Fill artboard).
