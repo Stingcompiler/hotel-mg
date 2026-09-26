@@ -1,7 +1,7 @@
 """API error shape: ``{"code": <stable machine code>, "detail": <Arabic message>}`` (spec §7)."""
 
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponseNotFound, JsonResponse
 from rest_framework import exceptions, status
 from rest_framework.views import exception_handler
 
@@ -12,6 +12,9 @@ MESSAGES = {
     "setup_done": "تم إعداد حساب المدير من قبل؛ سجّل الدخول به.",
     "no_open_shift": "لا توجد وردية مفتوحة على هذا الجهاز.",
     "validation_error": "البيانات المدخلة غير صحيحة.",
+    "parse_error": "تعذّر قراءة البيانات المرسلة.",
+    "unsupported_media_type": "نوع المحتوى المرسل غير مدعوم.",
+    "not_acceptable": "صيغة الاستجابة المطلوبة غير مدعومة.",
     "not_authenticated": "يجب تسجيل الدخول أولًا.",
     "authentication_failed": "بيانات الدخول غير صحيحة.",
     "account_locked": "الدخول مقفل مؤقتًا بعد 5 محاولات خاطئة. حاول لاحقًا أو اطلب من المدير فتح القفل.",
@@ -74,6 +77,13 @@ def error_json_response(code: str, status_code: int) -> JsonResponse:
     return JsonResponse(error_body(code), status=status_code, json_dumps_params={"ensure_ascii": False})
 
 
+def api_not_found(request, exception=None):
+    """Django-level 404 (no matching URL, or a missing hashed asset): JSON under ``/api/``, plain text otherwise."""
+    if request.path.startswith("/api/"):
+        return error_json_response("not_found", 404)
+    return HttpResponseNotFound("Not found", content_type="text/plain; charset=utf-8")
+
+
 def api_exception_handler(exc, context):
     response = exception_handler(exc, context)
     if response is None:
@@ -81,6 +91,11 @@ def api_exception_handler(exc, context):
 
     if isinstance(exc, ApiError):
         response.data = error_body(exc.error_code, str(exc.detail), **exc.extra)
+        if exc.error_code == "override_invalid":
+            # The service's transaction has already rolled back here, so the failed attempt survives.
+            from apps.accounts.services import register_override_failure
+
+            register_override_failure()
     elif isinstance(exc, exceptions.ValidationError):
         response.data = error_body("validation_error", errors=exc.detail)
     elif isinstance(exc, exceptions.APIException):

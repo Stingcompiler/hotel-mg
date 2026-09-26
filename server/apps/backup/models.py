@@ -11,6 +11,9 @@ class BackupSettings(BaseModel):
     )
     interval_hours = models.PositiveSmallIntegerField(default=6)
     keep_count = models.PositiveSmallIntegerField(default=30)
+    keep_days = models.PositiveSmallIntegerField(
+        default=90, help_text="Backups older than this are deleted; 0 = never."
+    )
     on_shift_close = models.BooleanField(default=True)
     auto_drive = models.BooleanField(default=True)
     second_dir = models.CharField(max_length=260, blank=True, help_text="USB / external disk folder.")

@@ -42,8 +42,15 @@ def _stay_kind(stay: Stay) -> str:
 
 
 def _create(rule: AlertRule, subject_key: str, due_at: datetime, title: str, *, second_at=None, **links) -> bool:
-    """Insert once per (rule, subject, due date); a concurrent or repeated tick is a no-op."""
-    if FollowupTask.objects.filter(rule=rule, subject_key=subject_key, due_date=_local_date(due_at)).exists():
+    """Insert once per (rule, subject, due date); a concurrent or repeated tick is a no-op.
+
+    Superseded rows do not count: after a room change the due date is unchanged, and the replacement
+    task must still be created (spec §6.6 «generates new ones»).
+    """
+    live = FollowupTask.objects.filter(rule=rule, subject_key=subject_key, due_date=_local_date(due_at)).exclude(
+        status=FollowupTask.Status.SUPERSEDED
+    )
+    if live.exists():
         return False
     try:
         with transaction.atomic():

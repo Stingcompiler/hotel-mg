@@ -850,6 +850,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/owner/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["owner_settings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["owner_settings_partial_update"];
+        trace?: never;
+    };
     "/api/v1/owner/status": {
         parameters: {
             query?: never;
@@ -1783,6 +1799,11 @@ export interface components {
             interval_hours: number;
             /** Format: int64 */
             keep_count: number;
+            /**
+             * Format: int64
+             * @description Backups older than this are deleted; 0 = never.
+             */
+            keep_days: number;
             on_shift_close: boolean;
             auto_drive: boolean;
             /** @description USB / external disk folder. */
@@ -2262,6 +2283,8 @@ export interface components {
             checks: components["schemas"]["ImportCheck"][];
             audit_chain_ok: boolean | null;
             error: string;
+            /** @description Failed runs: corrupt / foreign_hotel / upgrade_required / audit_chain_broken / older_backup / error */
+            readonly code: string | null;
             by: string;
         };
         /**
@@ -2592,6 +2615,11 @@ export interface components {
             interval_hours?: number;
             /** Format: int64 */
             keep_count?: number;
+            /**
+             * Format: int64
+             * @description Backups older than this are deleted; 0 = never.
+             */
+            keep_days?: number;
             on_shift_close?: boolean;
             auto_drive?: boolean;
             /** @description USB / external disk folder. */
@@ -3523,6 +3551,8 @@ export interface operations {
                 id?: string;
                 /** @description رقم الصفحة ضمن النتائج المقسمة. */
                 page?: number;
+                /** @description عدد النتائج التي يجب إرجاعها في كل صفحة. */
+                page_size?: number;
                 /** @description User name, action, entity or exact id */
                 q?: string;
             };
@@ -3817,6 +3847,8 @@ export interface operations {
             query?: {
                 /** @description رقم الصفحة ضمن النتائج المقسمة. */
                 page?: number;
+                /** @description عدد النتائج التي يجب إرجاعها في كل صفحة. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -3884,6 +3916,8 @@ export interface operations {
                 category?: string;
                 /** @description رقم الصفحة ضمن النتائج المقسمة. */
                 page?: number;
+                /** @description عدد النتائج التي يجب إرجاعها في كل صفحة. */
+                page_size?: number;
                 /** @description Default: month */
                 scope?: "month" | "shift" | "today";
             };
@@ -4432,6 +4466,8 @@ export interface operations {
                 in_house?: boolean;
                 /** @description رقم الصفحة ضمن النتائج المقسمة. */
                 page?: number;
+                /** @description عدد النتائج التي يجب إرجاعها في كل صفحة. */
+                page_size?: number;
                 /** @description Name (letter variants folded), phone digits, or exact ID number */
                 q?: string;
                 /** @description Only guests with a warning note */
@@ -4770,6 +4806,8 @@ export interface operations {
             query?: {
                 /** @description رقم الصفحة ضمن النتائج المقسمة. */
                 page?: number;
+                /** @description عدد النتائج التي يجب إرجاعها في كل صفحة. */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -4783,6 +4821,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaginatedImportRunList"];
+                };
+            };
+        };
+    };
+    owner_settings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupSettings"];
+                };
+            };
+        };
+    };
+    owner_settings_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedBackupSettingsUpdateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedBackupSettingsUpdateRequest"];
+                "multipart/form-data": components["schemas"]["PatchedBackupSettingsUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupSettings"];
                 };
             };
         };
@@ -5374,6 +5456,8 @@ export interface operations {
             query?: {
                 /** @description رقم الصفحة ضمن النتائج المقسمة. */
                 page?: number;
+                /** @description عدد النتائج التي يجب إرجاعها في كل صفحة. */
+                page_size?: number;
             };
             header?: never;
             path: {

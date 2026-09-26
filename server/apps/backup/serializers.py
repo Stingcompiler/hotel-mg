@@ -10,6 +10,7 @@ class BackupSettingsSerializer(serializers.ModelSerializer):
             "owner_recipient",
             "interval_hours",
             "keep_count",
+            "keep_days",
             "on_shift_close",
             "auto_drive",
             "second_dir",
@@ -75,9 +76,22 @@ class ImportCheckSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=["ok", "warn", "fail", "run"])
 
 
+# Why a failed import was refused (spec §9.3: ``upgrade_required`` for a newer schema), from its checks.
+IMPORT_CODES = {
+    "signature": "corrupt",
+    "integrity": "corrupt",
+    "hotel": "foreign_hotel",
+    "version": "upgrade_required",
+    "audit": "audit_chain_broken",
+}
+
+
 class ImportRunSerializer(serializers.ModelSerializer):
     by = serializers.CharField(source="created_by.full_name", default=None)
     checks = ImportCheckSerializer(many=True)
+    code = serializers.SerializerMethodField(
+        help_text="Failed runs: corrupt / foreign_hotel / upgrade_required / audit_chain_broken / older_backup / error",
+    )
 
     class Meta:
         model = ImportRun
@@ -93,8 +107,19 @@ class ImportRunSerializer(serializers.ModelSerializer):
             "checks",
             "audit_chain_ok",
             "error",
+            "code",
             "by",
         ]
+
+    def get_code(self, run) -> str | None:
+        if run.status == ImportRun.Status.OK:
+            return None
+        for check in run.checks or []:
+            if check.get("status") == "fail":
+                return IMPORT_CODES.get(check.get("key"), "error")
+            if check.get("status") == "warn" and check.get("key") == "audit":
+                return "older_backup"
+        return "error"
 
 
 class ImportRequestSerializer(serializers.Serializer):

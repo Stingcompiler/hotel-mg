@@ -48,6 +48,12 @@ paths:
         description: رقم الصفحة ضمن النتائج المقسمة.
         schema:
           type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
       - in: query
         name: q
         schema:
@@ -323,6 +329,12 @@ paths:
         description: رقم الصفحة ضمن النتائج المقسمة.
         schema:
           type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
       tags:
       - backup
       security:
@@ -389,6 +401,12 @@ paths:
         required: false
         in: query
         description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
         schema:
           type: integer
       - in: query
@@ -1043,6 +1061,12 @@ paths:
         description: رقم الصفحة ضمن النتائج المقسمة.
         schema:
           type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
       - in: query
         name: q
         schema:
@@ -1413,6 +1437,12 @@ paths:
         description: رقم الصفحة ضمن النتائج المقسمة.
         schema:
           type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
+        schema:
+          type: integer
       tags:
       - owner
       security:
@@ -1424,6 +1454,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedImportRunList'
+          description: ''
+  /api/v1/owner/settings:
+    get:
+      operationId: owner_settings_retrieve
+      tags:
+      - owner
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupSettings'
+          description: ''
+    patch:
+      operationId: owner_settings_partial_update
+      tags:
+      - owner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBackupSettingsUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBackupSettingsUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBackupSettingsUpdateRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupSettings'
           description: ''
   /api/v1/owner/status:
     get:
@@ -2220,6 +2290,12 @@ paths:
         required: false
         in: query
         description: رقم الصفحة ضمن النتائج المقسمة.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: عدد النتائج التي يجب إرجاعها في كل صفحة.
         schema:
           type: integer
       tags:
@@ -3423,6 +3499,12 @@ components:
           maximum: 9223372036854775807
           minimum: 0
           format: int64
+        keep_days:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Backups older than this are deleted; 0 = never.
         on_shift_close:
           type: boolean
         auto_drive:
@@ -3438,6 +3520,7 @@ components:
       - owner_recipient
       - interval_hours
       - keep_count
+      - keep_days
       - on_shift_close
       - auto_drive
       - second_dir
@@ -4601,6 +4684,12 @@ components:
         error:
           type: string
           maxLength: 300
+        code:
+          type: string
+          nullable: true
+          readOnly: true
+          description: 'Failed runs: corrupt / foreign_hotel / upgrade_required /
+            audit_chain_broken / older_backup / error'
         by:
           type: string
       required:
@@ -4615,6 +4704,7 @@ components:
       - checks
       - audit_chain_ok
       - error
+      - code
       - by
     ImportRunStatusEnum:
       enum:
@@ -5326,6 +5416,12 @@ components:
           maximum: 9223372036854775807
           minimum: 0
           format: int64
+        keep_days:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Backups older than this are deleted; 0 = never.
         on_shift_close:
           type: boolean
         auto_drive:

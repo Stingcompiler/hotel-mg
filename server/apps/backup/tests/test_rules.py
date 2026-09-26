@@ -28,3 +28,15 @@ def test_stale_hours():
     assert rules.stale_hours(None, now, 24) is None
     assert rules.stale_hours(now - timedelta(hours=23, minutes=59), now, 24) is None
     assert rules.stale_hours(now - timedelta(hours=26, minutes=30), now, 24) == 26
+
+
+def test_too_old_keeps_the_newest_file_and_zero_means_never():
+    from datetime import UTC, datetime, timedelta
+
+    from apps.backup import rules
+
+    now = datetime(2026, 9, 26, tzinfo=UTC)
+    stamps = [("c", now - timedelta(days=100)), ("b", now - timedelta(days=95)), ("a", now - timedelta(days=10))]
+    assert rules.too_old(stamps, 90, now) == ["b"]  # the newest (c) stays although it is older than the limit
+    assert rules.too_old(stamps, 0, now) == []
+    assert rules.too_old([], 30, now) == []

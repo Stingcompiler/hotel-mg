@@ -34,6 +34,8 @@ api_v1 = [
     path("", include(document_urls)),
 ]
 
+handler404 = "apps.core.errors.api_not_found"
+
 urlpatterns = [
     path("api/v1/", include(api_v1)),
     # Staff-only verification UI during the backend phases (spec §12).

@@ -15,6 +15,8 @@ backup_urls = [
 
 owner_urls = [
     path("status", views.OwnerStatusView.as_view(), name="owner-status"),
+    # Local settings of the owner PC (retention, second folder, Drive); the middleware only lets owner/ writes through.
+    path("settings", views.BackupSettingsView.as_view(), name="owner-settings"),
     path("import/run", views.OwnerImportView.as_view(), name="owner-import"),
     path("import/runs", views.OwnerImportRunsView.as_view(), name="owner-import-runs"),
     path("backup/run", views.OwnerBackupView.as_view(), name="owner-backup"),

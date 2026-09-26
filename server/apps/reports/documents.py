@@ -2,11 +2,13 @@
 
 from django.utils import timezone
 
+from apps.accounts import rules as account_rules
 from apps.billing.models import Folio, Payment
 from apps.billing.services import FolioTotals, ledger
 from apps.cash.models import Expense, Shift
 from apps.cash.services import ShiftTotals, movements
 from apps.core.models import HotelSettings
+from apps.guests import rules as guest_rules
 from apps.stays import rules as stay_rules
 from apps.stays.models import DurationKind, ReservationStatus
 
@@ -40,6 +42,7 @@ def invoice(folio: Folio, printed_by) -> dict:
     r = folio.reservation
     g = r.guest
     totals = FolioTotals.of(folio)
+    manager = account_rules.is_manager(printed_by.role)
     return {
         "hotel": hotel_header(),
         "invoice": folio.invoice_label,
@@ -49,7 +52,8 @@ def invoice(folio: Folio, printed_by) -> dict:
             "name": g.full_name,
             "phone": g.phone,
             "id_type": g.get_id_type_display() if g.id_type else "",
-            "id_number": g.id_number,
+            # Spec §5: the full number is for manager/owner only; reception prints the masked form.
+            "id_number": g.id_number if manager else guest_rules.mask_id_number(g.id_number),
             "companions": [c.name for c in g.companions.filter(removed=False)],
         },
         "stay": {

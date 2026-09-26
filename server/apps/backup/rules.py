@@ -75,8 +75,17 @@ def needs_full(last_full_at: datetime | None, now: datetime) -> bool:
 
 
 def to_delete(paths_newest_first: list[str], keep: int) -> list[str]:
-    """Retention: keep the newest ``keep`` files."""
+    """Retention by count: keep the newest ``keep`` files."""
     return paths_newest_first[keep:] if keep > 0 else []
+
+
+def too_old(stamps_newest_first: list[tuple[str, datetime]], keep_days: int, now: datetime) -> list[str]:
+    """Retention by age (spec §9.1.5): files older than ``keep_days``; 0 keeps everything. The newest file
+    is always kept, whatever its age, so a PC left off for months still has one copy."""
+    if keep_days <= 0:
+        return []
+    limit = now - timedelta(days=keep_days)
+    return [path for path, at in stamps_newest_first[1:] if at < limit]
 
 
 def is_due(last_at: datetime | None, interval_hours: int, now: datetime) -> bool:

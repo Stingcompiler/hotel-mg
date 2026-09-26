@@ -80,8 +80,13 @@ class FollowupTask(BaseModel):
     class Meta:
         ordering = ["due_at"]
         constraints = [
-            # Idempotent engine: re-runs never duplicate (spec §6.6).
-            models.UniqueConstraint(fields=["rule", "subject_key", "due_date"], name="task_once_per_rule_subject_day"),
+            # Idempotent engine: re-runs never duplicate (spec §6.6). Superseded rows are excluded so a
+            # room change (same due date) can create the replacement task.
+            models.UniqueConstraint(
+                fields=["rule", "subject_key", "due_date"],
+                condition=~models.Q(status="superseded"),
+                name="task_once_per_rule_subject_day",
+            ),
         ]
         indexes = [models.Index(fields=["status", "due_at"])]
 

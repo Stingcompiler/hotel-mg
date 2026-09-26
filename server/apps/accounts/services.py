@@ -246,10 +246,39 @@ def verify_manager_override(password: str, reason: str) -> User:
     """Return the manager/owner whose password was typed on the reception screen, or raise.
 
     Used where the design asks for «كلمة مرور المدير» plus a reason. The approver is recorded in audit.
+    A wrong password raises ``override_invalid``; the API error handler then calls
+    :func:`register_override_failure` outside the caller's (rolled-back) transaction.
     """
     if not reason or not reason.strip():
         raise ApiError("reason_required", 400)
+    now = timezone.now()
     for manager in User.objects.filter(role__in=rules.MANAGER_ROLES, is_active=True):
-        if not rules.is_locked(manager.locked_until, timezone.now()) and manager.check_password(password or ""):
+        if not rules.is_locked(manager.locked_until, now) and manager.check_password(password or ""):
+            if manager.failed_attempts:
+                manager.failed_attempts, manager.locked_until = 0, None
+                _save_counters(manager, "failed_attempts", "locked_until")
             return manager
     raise ApiError("override_invalid", 403)
+
+
+@transaction.atomic
+def register_override_failure() -> None:
+    """A wrong override password counts as a failed attempt for every manager who could have typed it
+    (the screen has one shared field), so the 5-attempt lock of spec §5 throttles guessing here too."""
+    now = timezone.now()
+    for manager in User.objects.filter(role__in=rules.MANAGER_ROLES, is_active=True):
+        if rules.is_locked(manager.locked_until, now):
+            continue
+        before = audit.snapshot(manager, USER_FIELDS)
+        manager.failed_attempts, manager.locked_until = rules.register_failure(manager.failed_attempts, now)
+        _save_counters(manager, "failed_attempts", "locked_until")
+        LoginEvent.objects.create(user=manager, at=now, kind=LoginEvent.Kind.FAILED, created_by=manager)
+        if manager.locked_until:
+            audit.record(
+                actor=manager,
+                action="auth.locked",
+                entity="user",
+                entity_id=manager.pk,
+                before=before,
+                after=audit.snapshot(manager, USER_FIELDS),
+            )

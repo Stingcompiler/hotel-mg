@@ -3,6 +3,7 @@ import io
 
 import pytest
 from openpyxl import load_workbook
+from rest_framework.test import APIClient
 
 from apps.billing.models import Folio, Payment
 from apps.cash.models import Expense, Shift
@@ -161,3 +162,15 @@ class TestDocuments:
         statement = api_as_manager.get(f"/api/v1/shifts/{shift.pk}/statement").json()
         assert statement["tiles"]["expected"] == 5_000_000 - 1_250_000
         assert [m["kind"] for m in statement["movements"]].count("out") == 2
+
+
+def test_invoice_masks_the_id_number_for_reception(seeded):
+    """Spec §5: the guest id number is visible to manager/owner only — the printed invoice included."""
+    from apps.accounts.services import login_with_password
+    from apps.core.seed import demo_data
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Token {login_with_password('ahmed.ali', demo_data.DEMO_PASSWORD).token}")
+    folio = Reservation.objects.get(room__number="203", status="checked_in").folio
+    doc = client.get(f"/api/v1/folios/{folio.pk}/invoice").json()
+    assert doc["guest"]["id_number"] == "••••23-7"

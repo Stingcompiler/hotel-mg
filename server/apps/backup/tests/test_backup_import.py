@@ -257,6 +257,53 @@ def test_backup_api_and_status(hotel):
     assert ok.json()["interval_hours"] == 4
 
 
+def test_import_needs_a_confirmation_token_once_users_exist(hotel, owner_identity):
+    """Spec §6.8: importing is a sensitive action; the very first import on an empty owner PC is the exception."""
+    from rest_framework.test import APIClient
+
+    from apps.accounts.services import login_with_password
+
+    walk_in(hotel, "201", "محمد عثمان")
+    path = backup(hotel)
+    api = APIClient()
+    api.credentials(HTTP_AUTHORIZATION=f"Token {login_with_password('manager', 'pw-123456').token}")
+    with path.open("rb") as f:
+        res = api.post("/api/v1/owner/import/run", {"file": f}, format="multipart")
+    assert res.status_code == 403 and res.json()["code"] == "confirmation_required"
+    assert not ImportRun.objects.exists()
+    with path.open("rb") as f:
+        res = api.post("/api/v1/owner/import/drive", {"name": path.name}, format="json")
+    assert res.status_code == 403 and res.json()["code"] == "confirmation_required"
+
+
+def test_keep_days_deletes_old_backups_but_never_the_newest(hotel, tmp_path):
+    import os
+
+    cfg = export.backup_settings()
+    cfg.keep_count, cfg.keep_days = 10, 30
+    cfg.save()
+    paths = []
+    stays = []
+    for i in range(3):
+        stays.append(walk_in(hotel, f"20{i + 1}", f"نزيل رقم {i}"))
+        paths.append(backup(hotel))
+    old = (timezone.now() - timedelta(days=45)).timestamp()
+    for path in paths[:2]:  # the two older files were made six weeks ago
+        os.utime(path, (old, old))
+    stay_services.extend(hotel, stays[0].pk, duration_kind="daily", count=1)
+    backup(hotel)
+    left = {p.name for p in settings.RUNTIME.backups_dir.glob("*.age")}
+    assert len(left) == 2 and paths[2].name in left and not (left & {p.name for p in paths[:2]})
+    # 0 = never delete by age; and the newest file survives even when it is itself older than the limit.
+    cfg.keep_days = 0
+    cfg.save()
+    for path in settings.RUNTIME.backups_dir.glob("*.age"):
+        os.utime(path, (old, old))
+    stay_services.extend(hotel, stays[1].pk, duration_kind="daily", count=1)
+    backup(hotel)
+    assert len(list(settings.RUNTIME.backups_dir.glob("*.age"))) == 3
+
+
 def test_run_if_due_and_no_backup_alert(hotel):
     from apps.followups import engine
     from apps.followups.models import FollowupTask
