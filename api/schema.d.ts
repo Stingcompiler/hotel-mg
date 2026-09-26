@@ -1562,7 +1562,7 @@ export interface components {
         ActionRequest: {
             action: components["schemas"]["ActionEnum"];
             /** @default  */
-            note: string;
+            note?: string;
             /**
              * Format: date-time
              * @description snooze / waiting: when it returns
@@ -1806,7 +1806,7 @@ export interface components {
             manual_total?: number | null;
             override_password: string;
             /** @default  */
-            override_reason: string;
+            override_reason?: string;
             version?: number;
         };
         Candidate: {
@@ -1831,16 +1831,16 @@ export interface components {
         };
         ChangeRoomRequest: {
             /** @default  */
-            override_password: string;
+            override_password?: string;
             /** @default  */
-            override_reason: string;
+            override_reason?: string;
             /** Format: uuid */
             room: string;
             reason: string;
             /** @default cleaning */
-            old_room_status: components["schemas"]["AfterRoomStatusEnum"];
+            old_room_status?: components["schemas"]["AfterRoomStatusEnum"];
             /** @default  */
-            maintenance_reason: string;
+            maintenance_reason?: string;
             version?: number;
         };
         CheckInRequest: {
@@ -1852,19 +1852,19 @@ export interface components {
         };
         CheckoutRequest: {
             /** @default  */
-            override_password: string;
+            override_password?: string;
             /** @default  */
-            override_reason: string;
+            override_reason?: string;
             /** @default cleaning */
-            room_status: components["schemas"]["AfterRoomStatusEnum"];
+            room_status?: components["schemas"]["AfterRoomStatusEnum"];
             /** @default  */
-            maintenance_reason: string;
+            maintenance_reason?: string;
             version?: number;
         };
         CloseShiftRequest: {
             counted: number;
             /** @default  */
-            difference_reason: string;
+            difference_reason?: string;
             version?: number;
         };
         CollectedKpi: {
@@ -1925,7 +1925,7 @@ export interface components {
             /** @description A file already in incoming/. */
             name?: string;
             /** @default false */
-            allow_older: boolean;
+            allow_older?: boolean;
         };
         DriveStatus: {
             /** @description client_secret.json installed on this PC */
@@ -1985,7 +1985,7 @@ export interface components {
             note: string;
             method: components["schemas"]["PaymentMethodEnum"];
             /** @default  */
-            reference: string;
+            reference?: string;
             /** Format: uuid */
             room?: string | null;
         };
@@ -2014,7 +2014,7 @@ export interface components {
             option_key?: string | null;
             final_total?: number | null;
             /** @default  */
-            override_reason: string;
+            override_reason?: string;
             version?: number;
         };
         Folio: {
@@ -2185,7 +2185,7 @@ export interface components {
              * @description «متابعة رغم ذلك» for an older file.
              * @default false
              */
-            allow_older: boolean;
+            allow_older?: boolean;
         };
         ImportRun: {
             /** Format: uuid */
@@ -2277,15 +2277,15 @@ export interface components {
         LineCreateRequest: {
             kind: components["schemas"]["LineCreateKindEnum"];
             /** @default  */
-            description: string;
+            description?: string;
             /** @description Always positive; a discount is stored as a credit. */
             amount: number;
             /** @default  */
-            reason: string;
+            reason?: string;
             /** @default  */
-            manager_password: string;
+            manager_password?: string;
             /** @default  */
-            manager_reason: string;
+            manager_reason?: string;
         };
         /** @description Shown on the login screen's user picker: names only. */
         LoginUser: {
@@ -2595,7 +2595,7 @@ export interface components {
             amount: number;
             method: components["schemas"]["PaymentMethodEnum"];
             /** @default  */
-            reference: string;
+            reference?: string;
         };
         /**
          * @description * `deposit` - عربون
@@ -2645,12 +2645,12 @@ export interface components {
             last_night: string;
             duration_kind?: components["schemas"]["BookingDurationKindEnum"];
             /** @default 0 */
-            days_before: number;
+            days_before?: number;
             second_days_before?: number | null;
             /** Format: time */
             at_time?: string;
             /** @default 0 */
-            repeat_hours: number;
+            repeat_hours?: number;
         };
         Quote: {
             /** Format: date */
@@ -2697,7 +2697,7 @@ export interface components {
             amount: number;
             method: components["schemas"]["PaymentMethodEnum"];
             /** @default  */
-            reference: string;
+            reference?: string;
             reason: string;
         };
         Report: {
@@ -2783,34 +2783,34 @@ export interface components {
             /** @description Price override. */
             final_total?: number | null;
             /** @default  */
-            override_reason: string;
+            override_reason?: string;
             /** @default  */
-            notes: string;
+            notes?: string;
             /**
              * @description Walk-in «تسكين الآن»: book and check in at once.
              * @default false
              */
-            check_in_now: boolean;
+            check_in_now?: boolean;
             /** @default 0 */
-            discount: number;
+            discount?: number;
             /** @default  */
-            discount_reason: string;
+            discount_reason?: string;
             /**
              * @description Taken in the open shift.
              * @default 0
              */
-            deposit: number;
+            deposit?: number;
             /** @default cash */
-            deposit_method: components["schemas"]["PaymentMethodEnum"];
+            deposit_method?: components["schemas"]["PaymentMethodEnum"];
             /** @default  */
-            deposit_reference: string;
+            deposit_reference?: string;
             /**
              * @description Only for a discount above the hotel's limit.
              * @default
              */
-            manager_password: string;
+            manager_password?: string;
             /** @default  */
-            manager_reason: string;
+            manager_reason?: string;
         };
         /**
          * @description * `confirmed` - مؤكد
@@ -2985,7 +2985,7 @@ export interface components {
         SetStatusRequest: {
             status: components["schemas"]["RoomStatusEnum"];
             /** @default  */
-            reason: string;
+            reason?: string;
             version?: number;
         };
         Shift: {
