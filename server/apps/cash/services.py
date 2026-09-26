@@ -169,6 +169,12 @@ def movements(shift: Shift) -> list[dict]:
     return sorted(rows, key=lambda r: r["at"], reverse=True)
 
 
+def _next_expense_number() -> int:
+    from apps.billing.services import next_number  # billing depends on cash, not the reverse
+
+    return next_number("expense")
+
+
 # --- Expenses ----------------------------------------------------------------------------
 
 
@@ -178,6 +184,7 @@ def create_expense(actor, *, category, amount: int, note: str, method: str, refe
         raise ApiError("validation_error", 400, detail="المبلغ يجب أن يكون أكبر من صفر.")
     shift = require_open_shift()
     expense = Expense.objects.create(
+        number=_next_expense_number(),
         shift=shift,
         category=category,
         amount=amount,
@@ -208,6 +215,7 @@ def reverse_expense(actor, expense_id, *, reason: str) -> Expense:
         raise ApiError("already_reversed", 409)
     shift = require_open_shift()
     reversal = Expense.objects.create(
+        number=_next_expense_number(),
         shift=shift,
         category=original.category,
         amount=-original.amount,

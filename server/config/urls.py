@@ -4,6 +4,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.billing.urls import folio_urls, payment_urls
 from apps.cash.urls import expense_urls, shift_urls
+from apps.reports.urls import document_urls, report_urls
 from apps.rooms.urls import room_type_urls
 from apps.stays.urls import reservation_urls, stay_urls
 
@@ -23,6 +24,8 @@ api_v1 = [
     path("payments/", include(payment_urls)),
     path("shifts/", include(shift_urls)),
     path("expenses/", include(expense_urls)),
+    path("reports/", include(report_urls)),
+    path("", include(document_urls)),
 ]
 
 urlpatterns = [
