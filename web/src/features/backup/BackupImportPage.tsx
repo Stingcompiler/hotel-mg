@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { components } from "@api/schema";
 
 import { api, data } from "@/api/client";
+import { useSystemStatus } from "@/api/queries";
 import { days } from "@/i18n/counts";
 import { formatDayMonth, formatTime, formatWhen } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
@@ -26,6 +27,8 @@ export function BackupImportPage() {
     retry: false,
   });
   const last = status?.last_import;
+  // Pasted in the reception's backup settings so its backups can be opened here.
+  const publicKey = useSystemStatus().data?.owner_public_key;
 
   return (
     <div className="flex flex-col gap-4 p-6 max-[1599px]:gap-3">
@@ -111,6 +114,14 @@ export function BackupImportPage() {
                 <div className="text-label font-normal text-text-secondary">{t("ownerBackup.alertAfter")}</div>
               </div>
             </div>
+            {publicKey && (
+              <div className="flex flex-col gap-1">
+                <div className="text-label text-text-secondary">{t("ownerBackup.publicKey")}</div>
+                <div dir="ltr" className="break-all rounded-control bg-bg-surface-2 p-2 text-label font-normal">
+                  {publicKey}
+                </div>
+              </div>
+            )}
             {last && (
               <div className={`text-label font-normal ${last.audit_chain_ok ? "text-success-text" : "text-danger"}`}>
                 {last.audit_chain_ok ? t("ownerBackup.chainOk") : t("ownerBackup.chainBroken")}

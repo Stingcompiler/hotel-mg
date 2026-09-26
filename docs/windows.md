@@ -2,12 +2,14 @@
 
 Two ways to run the system on Windows 10/11.
 
-## A. The installer (normal use)
+## A. The installer (normal use — no command line)
 
-1. Download **skytowers-installer** from the latest successful *Windows release* run on GitHub
-   (Actions → Windows release → Artifacts), unzip it, and run `Sky Towers_1.0.0_x64-setup.exe` as administrator.
-2. The installer asks one question: **«هل هذا جهاز الاستقبال؟»** — *نعم* for the reception PC,
-   *لا* for the owner PC. It then:
+1. Download **SkyTowers-Setup-<version>.exe** from the Releases page:
+   <https://github.com/Stingcompiler/hotel-mg/releases/latest> (no GitHub account needed).
+2. Run it. The installer is not signed with a commercial certificate, so Windows may show
+   «Windows protected your PC»: click **More info → Run anyway**. Accept the administrator prompt.
+3. The installer asks one question: **«هل هذا جهاز الاستقبال؟»** — *نعم* for the reception PC,
+   *لا* for the owner PC. It then, without further questions:
    - writes `%ProgramData%\SkyTowers\config.json` (a new hotel id on reception; empty on the owner PC
      until its first import);
    - lets only Administrators and the service account write `%ProgramData%\SkyTowers`;
@@ -15,25 +17,21 @@ Two ways to run the system on Windows 10/11.
    - installs and starts the Windows service **Sky Towers Server** (`SkyTowersServer`, automatic
      start, restarts on failure) on `http://127.0.0.1:8471`;
    - installs the desktop app, which starts with Windows in the tray.
-3. Open **Sky Towers** from the Start menu. The window shows the app served by the local service. Closing
-   the window keeps the app in the tray (فتح · نسخة احتياطية الآن · خروج).
+4. Open **Sky Towers** from the Start menu. Closing the window keeps the app in the tray
+   (فتح · نسخة احتياطية الآن · خروج).
 
 ### First run — reception PC
 
-The database starts empty. Create the first manager from an administrator command prompt:
+The app opens on **«إعداد النظام لأول مرة»**: enter the manager's name, username, password and a 4–6 digit
+PIN, and you are signed in. The empty room board then points to الإعدادات, in this order: أنواع الغرف والأسعار →
+الغرف → المستخدمون → بيانات الفندق → النسخ الاحتياطي (paste the owner PC's key there, see below). Then open a shift
+in «الصندوق» and start checking guests in.
+
+To try the system with demo data instead (a test PC only, before creating the manager), from an administrator
+command prompt:
 
 ```bat
 cd "C:\Program Files\Sky Towers\server"
-skytowers-server.exe manage createsuperuser
-```
-
-It asks for a username and password and creates a manager named «المدير». On the login page choose
-**الدخول بكلمة المرور**, then give yourself a PIN in الإعدادات › المستخدمون and fill the rest of **الإعدادات**: بيانات الفندق, أنواع الغرف والأسعار, الغرف, المستخدمون (each user
-gets a 4–6 digit PIN), and **النسخ الاحتياطي** (paste the owner PC's public key, see below).
-
-To try the system with demo data instead (a test PC only):
-
-```bat
 skytowers-server.exe manage seed_demo --allow-non-debug
 ```
 
@@ -41,16 +39,13 @@ Demo users: `manager` / `ahmed.ali` / `salma.h`, password `skytowers-dev`, PIN `
 
 ### Owner PC
 
-1. On the owner PC, create the owner's backup key once (administrator prompt):
-   ```bat
-   cd "C:\Program Files\Sky Towers\server"
-   skytowers-server.exe manage generate_owner_key
-   ```
-   It prints a public key (`age1…`). Paste it on the reception PC in الإعدادات › النسخ الاحتياطي › مفتاح المالك العام.
-2. On the reception PC press **نسخة احتياطية الآن**, copy the `.age` file from
-   `%ProgramData%\SkyTowers\backups` to a USB stick (or use Drive).
-3. On the owner PC open Sky Towers: with no data yet the login page offers **استيراد أول نسخة**. After the
-   import, sign in with the reception PC's manager account.
+1. Open Sky Towers on the owner PC: it shows **«إعداد جهاز المالك»** with this PC's key (made on first
+   start). Press **نسخ المفتاح** and paste it on the reception PC in الإعدادات › النسخ الاحتياطي › مفتاح المالك العام.
+   (The key is also shown later in «النسخ والاستيراد».)
+2. On the reception PC press **نسخة احتياطية الآن** and copy the `.age` file from
+   `%ProgramData%\SkyTowers\backups` to a USB stick (or link Drive).
+3. On the owner PC press **استيراد أول نسخة** and choose the file. Then sign in with the reception PC's
+   manager account.
 
 ### Updates
 

@@ -17,7 +17,7 @@ from apps.core.concurrency import get_for_update
 from apps.core.errors import ApiError
 
 from . import rules
-from .models import LoginEvent, User
+from .models import LoginEvent, Role, User
 
 CONFIRM_SALT = "skytowers.confirm"
 USER_FIELDS = ["username", "full_name", "role", "is_active", "is_staff", "failed_attempts", "locked_until"]
@@ -157,6 +157,26 @@ def create_user(actor: User, *, username, full_name, role, pin, password=None) -
         actor=actor, action="user.create", entity="user", entity_id=user.pk, after=audit.snapshot(user, USER_FIELDS)
     )
     return user
+
+
+@transaction.atomic
+def _create_first_manager(*, username, full_name, password, pin) -> User:
+    if User.objects.select_for_update().exists():
+        raise ApiError("setup_done", 409)
+    user = User.objects.create_user(username, full_name, role=Role.MANAGER, pin=pin, password=password, is_staff=True)
+    audit.record(
+        actor=None, action="user.create", entity="user", entity_id=user.pk, after=audit.snapshot(user, USER_FIELDS)
+    )
+    return user
+
+
+def setup_first_manager(*, username, full_name, password, pin) -> LoginResult:
+    """First run on a new reception PC (no users yet): create the manager from the login screen and sign in.
+
+    Replaces `manage createsuperuser` so a non-technical owner can install without a command line.
+    """
+    _create_first_manager(username=username, full_name=full_name, password=password, pin=pin)
+    return login_with_password(username, password)
 
 
 @transaction.atomic
