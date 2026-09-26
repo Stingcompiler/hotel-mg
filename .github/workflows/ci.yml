@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]  # every branch: CI must be green before merging into main
   pull_request:
 
 jobs:

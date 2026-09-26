@@ -16,3 +16,8 @@ Append-only. Newest last. Each entry: date, phase, decision, reason.
 10. **Authentication** is DRF session auth until B1 adds token login (§6.8). `/api/v1/system/status` is public so the SPA can pick the shell before login; it also returns `schema_version` and `data_as_of` (null until B4).
 11. **Seed**: `manage.py seed_demo` loads the design's users (PIN `1234`, dev password) and refuses to run with `DEBUG` off unless `--allow-non-debug`. All brief/design sample data is kept in `apps/core/seed/demo_data.py`; each later phase adds the loader for its models. The spec's `fixtures/demo.json` for F-phase review will be generated from the same data.
 12. **CI** runs on Ubuntu and Windows: ruff, migrations check, OpenAPI validation, pytest with coverage, seed.
+
+## 2026-09-26 — Working method
+
+13. **Standing instruction** from the repo owner: execute the recommended option, push, check CI, merge into `main`, continue with the next item. Captured in `CLAUDE.md` and the `phase-cycle` skill.
+14. **Merging** is a fast-forward push to `main` after the branch's CI run is green (no PR API in the cloud environment). CI runs on every branch push; `build/ci-status.sh` reads the result from the public GitHub API.

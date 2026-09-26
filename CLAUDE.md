@@ -3,6 +3,10 @@
 Read this first in every session. The full spec is `docs/spec/SkyTowers-System-Build-Spec.md`; section numbers below refer to it.
 Decisions made in a session are appended to `docs/decisions.md` in the same PR.
 
+## Standing instruction: execute → push → check → merge → continue
+
+The repo owner's rule: **always execute your own recommendation, then push, check CI, merge into `main`, and continue building the rest.** Don't stop to ask the user to pick between options — choose, record the decision in `docs/decisions.md`, and keep going. Ask only when blocked on something only the user can provide, and keep working on unblocked items meanwhile. The full loop is the `phase-cycle` skill (`.claude/skills/phase-cycle/SKILL.md`); CI results come from `build/ci-status.sh <sha>`.
+
 ## What this is
 
 Offline Windows desktop hotel management system, Arabic RTL UI. Two PCs run the same stack: **reception** (all operations) and **owner** (read-only, imports encrypted backups). Django 5 + DRF service on `127.0.0.1:8471`, SQLite (WAL), Tauri 2 shell loading the SPA.
