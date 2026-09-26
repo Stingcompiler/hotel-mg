@@ -32,6 +32,12 @@ class LoginResult:
     locked_until: datetime | None = None
 
 
+def _save_counters(user: User, *fields: str) -> None:
+    """Login bookkeeping without touching ``version``/``updated_at``: a login is not an edit of the user,
+    and on the owner PC a newer ``updated_at`` would hide the reception's real edits at the next import."""
+    User.objects.filter(pk=user.pk).update(**{f: getattr(user, f) for f in fields})
+
+
 def _check_credential(user: User | None, credential_ok, kind: str | None) -> LoginResult:
     """Shared flow for PIN login, password login and password confirmation.
 
@@ -46,7 +52,7 @@ def _check_credential(user: User | None, credential_ok, kind: str | None) -> Log
     before = audit.snapshot(user, USER_FIELDS)
     if not credential_ok(user):
         user.failed_attempts, user.locked_until = rules.register_failure(user.failed_attempts, now)
-        user.save(update_fields=["failed_attempts", "locked_until"])
+        _save_counters(user, "failed_attempts", "locked_until")
         LoginEvent.objects.create(user=user, at=now, kind=LoginEvent.Kind.FAILED, created_by=user)
         if user.locked_until:
             audit.record(
@@ -63,11 +69,11 @@ def _check_credential(user: User | None, credential_ok, kind: str | None) -> Log
     if kind is None:
         if user.failed_attempts:
             user.failed_attempts = 0
-            user.save(update_fields=["failed_attempts"])
+            _save_counters(user, "failed_attempts")
         return LoginResult(ok=True, user=user)
 
     user.failed_attempts, user.locked_until, user.last_login = 0, None, now
-    user.save(update_fields=["failed_attempts", "locked_until", "last_login"])
+    _save_counters(user, "failed_attempts", "locked_until", "last_login")
     LoginEvent.objects.create(user=user, at=now, kind=kind, created_by=user)
     Token.objects.filter(user=user).delete()
     token = Token.objects.create(user=user)

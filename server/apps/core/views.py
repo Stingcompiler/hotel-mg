@@ -31,11 +31,15 @@ class SystemStatusView(APIView):
 
     @extend_schema(responses=SystemStatusSerializer)
     def get(self, request):
+        from apps.backup.export import last_backup_at  # core must not import backup at module load
+        from apps.backup.merge import last_imported
+
+        last_import = last_imported() if settings.SKYTOWERS_ROLE == "owner" else None
         data = {
             "role": settings.SKYTOWERS_ROLE,
             "hotel_id": settings.RUNTIME.hotel_id,
-            "last_backup": None,  # B4: latest successful BackupRun
-            "data_as_of": None,  # B4: owner PC, created_at of the last imported backup
+            "last_backup": last_backup_at(),
+            "data_as_of": last_import.data_as_of if last_import else None,
             "clock_blocked": is_clock_blocked(),
             "version": settings.APP_VERSION,
             "schema_version": SCHEMA_VERSION,

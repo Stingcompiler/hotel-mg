@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from .clock import observe_clock
 from .errors import error_json_response
 
@@ -21,4 +23,24 @@ class ClockGuardMiddleware:
         if request.method in WRITE_METHODS and not request.path.startswith(CLOCK_EXEMPT_PREFIXES):
             if observe_clock():
                 return error_json_response("clock_rollback", 423)
+        return self.get_response(request)
+
+
+# The only writes an owner PC accepts (spec §2): signing in, and its own import / Drive / backup endpoints.
+OWNER_ALLOWED_PREFIXES = ("/api/v1/auth/", "/api/v1/owner/")
+
+
+class OwnerReadOnlyMiddleware:
+    """On the owner PC every mutating API request is refused with 403 ``owner_read_only`` (spec §2)."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if (
+            settings.SKYTOWERS_ROLE == "owner"
+            and request.method in WRITE_METHODS
+            and not request.path.startswith(OWNER_ALLOWED_PREFIXES)
+        ):
+            return error_json_response("owner_read_only", 403)
         return self.get_response(request)

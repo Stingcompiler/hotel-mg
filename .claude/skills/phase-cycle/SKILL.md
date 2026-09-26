@@ -23,7 +23,7 @@ This overrides the habit of stopping to ask. Do not ask the user to choose betwe
    python -m pytest
    ```
 5. **Commit and push** the branch: `git push -u origin <branch>` (retry network failures with backoff 2s/4s/8s/16s).
-6. **Check CI** for the pushed commit: `build/ci-status.sh $(git rev-parse HEAD)` (run it in the background; it polls every 30 s). If it fails, read the failing job's log, fix, push, check again. Never merge red.
+6. **Check CI** for the pushed commit: `build/ci-status.sh $(git rev-parse HEAD)` (run it in the background; it polls every 30 s). If it fails, find the cause, fix, push, check again. Never merge red. Job logs are usually not downloadable from a cloud session (blob storage is blocked); failing tests are published as annotations instead: `gh api repos/Stingcompiler/hotel-mg/actions/runs/<run>/jobs --jq '.jobs[]|"\(.id) \(.name) \(.conclusion)"'`, then `gh api repos/Stingcompiler/hotel-mg/check-runs/<job id>/annotations`.
 7. **Open a PR and merge it** (GitHub REST via `gh api`; GraphQL — `gh pr create/merge` — is blocked in cloud sessions):
    ```
    gh api repos/Stingcompiler/hotel-mg/pulls -f title="<phase>: <summary>" -f head=<branch> -f base=main -F body=@pr.md

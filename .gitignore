@@ -20,3 +20,4 @@ server/openapi.yml
 *.swp
 .DS_Store
 Thumbs.db
+.hypothesis/

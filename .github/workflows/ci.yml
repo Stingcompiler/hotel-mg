@@ -17,6 +17,7 @@ jobs:
     defaults:
       run:
         working-directory: server
+        shell: bash
     env:
       SKYTOWERS_HOME: ${{ github.workspace }}/.ci-home
     steps:
@@ -36,7 +37,9 @@ jobs:
       - name: OpenAPI schema is valid
         run: python manage.py spectacular --validate --fail-on-warn --file openapi.yml
       - name: Tests
-        run: python -m pytest --cov --cov-report=term-missing:skip-covered
+        run: |
+          python -m pytest --cov --cov-report=term-missing:skip-covered --junitxml=junit.xml \
+            || { python ../build/junit_annotations.py junit.xml; exit 1; }
       - name: rules.py fully covered (spec §12 gate)
         run: python -m coverage report --include="apps/*/rules.py" --fail-under=100
       - name: Seed loads
