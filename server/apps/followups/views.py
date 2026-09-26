@@ -19,6 +19,7 @@ from .serializers import (
     PreviewRequestSerializer,
     PreviewSerializer,
     TaskActionSerializer,
+    TaskCountSerializer,
     TaskRowSerializer,
     ToastBatchSerializer,
 )
@@ -40,7 +41,10 @@ class TaskListView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        parameters=[OpenApiParameter("status", str, enum=["open", "all"]), OpenApiParameter("count", bool)],
+        parameters=[
+            OpenApiParameter("status", str, enum=["open", "all"]),
+            OpenApiParameter("count", bool, description="Deprecated: returns the TaskCount shape; use tasks/count."),
+        ],
         responses=TaskRowSerializer(many=True),
     )
     def get(self, request):
@@ -48,11 +52,28 @@ class TaskListView(APIView):
             "rule", "shift__created_by", "room", "stay__reservation__room", "stay__reservation__guest"
         )
         if request.query_params.get("status", "open") == "open":
-            qs = qs.filter(status__in=["open", "snoozed", "waiting", "neglected"])
+            qs = qs.filter(status__in=OPEN_STATUSES)
         if "count" in request.query_params:
-            return Response({"count": qs.count(), **services.summary_counts()})
+            return Response(_task_count())
         today = timezone.localdate()
         return Response(TaskRowSerializer([services.task_row(t, today) for t in qs.order_by("due_at")], many=True).data)
+
+
+OPEN_STATUSES = ["open", "snoozed", "waiting", "neglected"]
+
+
+def _task_count() -> dict:
+    return {"count": FollowupTask.objects.filter(status__in=OPEN_STATUSES).count(), **services.summary_counts()}
+
+
+class TaskCountView(APIView):
+    """Badge numbers for the login screen, sidebar and top bar (spec §10.4 ``tasks?status=open&count``)."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=TaskCountSerializer)
+    def get(self, request):
+        return Response(TaskCountSerializer(_task_count()).data)
 
 
 class TaskDetailView(APIView):

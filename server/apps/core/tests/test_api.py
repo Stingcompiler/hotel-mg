@@ -19,6 +19,7 @@ def test_system_status_is_public(api):
         "role": "reception",
         "hotel_id": str(settings.RUNTIME.hotel_id),
         "last_backup": None,
+        "backup_stale_hours": None,
         "data_as_of": None,
         "clock_blocked": False,
         "version": settings.APP_VERSION,

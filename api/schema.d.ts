@@ -565,6 +565,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/followups/tasks/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Badge numbers for the login screen, sidebar and top bar (spec §10.4 ``tasks?status=open&count``). */
+        get: operations["followups_tasks_count_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/followups/toasts": {
         parameters: {
             query?: never;
@@ -1546,33 +1563,33 @@ export interface components {
             name: string;
             trigger_kind: components["schemas"]["TriggerKindEnum"];
             /** @description stay_ending: daily / weekly / monthly. */
-            duration_kind?: string;
+            duration_kind: string;
             /** Format: int64 */
-            days_before?: number;
+            days_before: number;
             /** Format: int64 */
-            second_days_before?: number | null;
+            second_days_before: number | null;
             /** Format: time */
-            at_time?: string;
+            at_time: string;
             /**
              * Format: int64
              * @description 0 = no repeat.
              */
-            repeat_hours?: number;
+            repeat_hours: number;
             /** Format: int64 */
-            max_snoozes?: number;
+            max_snoozes: number;
             /**
              * Format: int64
              * @description Open this long → neglected.
              */
-            escalate_after_hours?: number;
+            escalate_after_hours: number;
             /**
              * Format: int64
              * @description shift/room/backup triggers.
              */
-            threshold_hours?: number | null;
-            threshold?: number | null;
-            windows_notification?: boolean;
-            is_active?: boolean;
+            threshold_hours: number | null;
+            threshold: number | null;
+            windows_notification: boolean;
+            is_active: boolean;
             readonly version: number;
         };
         AlertRuleRequest: {
@@ -1648,15 +1665,15 @@ export interface components {
             /** Format: date-time */
             at: string;
             /** Format: uuid */
-            actor?: string | null;
+            actor: string | null;
             readonly actor_name: string;
             action: string;
             readonly category: components["schemas"]["AuditCategoryEnum"];
             readonly category_label: string;
             entity: string;
-            entity_id?: string;
-            before?: unknown;
-            after?: unknown;
+            entity_id: string;
+            before: unknown;
+            after: unknown;
             hash: string;
         };
         AuditVerify: {
@@ -1677,13 +1694,13 @@ export interface components {
             /** Format: uuid */
             room_type: string;
             room_type_name: string;
-            status?: components["schemas"]["RoomStatusEnum"];
+            status: components["schemas"]["RoomStatusEnum"];
         };
         BackupRun: {
             /** Format: uuid */
             readonly id: string;
             /** Format: date-time */
-            created_at?: string;
+            created_at: string;
             kind: components["schemas"]["BackupRunKindEnum"];
             kind_label: string;
             status: components["schemas"]["BackupRunStatusEnum"];
@@ -1692,15 +1709,15 @@ export interface components {
              * Format: int64
              * @description Per-hotel backup number (ok runs only).
              */
-            seq?: number | null;
+            seq: number | null;
             /** @description All attachments (weekly), else changed ones only. */
-            full?: boolean;
-            path?: string;
-            second_path?: string;
-            second_error?: string;
+            full: boolean;
+            path: string;
+            second_path: string;
+            second_error: string;
             /** Format: int64 */
-            size?: number;
-            message?: string;
+            size: number;
+            message: string;
             readonly by: string;
             readonly uploaded: boolean;
         };
@@ -1720,15 +1737,15 @@ export interface components {
         BackupRunStatusEnum: "ok" | "failed" | "skipped";
         BackupSettings: {
             /** @description Owner's age public key (age1…); backups are encrypted to it. */
-            owner_recipient?: string;
+            owner_recipient: string;
             /** Format: int64 */
-            interval_hours?: number;
+            interval_hours: number;
             /** Format: int64 */
-            keep_count?: number;
-            on_shift_close?: boolean;
-            auto_drive?: boolean;
+            keep_count: number;
+            on_shift_close: boolean;
+            auto_drive: boolean;
             /** @description USB / external disk folder. */
-            second_dir?: string;
+            second_dir: string;
             readonly version: number;
         };
         /** @enum {unknown} */
@@ -1916,16 +1933,16 @@ export interface components {
             readonly amount: number;
             note: string;
             method: components["schemas"]["PaymentMethodEnum"];
-            reference?: string;
+            reference: string;
             /** Format: uuid */
-            room?: string | null;
+            room: string | null;
             readonly room_number: string;
             /** Format: date-time */
             spent_at: string;
             /** Format: uuid */
-            reverses?: string | null;
+            reverses: string | null;
             /** @description Required on reversals. */
-            reason?: string;
+            reason: string;
             readonly reversed: boolean;
             readonly attachments: string[];
             readonly attachment_missing: boolean;
@@ -1989,7 +2006,7 @@ export interface components {
             readonly reservation: string;
             readonly guest_name: string;
             readonly room_number: string;
-            status?: components["schemas"]["FolioStatusEnum"];
+            status: components["schemas"]["FolioStatusEnum"];
             readonly totals: components["schemas"]["FolioTotals"];
             readonly ledger: components["schemas"]["LedgerEntry"][];
         };
@@ -2012,20 +2029,20 @@ export interface components {
             readonly id: string;
             full_name: string;
             /** @description Normalized: + and digits. */
-            phone?: string;
-            nationality?: string;
-            id_type?: components["schemas"]["IdTypeEnum"] | components["schemas"]["BlankEnum"];
+            phone: string;
+            nationality: string;
+            id_type: components["schemas"]["IdTypeEnum"] | components["schemas"]["BlankEnum"];
             /** @description Full for manager/owner; last 4 characters otherwise. */
             readonly id_number: string;
-            warning_note?: string;
+            warning_note: string;
             readonly companions: {
                 [key: string]: unknown;
             }[];
             readonly documents: components["schemas"]["GuestDocument"][];
             /** Format: int64 */
-            version?: number;
+            version: number;
             /** Format: date-time */
-            created_at?: string;
+            created_at: string;
         };
         GuestDocument: {
             /** Format: uuid */
@@ -2033,7 +2050,7 @@ export interface components {
             /** Format: int64 */
             size: number;
             /** Format: date-time */
-            created_at?: string;
+            created_at: string;
             readonly added_by: string;
         };
         GuestHistoryItem: {
@@ -2055,20 +2072,20 @@ export interface components {
             readonly id: string;
             full_name: string;
             /** @description Normalized: + and digits. */
-            phone?: string;
-            nationality?: string;
-            id_type?: components["schemas"]["IdTypeEnum"] | components["schemas"]["BlankEnum"];
+            phone: string;
+            nationality: string;
+            id_type: components["schemas"]["IdTypeEnum"] | components["schemas"]["BlankEnum"];
             /** @description Full for manager/owner; last 4 characters otherwise. */
             readonly id_number: string;
-            warning_note?: string;
+            warning_note: string;
             readonly companions: {
                 [key: string]: unknown;
             }[];
             readonly documents: components["schemas"]["GuestDocument"][];
             /** Format: int64 */
-            version?: number;
+            version: number;
             /** Format: date-time */
-            created_at?: string;
+            created_at: string;
             readonly stays_count: number;
             readonly last_stay: components["schemas"]["LastStay"] | null;
             /** @description Open balance over all stays, minor units. */
@@ -2085,30 +2102,30 @@ export interface components {
             companions?: components["schemas"]["CompanionRequest"][];
         };
         HotelSettings: {
-            name_ar?: string;
-            name_latin?: string;
-            address?: string;
-            phone?: string;
+            name_ar: string;
+            name_latin: string;
+            address: string;
+            phone: string;
             readonly currency: string;
-            digits?: components["schemas"]["DigitsEnum"];
+            digits: components["schemas"]["DigitsEnum"];
             /**
              * Format: int64
              * @description 0 or 2 decimals when showing money.
              */
-            money_decimals?: number;
+            money_decimals: number;
             /**
              * Format: time
              * @description A stay becomes overdue after this time.
              */
-            stay_day_end?: string;
+            stay_day_end: string;
             /** Format: int64 */
-            session_lock_minutes?: number;
+            session_lock_minutes: number;
             expense_attachment_threshold: number;
             /** Format: int64 */
-            max_discount_percent?: number;
-            debt_attention_threshold?: number;
-            auto_print_receipt?: boolean;
-            thermal_printer?: string;
+            max_discount_percent: number;
+            debt_attention_threshold: number;
+            auto_print_receipt: boolean;
+            thermal_printer: string;
             /** Format: uuid */
             readonly hotel_id: string;
             readonly version: number;
@@ -2153,22 +2170,22 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             /** Format: date-time */
-            created_at?: string;
+            created_at: string;
             source: components["schemas"]["SourceEnum"];
             file_name: string;
             /** Format: int64 */
-            backup_seq?: number | null;
+            backup_seq: number | null;
             /**
              * Format: date-time
              * @description created_at in the imported manifest.
              */
-            data_as_of?: string | null;
+            data_as_of: string | null;
             status: components["schemas"]["ImportRunStatusEnum"];
-            counts?: unknown;
+            counts: unknown;
             checks: components["schemas"]["ImportCheck"][];
-            audit_chain_ok?: boolean | null;
-            error?: string;
-            by?: string;
+            audit_chain_ok: boolean | null;
+            error: string;
+            by: string;
         };
         /**
          * @description * `ok` - اكتمل
@@ -2335,12 +2352,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["AuditLog"][];
         };
         PaginatedBackupRunList: {
@@ -2350,12 +2367,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["BackupRun"][];
         };
         PaginatedExpenseList: {
@@ -2365,12 +2382,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["Expense"][];
         };
         PaginatedGuestListItemList: {
@@ -2380,12 +2397,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["GuestListItem"][];
         };
         PaginatedImportRunList: {
@@ -2395,12 +2412,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["ImportRun"][];
         };
         PaginatedRoomStatusHistoryList: {
@@ -2410,12 +2427,12 @@ export interface components {
              * Format: uri
              * @example http://api.example.org/accounts/?page=4
              */
-            next?: string | null;
+            next: string | null;
             /**
              * Format: uri
              * @example http://api.example.org/accounts/?page=2
              */
-            previous?: string | null;
+            previous: string | null;
             results: components["schemas"]["RoomStatusHistory"][];
         };
         PasswordLoginRequest: {
@@ -2545,10 +2562,10 @@ export interface components {
             method: components["schemas"]["PaymentMethodEnum"];
             readonly amount: number;
             /** @description Bankak / transfer reference. */
-            reference?: string;
+            reference: string;
             /** Format: uuid */
-            reverses?: string | null;
-            reason?: string;
+            reverses: string | null;
+            reason: string;
             /** Format: date-time */
             received_at: string;
             readonly by: string;
@@ -2804,8 +2821,8 @@ export interface components {
             /** Format: date-time */
             readonly status_changed_at: string | null;
             readonly maintenance_reason: string;
-            in_service?: boolean;
-            note?: string;
+            in_service: boolean;
+            note: string;
             readonly version: number;
         };
         RoomCreateRequest: {
@@ -2831,7 +2848,7 @@ export interface components {
             to_status: components["schemas"]["RoomStatusEnum"];
             /** Format: date-time */
             at: string;
-            reason?: string;
+            reason: string;
             readonly by_name: string;
         };
         RoomType: {
@@ -2839,11 +2856,11 @@ export interface components {
             readonly id: string;
             name: string;
             /** Format: int64 */
-            capacity?: number;
+            capacity: number;
             nightly_price: number;
             weekly_price: number;
             monthly_price: number;
-            is_active?: boolean;
+            is_active: boolean;
             readonly room_count: number;
             readonly version: number;
         };
@@ -2875,14 +2892,14 @@ export interface components {
             readonly opened_by: string;
             readonly opening: number;
             /** Format: date-time */
-            closed_at?: string | null;
+            closed_at: string | null;
             readonly closed_by_name: string;
             readonly expected: number | null;
             readonly counted: number | null;
             readonly difference: number | null;
-            difference_reason?: string;
+            difference_reason: string;
             /** Format: int64 */
-            version?: number;
+            version: number;
         };
         ShiftDetail: {
             shift: components["schemas"]["Shift"];
@@ -2904,14 +2921,14 @@ export interface components {
             readonly opened_by: string;
             readonly opening: number;
             /** Format: date-time */
-            closed_at?: string | null;
+            closed_at: string | null;
             readonly closed_by_name: string;
             readonly expected: number | null;
             readonly counted: number | null;
             readonly difference: number | null;
-            difference_reason?: string;
+            difference_reason: string;
             /** Format: int64 */
-            version?: number;
+            version: number;
             /** @description Cash receipts. */
             readonly receipts: number;
             readonly cash_expenses: number;
@@ -2951,14 +2968,14 @@ export interface components {
             /** Format: date-time */
             checked_in_at: string;
             /** Format: date-time */
-            checked_out_at?: string | null;
+            checked_out_at: string | null;
             /** Format: date */
             readonly last_night: string;
             readonly segments: components["schemas"]["StaySegment"][];
             readonly override_by_name: string;
-            override_reason?: string;
+            override_reason: string;
             /** Format: int64 */
-            version?: number;
+            version: number;
         };
         /** @description extend: duration_kind, count, option_key…; confirm_checkout: room_status, override_password… */
         StayActionParamsRequest: {
@@ -2984,7 +3001,7 @@ export interface components {
              * @description Exclusive.
              */
             to_date: string;
-            reason?: string;
+            reason: string;
         };
         SyncResult: {
             /** @description Reception: files uploaded now. */
@@ -3001,6 +3018,8 @@ export interface components {
             last_backup: string | null;
             /** Format: date-time */
             data_as_of: string | null;
+            /** @description Hours since the last backup once past the «no backup» alert threshold. */
+            backup_stale_hours: number | null;
             clock_blocked: boolean;
             version: string;
             schema_version: number;
@@ -3012,22 +3031,30 @@ export interface components {
             label: string;
             /** Format: date-time */
             at: string;
-            note?: string;
+            note: string;
             /** Format: date-time */
-            next_at?: string | null;
-            by?: string;
+            next_at: string | null;
+            by: string;
+        };
+        TaskCount: {
+            late: number;
+            today: number;
+            upcoming: number;
+            system: number;
+            /** @description Open tasks (open, snoozed, waiting, neglected): the badge number. */
+            count: number;
         };
         TaskRow: {
             /** Format: uuid */
             stay: string | null;
             room: string | null;
-            room_state?: string;
-            guest?: string;
-            kind?: string;
+            room_state: string;
+            guest: string;
+            kind: string;
             /** Format: date */
-            last_night?: string;
+            last_night: string;
             /** @description «تنتهي بعد يومين», «متجاوزة منذ يوم» */
-            when?: string;
+            when: string;
             /** Format: uuid */
             id: string;
             /** @description «قاعدة: شهري – قبل 5 أيام · 09:00» */
@@ -3083,13 +3110,13 @@ export interface components {
             /** Format: uuid */
             stay: string | null;
             room: string | null;
-            room_state?: string;
-            guest?: string;
-            kind?: string;
+            room_state: string;
+            guest: string;
+            kind: string;
             /** Format: date */
-            last_night?: string;
+            last_night: string;
             /** @description «تنتهي بعد يومين», «متجاوزة منذ يوم» */
-            when?: string;
+            when: string;
             rule: string;
             /**
              * Format: date-time
@@ -3941,6 +3968,7 @@ export interface operations {
     followups_tasks_list: {
         parameters: {
             query?: {
+                /** @description Deprecated: returns the TaskCount shape; use tasks/count. */
                 count?: boolean;
                 status?: "all" | "open";
             };
@@ -4004,6 +4032,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskRow"];
+                };
+            };
+        };
+    };
+    followups_tasks_count_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskCount"];
                 };
             };
         };

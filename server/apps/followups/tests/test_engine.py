@@ -269,6 +269,7 @@ def test_toasts_api_and_rules_api(monthly_stay, reception_api, manager_api, conf
         assert preview["affected_stays"] == 1
         counts = reception_api.get("/api/v1/followups/tasks", {"count": "1"}).json()
         assert counts["count"] == 1
+        assert reception_api.get("/api/v1/followups/tasks/count").json() == counts
 
 
 def test_seeded_board_matches_artboard(db):

@@ -91,3 +91,13 @@ def unknown_migrations(incoming: set[tuple[str, str]], known: set[tuple[str, str
 def check(key: str, label: str, detail: str, status: str) -> dict:
     """One of the five pre-merge checks shown in the import dialog (artboard 6.13 C)."""
     return {"key": key, "label": label, "detail": detail, "status": status}
+
+
+def stale_hours(last_at: datetime | None, now: datetime, limit_hours: int) -> int | None:
+    """Whole hours since the last backup once that reaches the limit (top bar red chip), else None.
+
+    No backup at all is not «stale» here: the chip then says none was made yet.
+    """
+    if last_at is None or now - last_at < timedelta(hours=limit_hours):
+        return None
+    return int((now - last_at).total_seconds() // 3600)
