@@ -9,6 +9,8 @@ Frozen at the API freeze (spec §12). The frontend is built against these files 
 | `skytowers.postman_collection.json` | Postman v2.1 collection (also imports into Bruno) |
 
 CI job **api contract** regenerates all three and fails when they differ from what is committed.
+`api/VERSION` holds the contract version; when it changes on `main`, the **API tag** workflow tags that commit
+`v<version>-api`.
 
 ## Regenerate after an API change
 

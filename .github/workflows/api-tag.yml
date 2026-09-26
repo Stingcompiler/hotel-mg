@@ -1,0 +1,29 @@
+name: API tag
+
+# Tags main as v<api/VERSION>-api when the version file changes (the API freeze tag, spec §12).
+# Cloud sessions can push branches but not tags, so the tag is created here.
+on:
+  push:
+    branches: [main]
+    paths: [api/VERSION]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create the tag if it does not exist
+        run: |
+          tag="v$(tr -d '[:space:]' < api/VERSION)-api"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "$tag already exists"; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "API freeze $tag: api/openapi.yml, api/schema.d.ts, Postman collection"
+          git push origin "$tag"
