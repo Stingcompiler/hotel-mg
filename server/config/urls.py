@@ -3,6 +3,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.rooms.urls import room_type_urls
+from apps.stays.urls import reservation_urls
 
 api_v1 = [
     path("schema", SpectacularAPIView.as_view(), name="schema"),
@@ -14,6 +15,7 @@ api_v1 = [
     path("room-types/", include(room_type_urls)),
     path("rooms/", include("apps.rooms.urls")),
     path("guests/", include("apps.guests.urls")),
+    path("reservations/", include(reservation_urls)),
 ]
 
 urlpatterns = [
