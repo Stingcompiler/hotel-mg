@@ -1178,6 +1178,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rooms/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Room board 6.2 (spec §10.4 ``rooms?view=board``, typed): every room with its state, current stay, next
+         *     booking and the summary tiles. Polled every 15 s. Served at ``rooms/board``; lives here because the board
+         *     reads stays (rooms must not depend on stays).
+         */
+        get: operations["rooms_board"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/shifts/": {
         parameters: {
             query?: never;
@@ -2825,6 +2846,81 @@ export interface components {
             note: string;
             readonly version: number;
         };
+        RoomBoard: {
+            /** Format: date */
+            date: string;
+            summary: components["schemas"]["RoomBoardSummary"];
+            rooms: components["schemas"]["RoomBoardRoom"][];
+        };
+        RoomBoardNext: {
+            /** Format: uuid */
+            id: string;
+            guest_name: string;
+            /** Format: date */
+            check_in_date: string;
+            duration_kind: components["schemas"]["DurationKindEnum"];
+            duration_label: string;
+        };
+        RoomBoardRoom: {
+            /** Format: uuid */
+            id: string;
+            number: string;
+            floor: number;
+            /** Format: uuid */
+            room_type: string;
+            room_type_name: string;
+            status: components["schemas"]["RoomStatusEnum"];
+            /**
+             * @description status, or «overdue» when occupied past the end date
+             *
+             *     * `ready` - ready
+             *     * `occupied` - occupied
+             *     * `cleaning` - cleaning
+             *     * `maintenance` - maintenance
+             *     * `overdue` - overdue
+             */
+            display_status: components["schemas"]["RoomDisplayStatusEnum"];
+            /** Format: date-time */
+            status_changed_at: string | null;
+            maintenance_reason: string;
+            in_service: boolean;
+            /** @description Statuses staff may set from the board (rooms/{id}/set-status); maintenance needs a reason. */
+            manual_targets: components["schemas"]["RoomStatusEnum"][];
+            version: number;
+            stay: components["schemas"]["RoomBoardStay"] | null;
+            next_reservation: components["schemas"]["RoomBoardNext"] | null;
+        };
+        RoomBoardStay: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            reservation: string;
+            guest_name: string;
+            guest_phone: string;
+            /** Format: date */
+            check_in_date: string;
+            /** Format: date */
+            check_out_date: string;
+            /** Format: date */
+            last_night: string;
+            /** @description 0 = ends today; negative = overdue by that many days */
+            days_left: number;
+            duration_kind: components["schemas"]["DurationKindEnum"];
+            duration_label: string;
+            balance: number | null;
+            invoice: string | null;
+        };
+        RoomBoardSummary: {
+            rooms: number;
+            occupied: number;
+            occupancy_percent: number;
+            arrivals_today: number;
+            departures_today: number;
+            overdue: number;
+            by_status: {
+                [key: string]: number;
+            };
+        };
         RoomCreateRequest: {
             number: string;
             /** Format: int64 */
@@ -2833,6 +2929,15 @@ export interface components {
             room_type: string;
             note?: string;
         };
+        /**
+         * @description * `ready` - ready
+         *     * `occupied` - occupied
+         *     * `cleaning` - cleaning
+         *     * `maintenance` - maintenance
+         *     * `overdue` - overdue
+         * @enum {string}
+         */
+        RoomDisplayStatusEnum: "ready" | "occupied" | "cleaning" | "maintenance" | "overdue";
         /**
          * @description * `ready` - جاهزة
          *     * `occupied` - مشغولة
@@ -5075,6 +5180,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Room"];
+                };
+            };
+        };
+    };
+    rooms_board: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomBoard"];
                 };
             };
         };

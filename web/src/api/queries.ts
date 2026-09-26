@@ -11,6 +11,7 @@ export const keys = {
   currentShift: ["shifts", "current"] as const,
   taskCount: ["followups", "tasks", "count"] as const,
   importRuns: ["owner", "import", "runs"] as const,
+  roomBoard: ["rooms", "board"] as const,
 };
 
 /** Read before login: decides the reception or owner shell. */

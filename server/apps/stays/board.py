@@ -43,6 +43,7 @@ def board() -> dict:
             "status_changed_at": room.status_changed_at,
             "maintenance_reason": room.maintenance_reason,
             "in_service": room.in_service,
+            "manual_targets": room_rules.manual_targets(room.status),
             "version": room.version,
             "stay": None,
             "next_reservation": None,
@@ -53,11 +54,13 @@ def board() -> dict:
                 "id": stay.stay.pk,
                 "reservation": stay.pk,
                 "guest_name": stay.guest.full_name,
+                "guest_phone": stay.guest.phone,
                 "check_in_date": stay.check_in_date,
                 "check_out_date": stay.check_out_date,
                 "last_night": last,
                 "days_left": (last - day).days,  # 0 = ends today, negative = overdue by N days
                 "duration_kind": stay.duration_kind,
+                "duration_label": stay.get_duration_kind_display(),
                 "balance": balances.get(stay.pk),
                 "invoice": stay.folio.invoice_label if hasattr(stay, "folio") else None,
             }
@@ -67,6 +70,7 @@ def board() -> dict:
                 "guest_name": nxt.guest.full_name,
                 "check_in_date": nxt.check_in_date,
                 "duration_kind": nxt.duration_kind,
+                "duration_label": nxt.get_duration_kind_display(),
             }
         rows.append(row)
 

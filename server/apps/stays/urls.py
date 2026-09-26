@@ -22,3 +22,5 @@ stay_urls = [
     path("<uuid:pk>/checkout", views.CheckoutView.as_view(), name="stay-checkout"),
     path("<uuid:pk>/cancel", views.CancelStayView.as_view(), name="stay-cancel"),
 ]
+
+room_board_urls = [path("board", views.RoomBoardView.as_view(), name="room-board")]

@@ -29,3 +29,17 @@ export function formatDayDate(value: string | Date): string {
   const date = asDate(value);
   return t("dates.weekdayDate", { weekday: format(date, "EEEE", { locale: ar }), date: formatDate(date) });
 }
+
+/** "17 – 24 سبتمبر" (same month) or "28 سبتمبر – 3 أكتوبر": periods with a long dash (RTL notes «التواريخ»). */
+export function formatRange(from: string | Date, to: string | Date): string {
+  const a = asDate(from);
+  const b = asDate(to);
+  const sameMonth = a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
+  const start = sameMonth ? format(a, "d") : format(a, "d MMMM", { locale: ar });
+  return digits(`${start} – ${format(b, "d MMMM", { locale: ar })}`);
+}
+
+/** "24 سبتمبر" */
+export function formatDayMonth(value: string | Date): string {
+  return digits(format(asDate(value), "d MMMM", { locale: ar }));
+}

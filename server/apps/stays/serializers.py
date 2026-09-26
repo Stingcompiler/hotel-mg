@@ -5,7 +5,7 @@ from rest_framework import serializers
 from apps.cash.models import PaymentMethod
 from apps.core.fields import MoneyMinorField
 from apps.guests.models import Guest
-from apps.rooms.models import Room, RoomType
+from apps.rooms.models import Room, RoomStatus, RoomType
 
 from . import rules
 from .models import DurationKind, Reservation, Stay, StaySegment
@@ -244,43 +244,55 @@ class CancelStaySerializer(serializers.Serializer):
     version = serializers.IntegerField(min_value=1, required=False)
 
 
-class BoardStaySerializer(serializers.Serializer):
+DISPLAY_STATUS = ["ready", "occupied", "cleaning", "maintenance", "overdue"]
+
+
+class RoomBoardStaySerializer(serializers.Serializer):
     id = serializers.UUIDField()
     reservation = serializers.UUIDField()
     guest_name = serializers.CharField()
+    guest_phone = serializers.CharField()
     check_in_date = serializers.DateField()
     check_out_date = serializers.DateField()
     last_night = serializers.DateField()
     days_left = serializers.IntegerField(help_text="0 = ends today; negative = overdue by that many days")
-    duration_kind = serializers.CharField()
+    duration_kind = serializers.ChoiceField(choices=DurationKind.choices)
+    duration_label = serializers.CharField()
     balance = MoneyMinorField(allow_null=True)
     invoice = serializers.CharField(allow_null=True)
 
 
-class BoardNextSerializer(serializers.Serializer):
+class RoomBoardNextSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     guest_name = serializers.CharField()
     check_in_date = serializers.DateField()
-    duration_kind = serializers.CharField()
+    duration_kind = serializers.ChoiceField(choices=DurationKind.choices)
+    duration_label = serializers.CharField()
 
 
-class BoardRoomSerializer(serializers.Serializer):
+class RoomBoardRoomSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     number = serializers.CharField()
     floor = serializers.IntegerField()
     room_type = serializers.UUIDField()
     room_type_name = serializers.CharField()
-    status = serializers.CharField()
-    display_status = serializers.CharField(help_text="status, or «overdue» when occupied past the end date")
+    status = serializers.ChoiceField(choices=RoomStatus.choices)
+    display_status = serializers.ChoiceField(
+        choices=DISPLAY_STATUS, help_text="status, or «overdue» when occupied past the end date"
+    )
     status_changed_at = serializers.DateTimeField(allow_null=True)
     maintenance_reason = serializers.CharField()
     in_service = serializers.BooleanField()
+    manual_targets = serializers.ListField(
+        child=serializers.ChoiceField(choices=RoomStatus.choices),
+        help_text="Statuses staff may set from the board (rooms/{id}/set-status); maintenance needs a reason.",
+    )
     version = serializers.IntegerField()
-    stay = BoardStaySerializer(allow_null=True)
-    next_reservation = BoardNextSerializer(allow_null=True)
+    stay = RoomBoardStaySerializer(allow_null=True)
+    next_reservation = RoomBoardNextSerializer(allow_null=True)
 
 
-class BoardSummarySerializer(serializers.Serializer):
+class RoomBoardSummarySerializer(serializers.Serializer):
     rooms = serializers.IntegerField()
     occupied = serializers.IntegerField()
     occupancy_percent = serializers.IntegerField()
@@ -290,7 +302,7 @@ class BoardSummarySerializer(serializers.Serializer):
     by_status = serializers.DictField(child=serializers.IntegerField())
 
 
-class BoardSerializer(serializers.Serializer):
+class RoomBoardSerializer(serializers.Serializer):
     date = serializers.DateField()
-    summary = BoardSummarySerializer()
-    rooms = BoardRoomSerializer(many=True)
+    summary = RoomBoardSummarySerializer()
+    rooms = RoomBoardRoomSerializer(many=True)

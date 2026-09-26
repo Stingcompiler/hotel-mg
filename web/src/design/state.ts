@@ -34,4 +34,12 @@ export function stateColor(state: RoomState) {
 }
 
 /** «محجوزة قريبًا» is an outline only (tokens: reserved-soon has no soft/solid fill). */
-export const reservedSoonOutline = "border-state-reserved-soon";
+export const reservedSoon = {
+  outline: "outline outline-2 -outline-offset-2 outline-state-reserved-soon",
+  text: "text-state-reserved-soon",
+};
+
+/** History timeline dots and the card's start stripe use the solid colour of a room status. */
+export function stateSolid(state: RoomState | "overdue"): string {
+  return CLASSES[state].solid;
+}

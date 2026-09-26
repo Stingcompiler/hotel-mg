@@ -7,7 +7,7 @@ from apps.billing.urls import folio_urls, payment_urls
 from apps.cash.urls import expense_urls, shift_urls
 from apps.reports.urls import document_urls, report_urls
 from apps.rooms.urls import room_type_urls
-from apps.stays.urls import reservation_urls, stay_urls
+from apps.stays.urls import reservation_urls, room_board_urls, stay_urls
 
 api_v1 = [
     path("schema", SpectacularAPIView.as_view(), name="schema"),
@@ -17,6 +17,7 @@ api_v1 = [
     path("users/", include("apps.accounts.urls_users")),
     path("audit/", include("apps.audit.urls")),
     path("room-types/", include(room_type_urls)),
+    path("rooms/", include(room_board_urls)),
     path("rooms/", include("apps.rooms.urls")),
     path("guests/", include("apps.guests.urls")),
     path("reservations/", include(reservation_urls)),

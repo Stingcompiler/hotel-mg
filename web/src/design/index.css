@@ -18,3 +18,36 @@
     outline-offset: var(--focus-ring-offset);
   }
 }
+
+@layer components {
+  /* Modal scrims (design rule: 24 % behind drawers, 32 % dialogs, 48 % blocking dialogs). */
+  .scrim-24 {
+    background: color-mix(in srgb, var(--color-text-primary) 24%, transparent);
+  }
+  .scrim-32 {
+    background: color-mix(in srgb, var(--color-text-primary) 32%, transparent);
+  }
+  .scrim-48 {
+    background: color-mix(in srgb, var(--color-text-primary) 48%, transparent);
+  }
+  /* Loading shimmer (6.2 D). */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-bg-surface-2) 25%,
+      var(--color-border) 50%,
+      var(--color-bg-surface-2) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s linear infinite;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}

@@ -3,9 +3,11 @@ import { Outlet } from "react-router-dom";
 import { useCurrentShift, useMe, useSystemStatus, useTaskCount } from "@/api/queries";
 import { formatTime, formatWhen } from "@/i18n/dates";
 import { t } from "@/i18n/t";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 
 import { RECEPTION_NAV } from "../nav";
 import { Sidebar } from "./Sidebar";
+import { SystemBars } from "./SystemBars";
 import { TopBar } from "./TopBar";
 import { useLogout } from "./useLogout";
 
@@ -15,6 +17,8 @@ export function ReceptionShell() {
   const shift = useCurrentShift().data?.shift ?? null;
   const alerts = useTaskCount().data?.count ?? 0;
   const logout = useLogout();
+  // 1366×768 artboards: the sidebar folds to the 64 px rail below 1600 px.
+  const narrow = useMediaQuery("(max-width: 1599px)");
 
   const userName = me?.full_name ?? "";
   const backup =
@@ -31,6 +35,7 @@ export function ReceptionShell() {
         userName={userName}
         roleName={me ? t(`roles.${me.role}`) : ""}
         followups={alerts}
+        collapsed={narrow}
         onLogout={logout}
       />
       <div className="flex min-w-0 flex-1 flex-col">
@@ -40,6 +45,7 @@ export function ReceptionShell() {
           backup={backup}
           alerts={alerts}
         />
+        <SystemBars />
         <main className="min-h-0 flex-1 overflow-auto">
           <Outlet />
         </main>
