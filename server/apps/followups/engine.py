@@ -173,6 +173,21 @@ def _gen_no_backup(rule: AlertRule, now: datetime) -> int:
     )
 
 
+def _gen_no_drive_upload(rule: AlertRule, now: datetime) -> int:
+    from apps.backup import drive
+
+    if not drive.is_linked():
+        return 0
+    limit = timedelta(hours=rule.threshold_hours or 72)
+    last = drive.last_upload_at()
+    pending = drive.pending_runs().order_by("created_at").values_list("created_at", flat=True).first()
+    anchor = last or pending
+    if anchor is None or now - anchor < limit or not pending:
+        return 0
+    days = int(limit.total_seconds() // 86400)
+    return _create(rule, "drive", anchor + limit, f"لا رفع إلى Drive منذ أكثر من {days} أيام")
+
+
 GENERATORS = {
     TriggerKind.STAY_ENDING: _gen_stay_ending,
     TriggerKind.STAY_OVERDUE: _gen_stay_overdue,
@@ -181,7 +196,7 @@ GENERATORS = {
     TriggerKind.ROOM_CLEANING_TOO_LONG: lambda r, n: _gen_room_status_too_long(r, n, RoomStatus.CLEANING, 4),
     TriggerKind.ROOM_MAINTENANCE_TOO_LONG: lambda r, n: _gen_room_status_too_long(r, n, RoomStatus.MAINTENANCE, 168),
     TriggerKind.NO_BACKUP: _gen_no_backup,
-    # no_drive_upload: with Drive sync (phase B4.2).
+    TriggerKind.NO_DRIVE_UPLOAD: _gen_no_drive_upload,
 }
 
 

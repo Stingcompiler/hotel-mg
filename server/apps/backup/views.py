@@ -1,24 +1,34 @@
+from pathlib import Path
+
+from django.conf import settings
+from django.http import HttpResponse
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
 from apps.accounts.permissions import IsManager
+from apps.core.errors import ApiError
 
-from . import export, keys, merge, services
+from . import drive, export, keys, merge, rules, services
 from .models import BackupRun, ImportRun
 from .serializers import (
+    AuthUrlSerializer,
     BackupRunSerializer,
     BackupSettingsSerializer,
     BackupSettingsUpdateSerializer,
+    CandidateSerializer,
+    DriveImportSerializer,
+    DriveStatusSerializer,
     ImportRequestSerializer,
     ImportRunSerializer,
     OwnerStatusSerializer,
+    SyncResultSerializer,
 )
 
 
@@ -140,3 +150,162 @@ class OwnerBackupView(APIView):
     def post(self, request):
         run = export.run_backup(request.user, BackupRun.Kind.MANUAL)
         return Response(BackupRunSerializer(run).data, status=status.HTTP_201_CREATED)
+
+
+# --- Google Drive (both PCs; the owner PC under owner/) ---------------------------------------------
+
+
+def _drive_status() -> dict:
+    email = None
+    token = drive.load_token()
+    if token:
+        email = token.get("email")
+    return {
+        "configured": drive.client_secret_path().exists(),
+        "linked": token is not None,
+        "email": email,
+        "pending_uploads": drive.pending_runs().count(),
+        "last_upload_at": drive.last_upload_at(),
+    }
+
+
+class DriveStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=DriveStatusSerializer)
+    def get(self, request):
+        return Response(DriveStatusSerializer(_drive_status()).data)
+
+
+class DriveAuthUrlView(APIView):
+    """«ربط حساب» (manager): opens Google's consent page; Google returns to ``…/drive/callback``."""
+
+    permission_classes = [IsManager]
+    prefix = "backup"
+
+    @extend_schema(request=None, responses=AuthUrlSerializer)
+    def post(self, request):
+        return Response({"url": drive.auth_url(self.prefix)})
+
+
+class DriveCallbackView(APIView):
+    """Browser redirect from Google (no session token in the browser); protected by the OAuth state."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    prefix = "backup"
+
+    @extend_schema(exclude=True)
+    def get(self, request):  # pragma: no cover - needs Google
+        email = drive.finish_auth(
+            self.prefix, request.query_params.get("code", ""), request.query_params.get("state", "")
+        )
+        token = drive.load_token()
+        token["email"] = email
+        drive.save_token(token)
+        page = (
+            f"<!doctype html><html dir='rtl' lang='ar'><meta charset='utf-8'><body style='font-family:sans-serif'>"
+            f"<h2>تم ربط حساب Drive</h2><p dir='ltr'>{email}</p><p>يمكنك إغلاق هذه النافذة.</p></body></html>"
+        )
+        return HttpResponse(page)
+
+
+class DriveUnlinkView(APIView):
+    """«فصل الحساب» (manager)."""
+
+    permission_classes = [IsManager]
+
+    @extend_schema(request=None, responses=DriveStatusSerializer)
+    def post(self, request):
+        drive.unlink_account()
+        return Response(DriveStatusSerializer(_drive_status()).data)
+
+
+class DriveSyncView(APIView):
+    """«مزامنة مع Drive»: reception uploads pending backups; the owner PC downloads newer ones."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=None, responses=SyncResultSerializer)
+    def post(self, request):
+        if settings.SKYTOWERS_ROLE == "owner":
+            fetched = drive.download_new()
+            message = f"نُزّلت {len(fetched)} نسخ جديدة" if fetched else "لا جديد على Drive"
+            return Response(SyncResultSerializer({"uploaded": 0, "downloaded": fetched, "message": message}).data)
+        uploaded = drive.upload_pending(request.user)
+        message = f"رُفعت {uploaded} نسخ" if uploaded else "لا جديد — كل النسخ مرفوعة"
+        return Response(SyncResultSerializer({"uploaded": uploaded, "downloaded": [], "message": message}).data)
+
+
+class OwnerDriveAuthUrlView(DriveAuthUrlView):
+    prefix = "owner"
+
+
+class OwnerDriveCallbackView(DriveCallbackView):
+    prefix = "owner"
+
+
+class CandidatesView(APIView):
+    """Import dialog step 1 (artboard 6.13 C): files in ``incoming/`` and on Drive, tagged new / imported / older."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=CandidateSerializer(many=True))
+    def get(self, request):
+        last = merge.last_imported()
+        newest = last.backup_seq if last and last.backup_seq else 0
+        imported = set(ImportRun.objects.filter(status=ImportRun.Status.OK).values_list("backup_seq", flat=True))
+        found: dict[str, dict] = {}
+        folder = drive.incoming_dir()
+        if folder.exists():
+            for path in folder.glob("skytowers-*.age"):
+                parsed = rules.parse_file_name(path.name)
+                if parsed:
+                    found[path.name] = {
+                        "name": path.name,
+                        "seq": parsed[1],
+                        "size": path.stat().st_size,
+                        "drive_file_id": None,
+                        "local": True,
+                    }
+        if drive.is_linked():
+            try:
+                for remote in drive.remote_backups(drive.get_client()):
+                    entry = found.setdefault(
+                        remote.name, {"name": remote.name, "seq": remote.parsed[1], "size": remote.size, "local": False}
+                    )
+                    entry["drive_file_id"] = remote.id
+            except ApiError:
+                pass  # offline: show what is on this PC
+        rows = []
+        for entry in sorted(found.values(), key=lambda e: e["seq"], reverse=True):
+            state = "imported" if entry["seq"] in imported else ("new" if entry["seq"] > newest else "older")
+            rows.append({**entry, "state": state})
+        return Response(CandidateSerializer(rows, many=True).data)
+
+
+class OwnerImportFromDriveView(APIView):
+    """Import a candidate by Drive id or by name in ``incoming/`` (spec §7: import/run with drive_file_id)."""
+
+    permission_classes = [ManagerOrFirstImport]
+
+    @extend_schema(request=DriveImportSerializer, responses={201: ImportRunSerializer})
+    def post(self, request):
+        data = DriveImportSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        v = data.validated_data
+        if v.get("drive_file_id"):
+            name, raw = drive.fetch_one(v["drive_file_id"])
+            source = ImportRun.Source.DRIVE
+        else:
+            path = drive.incoming_dir() / Path(v["name"]).name
+            if not path.exists():
+                raise ApiError("not_found", 404)
+            name, raw, source = path.name, path.read_bytes(), ImportRun.Source.FILE
+        actor = request.user if request.user.is_authenticated else None
+        result = merge.import_backup(actor, raw, source=source, file_name=name, allow_older=v["allow_older"])
+        ok = result.run.status == ImportRun.Status.OK
+        return Response(
+            ImportRunSerializer(result.run).data,
+            status=status.HTTP_201_CREATED if ok else status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )

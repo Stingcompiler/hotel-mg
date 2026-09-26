@@ -107,3 +107,41 @@ class OwnerStatusSerializer(serializers.Serializer):
     last_import = ImportRunSerializer(allow_null=True)
     hours_old = serializers.IntegerField(allow_null=True)
     public_key = serializers.CharField(allow_null=True, help_text="Enter it in the reception's backup settings.")
+
+
+class DriveStatusSerializer(serializers.Serializer):
+    configured = serializers.BooleanField(help_text="client_secret.json installed on this PC")
+    linked = serializers.BooleanField()
+    email = serializers.CharField(allow_null=True)
+    pending_uploads = serializers.IntegerField()
+    last_upload_at = serializers.DateTimeField(allow_null=True)
+
+
+class AuthUrlSerializer(serializers.Serializer):
+    url = serializers.URLField()
+
+
+class SyncResultSerializer(serializers.Serializer):
+    uploaded = serializers.IntegerField(help_text="Reception: files uploaded now.")
+    downloaded = serializers.ListField(child=serializers.CharField(), help_text="Owner: files fetched to incoming/.")
+    message = serializers.CharField()
+
+
+class CandidateSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    seq = serializers.IntegerField()
+    size = serializers.IntegerField()
+    drive_file_id = serializers.CharField(allow_null=True)
+    local = serializers.BooleanField()
+    state = serializers.ChoiceField(choices=["new", "imported", "older"], help_text="جديدة / مستوردة / أقدم من بياناتك")
+
+
+class DriveImportSerializer(serializers.Serializer):
+    drive_file_id = serializers.CharField(required=False)
+    name = serializers.CharField(required=False, help_text="A file already in incoming/.")
+    allow_older = serializers.BooleanField(default=False)
+
+    def validate(self, attrs):
+        if not attrs.get("drive_file_id") and not attrs.get("name"):
+            raise serializers.ValidationError("حدّد ملفًا من Drive أو من مجلد الوارد.")
+        return attrs

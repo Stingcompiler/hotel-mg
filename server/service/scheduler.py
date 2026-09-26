@@ -12,7 +12,7 @@ INTERVAL_SECONDS = 60
 def _loop(stop: threading.Event) -> None:
     from django.db import close_old_connections
 
-    from apps.backup import export
+    from apps.backup import drive, export
     from apps.followups import engine
 
     while not stop.is_set():
@@ -25,6 +25,7 @@ def _loop(stop: threading.Event) -> None:
                 run = export.run_if_due()
                 if run is not None and run.status == "failed":
                     log.error("Scheduled backup failed: %s", run.message)
+                drive.upload_if_due()  # silently retried every 10 minutes while offline
         except Exception:  # keep the scheduler alive; the next tick retries
             log.exception("Engine tick failed")
         stop.wait(INTERVAL_SECONDS)
