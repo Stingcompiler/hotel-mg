@@ -1,5 +1,5 @@
 import { CircleAlert } from "lucide-react";
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
+import { forwardRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { t } from "@/i18n/t";
@@ -72,9 +72,11 @@ export const inputClass = (invalid = false, readOnly = false) =>
     invalid ? "border-danger" : readOnly ? "border-border bg-bg-surface-2" : "border-border-strong bg-bg-surface"
   }`;
 
-export function TextInput({ invalid, ...rest }: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
-  return <input {...rest} className={`${inputClass(invalid, rest.readOnly)} ${rest.className ?? ""}`} />;
-}
+export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }>(
+  function TextInput({ invalid, ...rest }, ref) {
+    return <input ref={ref} {...rest} className={`${inputClass(invalid, rest.readOnly)} ${rest.className ?? ""}`} />;
+  },
+);
 
 /** Money typed in currency units («15,000»), shown with the «ج.س» suffix; the caller parses it. */
 export function MoneyInput({ invalid, ...rest }: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {

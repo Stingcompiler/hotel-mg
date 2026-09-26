@@ -5,8 +5,7 @@ import { NavLink, useNavigate, useParams } from "react-router-dom";
 
 import type { components } from "@api/schema";
 
-import { api, ApiError, data } from "@/api/client";
-import { session } from "@/api/session";
+import { api, ApiError, data, download } from "@/api/client";
 import { ErrorBanner, Segmented, Select, TextInput } from "@/components/ui/form";
 import { buttons } from "@/components/ui/Modal";
 import { formatDayMonth, formatRange, formatTime, formatWhen } from "@/i18n/dates";
@@ -78,15 +77,11 @@ export function ReportsPage() {
   const exportAs = async (format: "xlsx" | "csv") => {
     setError(null);
     const qs = new URLSearchParams({ ...query, format });
-    const res = await fetch(`${window.location.origin}/api/v1/reports/${current}/export?${qs}`, { headers: { Authorization: `Token ${session.token}` } });
-    if (!res.ok) return setError(new ApiError(res.status, "error", t("errors.error")).message);
-    const blob = await res.blob();
-    const name = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? `${current}.${format}`;
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    try {
+      await download(`/api/v1/reports/${current}/export?${qs}`, `${current}.${format}`);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t("errors.error"));
+    }
   };
 
   const meta = r?.meta as

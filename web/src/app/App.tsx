@@ -15,6 +15,7 @@ import { ReportsPage } from "@/features/reports/ReportsPage";
 import { NewReservationPage } from "@/features/reservations/NewReservationPage";
 import { ReservationsPage } from "@/features/reservations/ReservationsPage";
 import { RoomBoardPage } from "@/features/rooms/RoomBoardPage";
+import { SettingsPage } from "@/features/settings/SettingsPage";
 import { StayDetailPage } from "@/features/stays/StayDetailPage";
 import { setDigits } from "@/i18n/digits";
 import { setMoneyDecimals } from "@/i18n/money";
@@ -71,7 +72,8 @@ const router = createBrowserRouter([
       { path: "/guests", element: <GuestsPage /> },
       { path: "/reports", element: <ReportsPage /> },
       { path: "/reports/:name", element: <ReportsPage /> },
-      screen("/settings/*", "settings"),
+      { path: "/settings", element: <SettingsPage /> },
+      { path: "/settings/:tab", element: <SettingsPage /> },
       screen("/owner", "owner"),
       screen("/backup", "backup"),
       { path: "*", element: <Navigate to="/" replace /> },

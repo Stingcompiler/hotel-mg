@@ -61,3 +61,33 @@ def test_action_labels():
     assert rules.action_label("stay.check_in") == "تسكين"
     assert rules.action_label("payment.deposit") == "عربون"
     assert rules.action_label("something.new") == "something.new"
+
+
+def test_summary_lists_changed_fields_before_and_after():
+    assert rules.summary({"days_before": 3, "version": 1}, {"days_before": 5, "version": 2}) == "التنبيه الأول: 3 ← 5"
+    assert rules.summary(None, {"number": "101", "in_service": True}) == "الرقم: 101 · في الخدمة: نعم"
+    assert rules.summary({"note": ""}, {"note": "x", "extra": {"a": 1}}) == "ملاحظة: — ← x"
+    assert rules.summary(None, None) == ""
+
+
+def test_action_label_falls_back_to_the_key():
+    assert rules.action_label("user.create") == "إنشاء مستخدم"
+    assert rules.action_label("unknown.thing") == "unknown.thing"
+
+
+def test_summary_formats_money_and_hides_ids_and_times():
+    after = {
+        "amount": 750000,
+        "shift": "4055d471-b0d9-4cf8-ad08-01c17e644af6",
+        "opened_at": "2026-09-26T18:23:27Z",
+        "closed_by": None,
+        "counted": 1234567,
+    }
+    assert rules.summary(None, after) == "المبلغ: 7,500 ج.س · المعدود: 12,345.67 ج.س"
+    assert rules.summary({"amount": 100}, {"amount": -250}) == "المبلغ: 1 ج.س ← -2.50 ج.س"
+
+
+def test_summary_uses_arabic_values_and_hides_internal_flags():
+    before = {"role": "reception", "is_staff": False}
+    after = {"role": "manager", "is_staff": True}
+    assert rules.summary(before, after) == "الدور: موظف استقبال ← مدير"
