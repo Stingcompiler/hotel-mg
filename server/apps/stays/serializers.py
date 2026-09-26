@@ -55,6 +55,8 @@ class ReservationSerializer(serializers.ModelSerializer):
     folio = serializers.UUIDField(source="folio.pk", read_only=True, default=None)
     invoice = serializers.CharField(source="folio.invoice_label", read_only=True, default=None)
     balance = serializers.SerializerMethodField()
+    deposit = serializers.SerializerMethodField(help_text="Deposits taken at booking (minor units).")
+    stay = serializers.SerializerMethodField(help_text="Stay id once checked in.")
 
     class Meta:
         model = Reservation
@@ -79,10 +81,25 @@ class ReservationSerializer(serializers.ModelSerializer):
             "folio",
             "invoice",
             "balance",
+            "deposit",
+            "stay",
             "version",
             "created_at",
         ]
         read_only_fields = fields
+
+    def get_deposit(self, reservation) -> int:
+        annotated = getattr(reservation, "deposit_total", None)
+        if annotated is not None:
+            return annotated
+        folio = getattr(reservation, "folio", None)
+        if folio is None:
+            return 0
+        return sum(p.amount for p in folio.payments.filter(kind="deposit"))
+
+    def get_stay(self, reservation) -> str | None:
+        stay = getattr(reservation, "stay", None)
+        return str(stay.pk) if stay is not None else None
 
     def get_balance(self, reservation) -> int | None:
         """Folio balance in minor units (> 0 owed by the guest)."""

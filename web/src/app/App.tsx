@@ -12,6 +12,7 @@ import { GuestsPage } from "@/features/guests/GuestsPage";
 import { LoginPage } from "@/features/login/LoginPage";
 import { Placeholder } from "@/features/placeholder/Placeholder";
 import { NewReservationPage } from "@/features/reservations/NewReservationPage";
+import { ReservationsPage } from "@/features/reservations/ReservationsPage";
 import { RoomBoardPage } from "@/features/rooms/RoomBoardPage";
 import { StayDetailPage } from "@/features/stays/StayDetailPage";
 import { setDigits } from "@/i18n/digits";
@@ -60,7 +61,7 @@ const router = createBrowserRouter([
     element: <Root />,
     children: [
       { path: "/", element: <RoomBoardPage /> },
-      screen("/reservations", "reservations"),
+      { path: "/reservations", element: <ReservationsPage /> },
       { path: "/reservations/new", element: <NewReservationPage /> },
       { path: "/stays/:id", element: <StayDetailPage /> },
       { path: "/followups", element: <FollowupsPage /> },

@@ -2778,6 +2778,10 @@ export interface components {
             readonly invoice: string;
             /** @description Folio balance in minor units (> 0 owed by the guest). */
             readonly balance: number | null;
+            /** @description Deposits taken at booking (minor units). */
+            readonly deposit: number;
+            /** @description Stay id once checked in. */
+            readonly stay: string | null;
             readonly version: number;
             /** Format: date-time */
             readonly created_at: string;
