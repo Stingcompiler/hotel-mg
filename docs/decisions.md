@@ -49,3 +49,13 @@ Append-only. Newest last. Each entry: date, phase, decision, reason.
 31. **ID images**: any Pillow-readable image up to 10 MB is re-encoded server-side as JPEG ≤ 300 KB (orientation fixed, metadata stripped) under `attachments/guests/<guest>/`; `GuestDocument` is append-only with size and SHA-256. The unblurred image is served only to manager/owner with `Cache-Control: no-store`, and every view is audited (`guest.view_document`, the design's «عرض حساس»).
 32. **No deletes for mutable hotel rows**: replaced companions are flagged `removed` so the owner PC's additive import stays correct. Rule added to `CLAUDE.md`.
 33. Full name needs at least two words (the forms use full names for invoices and reports).
+
+## 2026-09-26 — B1.4 Reservations
+
+34. **Durations**: daily ×N = N nights, weekly ×N = 7N, monthly ×N = 30N; `check_out_date = check_in + nights` (exclusive); `last_night` is returned for the «تنتهي بنهاية يوم …» text. Max 366 nights.
+35. **Pricing options** (spec §6.1): weekly and monthly are exact; daily stays of 7+ nights also offer months→weeks→nights and weeks→nights mixes, deduplicated and sorted cheapest first (10 nights → «أسبوع + 3 ليالٍ» 113,000 / «10 ليالٍ» 120,000, as on artboard 6.4 B). With several options the client must send `option_key` (400 `pricing_choice_required` lists them). Labels use Arabic number agreement (ليلة / ليلتان / 3 ليالٍ / 30 ليلة).
+36. **Rate snapshot** stores the type name, the three prices, the chosen option and label, base total, and any override with its reason; `Reservation.total` is the agreed room charge. A price override needs a reason (artboard: «سبب تعديل السعر *»). Discounts, deposits and payments come with folios in B2.
+37. **Overlap** (spec §6.2): confirmed and checked-in reservations block their room over [check_in, check_out); a checked-in stay also holds the room through today when overdue. Booking locks the room row (`select_for_update`, row lock on PostgreSQL; the IMMEDIATE transaction serializes on SQLite) before checking. Verified by a 6-thread race test on a real SQLite file: exactly one wins.
+38. **Room checks at booking**: out-of-service rooms are refused; rooms under maintenance are refused only for arrivals today (a future booking may be made while repairs finish). Past arrival dates are refused (the opening-day migration will use `allow_past`).
+39. **Tests use a SQLite file** (in the test `SKYTOWERS_HOME`) instead of in-memory, so they exercise WAL and real locking.
+40. Reservation cancel (before check-in) needs a reason; no-show only from the arrival day; a room can be assigned later with the same overlap check.

@@ -1,0 +1,138 @@
+"""Stay dates, durations, pricing decompositions and overlap (spec §6.1, §6.2). Pure functions, no ORM.
+
+Dates are hotel-local calendar dates. ``check_out_date`` is exclusive: a stay of N nights starting on D
+has check_out_date = D + N and ends at the end of D + N - 1.
+"""
+
+from dataclasses import dataclass
+from datetime import date, timedelta
+
+NIGHTS_PER_UNIT = {"daily": 1, "weekly": 7, "monthly": 30}
+UNIT_ORDER = ("monthly", "weekly", "daily")
+MAX_NIGHTS = 366
+BLOCKING_STATUSES = frozenset({"confirmed", "checked_in"})
+
+# (one, two, 3-10, 11+) — Arabic number agreement.
+UNIT_LABELS = {
+    "monthly": ("شهر", "شهران", "أشهر", "شهرًا"),
+    "weekly": ("أسبوع", "أسبوعان", "أسابيع", "أسبوعًا"),
+    "daily": ("ليلة", "ليلتان", "ليالٍ", "ليلة"),
+}
+
+
+@dataclass(frozen=True)
+class Option:
+    """One way to price a number of nights, e.g. 1 week + 3 nights."""
+
+    monthly: int
+    weekly: int
+    daily: int
+
+    @property
+    def key(self) -> str:
+        return f"m{self.monthly}w{self.weekly}d{self.daily}"
+
+    @property
+    def nights(self) -> int:
+        return self.monthly * 30 + self.weekly * 7 + self.daily
+
+    def units(self) -> dict[str, int]:
+        return {"monthly": self.monthly, "weekly": self.weekly, "daily": self.daily}
+
+
+def nights_for(kind: str, count: int) -> int:
+    if kind not in NIGHTS_PER_UNIT:
+        raise ValueError(f"unknown duration kind {kind!r}")
+    if count < 1:
+        raise ValueError("count must be at least 1")
+    return NIGHTS_PER_UNIT[kind] * count
+
+
+def check_out_for(check_in: date, nights: int) -> date:
+    return check_in + timedelta(days=nights)
+
+
+def last_night(check_out: date) -> date:
+    """The stay ends at the end of this day."""
+    return check_out - timedelta(days=1)
+
+
+def options_for(kind: str, count: int) -> list[Option]:
+    """Pricing choices the staff pick from (spec §6.1).
+
+    Weekly and monthly are exact. Daily stays of 7+ nights also offer the greedy mix of larger units
+    (e.g. 10 nights → 1 week + 3 nights, or 10 nights) — the staff choose explicitly.
+    """
+    nights = nights_for(kind, count)
+    if kind == "monthly":
+        return [Option(count, 0, 0)]
+    if kind == "weekly":
+        return [Option(0, count, 0)]
+    candidates = [
+        Option(nights // 30, (nights % 30) // 7, (nights % 30) % 7),  # months, then weeks, then nights
+        Option(0, nights // 7, nights % 7),  # weeks, then nights
+        Option(0, 0, nights),  # nightly rate only
+    ]
+    seen, result = set(), []
+    for option in candidates:
+        if option.key not in seen:
+            seen.add(option.key)
+            result.append(option)
+    return result
+
+
+def price(option: Option, prices: dict[str, int]) -> int:
+    """Total in minor units. ``prices`` has nightly/weekly/monthly in minor units."""
+    return option.monthly * prices["monthly"] + option.weekly * prices["weekly"] + option.daily * prices["nightly"]
+
+
+def duration_kind_of(option: Option) -> str:
+    used = [unit for unit in UNIT_ORDER if option.units()[unit]]
+    return used[0] if len(used) == 1 else "mixed"
+
+
+def count_label(unit: str, n: int) -> str:
+    """«ليلة», «ليلتان», «3 ليالٍ», «30 ليلة»."""
+    one, two, few, many = UNIT_LABELS[unit]
+    if n == 1:
+        return one
+    if n == 2:
+        return two
+    return f"{n} {few if n <= 10 else many}"
+
+
+def option_label(option: Option) -> str:
+    """Arabic label as on the New Reservation artboard: «أسبوع + 3 ليالٍ», «10 ليالٍ»."""
+    parts = [count_label(unit, n) for unit, n in option.units().items() if n]
+    return " + ".join(parts)
+
+
+def option_formula(option: Option, prices: dict[str, int]) -> str:
+    """Human formula in major units, e.g. «77,000 + 3 × 12,000»."""
+    unit_price = {"monthly": prices["monthly"], "weekly": prices["weekly"], "daily": prices["nightly"]}
+    parts = []
+    for unit, n in option.units().items():
+        if n:
+            amount = f"{unit_price[unit] // 100:,}"
+            parts.append(amount if n == 1 else f"{n} × {amount}")
+    return " + ".join(parts)
+
+
+def overlaps(a_in: date, a_out: date, b_in: date, b_out: date) -> bool:
+    """Half-open date ranges [in, out) intersect (spec §6.2)."""
+    return a_in < b_out and a_out > b_in
+
+
+def blocking_until(status: str, check_out: date, today: date) -> date:
+    """Until when an existing reservation blocks its room.
+
+    A checked-in guest keeps the room until checkout is recorded, even past the end date (overdue):
+    treat the room as held at least through today.
+    """
+    if status == "checked_in":
+        return max(check_out, today + timedelta(days=1))
+    return check_out
+
+
+def override_needs_reason(base_total: int, final_total: int) -> bool:
+    return final_total != base_total
