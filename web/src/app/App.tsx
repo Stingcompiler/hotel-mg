@@ -6,6 +6,7 @@ import { createBrowserRouter, Navigate, RouterProvider, useLocation } from "reac
 import { useHotelSettings, useSystemStatus } from "@/api/queries";
 import { session } from "@/api/session";
 import { CashPage } from "@/features/cash/CashPage";
+import { ExpensesPage } from "@/features/expenses/ExpensesPage";
 import { FollowupsPage } from "@/features/followups/FollowupsPage";
 import { LoginPage } from "@/features/login/LoginPage";
 import { Placeholder } from "@/features/placeholder/Placeholder";
@@ -63,7 +64,7 @@ const router = createBrowserRouter([
       { path: "/stays/:id", element: <StayDetailPage /> },
       { path: "/followups", element: <FollowupsPage /> },
       { path: "/cash", element: <CashPage /> },
-      screen("/expenses", "expenses"),
+      { path: "/expenses", element: <ExpensesPage /> },
       screen("/guests", "guests"),
       screen("/reports", "reports"),
       screen("/reports/:name", "reports"),
