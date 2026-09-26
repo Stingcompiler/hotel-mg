@@ -319,5 +319,10 @@ def assign_room(actor, reservation_id, room: Room, *, version: int | None = None
 
 
 def window(date_from: date, date_to: date):
-    """Reservations touching [date_from, date_to) — the timeline view."""
-    return Reservation.objects.filter(check_in_date__lt=date_to, check_out_date__gt=date_from)
+    """Reservations touching [date_from, date_to) — the timeline view.
+
+    A stay still checked in past its end (overdue) keeps occupying the room until check-out, so it is included.
+    """
+    return Reservation.objects.filter(check_in_date__lt=date_to).filter(
+        Q(check_out_date__gt=date_from) | Q(status=ReservationStatus.CHECKED_IN)
+    )

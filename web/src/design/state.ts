@@ -37,6 +37,7 @@ export function stateColor(state: RoomState) {
 export const reservedSoon = {
   outline: "outline outline-2 -outline-offset-2 outline-state-reserved-soon",
   text: "text-state-reserved-soon",
+  border: "border-[1.5px] border-state-reserved-soon",
 };
 
 /** History timeline dots and the card's start stripe use the solid colour of a room status. */

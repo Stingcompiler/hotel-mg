@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from django.db.models import Q, Sum
+from django.db.models.functions import Coalesce
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status
 from rest_framework.generics import ListAPIView, get_object_or_404
@@ -94,7 +96,13 @@ class ReservationListView(ListAPIView):
         field = serializers.DateField()
         date_from = field.to_internal_value(params["date_from"]) if "date_from" in params else services.today()
         date_to = field.to_internal_value(params["date_to"]) if "date_to" in params else date_from + timedelta(days=14)
-        qs = services.window(date_from, date_to).select_related("guest", "room", "room_type")
+        qs = (
+            services.window(date_from, date_to)
+            .select_related("guest", "room", "room_type", "folio", "stay")
+            .annotate(
+                deposit_total=Coalesce(Sum("folio__payments__amount", filter=Q(folio__payments__kind="deposit")), 0)
+            )
+        )
         if statuses := params.getlist("status"):
             qs = qs.filter(status__in=statuses)
         return qs.order_by("check_in_date", "room__number")

@@ -5732,6 +5732,15 @@ components:
           nullable: true
           description: Folio balance in minor units (> 0 owed by the guest).
           readOnly: true
+        deposit:
+          type: integer
+          readOnly: true
+          description: Deposits taken at booking (minor units).
+        stay:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Stay id once checked in.
         version:
           type: integer
           readOnly: true
@@ -5760,6 +5769,8 @@ components:
       - folio
       - invoice
       - balance
+      - deposit
+      - stay
       - version
       - created_at
     ReservationCreateRequest:

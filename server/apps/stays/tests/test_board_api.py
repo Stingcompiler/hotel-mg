@@ -33,3 +33,11 @@ def test_stay_detail_carries_guest_room_days_left_and_log(api_as_manager):
     labels = [e["label"] for e in detail["log"]]
     assert "إنشاء الحجز" in labels and "قيد إقامة" in labels
     assert detail["log"] == sorted(detail["log"], key=lambda e: e["at"], reverse=True)
+
+
+def test_reservation_window_keeps_overdue_stays_and_carries_deposit(api_as_manager):
+    rows = api_as_manager.get("/api/v1/reservations/").json()
+    rooms = {r["room_number"] for r in rows}
+    assert {"207", "305"} <= rooms  # overdue: their planned end is before today, but they are still in house
+    in_house = [r for r in rows if r["status"] == "checked_in"]
+    assert all(r["stay"] for r in in_house) and all("deposit" in r for r in rows)
