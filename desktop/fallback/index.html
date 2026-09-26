@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sky Towers</title>
+    <!-- Desktop start page (spec §11): waits for the local service, then opens it; otherwise explains. -->
+    <style>
+      body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        background: #F6F7F9; color: #1B2430; font-family: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif; }
+      .card { width: 440px; background: #fff; border: 1px solid #E3E6EB; border-radius: 12px; padding: 32px;
+        box-shadow: 0 8px 24px rgba(27, 36, 48, 0.08); text-align: center; }
+      .logo { width: 48px; height: 48px; margin: 0 auto 16px; border-radius: 8px; background: #0F766E; color: #fff;
+        display: flex; align-items: center; justify-content: center; font-weight: 700; direction: ltr; }
+      h1 { margin: 0 0 8px; font-size: 20px; }
+      p { margin: 0 0 20px; color: #5B6674; font-size: 14px; line-height: 1.6; }
+      .down h1 { color: #7F1D1D; }
+      button { font: inherit; font-size: 14px; font-weight: 600; height: 44px; padding: 0 24px; border-radius: 6px; cursor: pointer; }
+      .primary { background: #0F766E; color: #fff; border: 0; }
+      .link { background: none; border: 0; color: #5B6674; text-decoration: underline; font-weight: 500; }
+      .actions { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <div class="card" id="card">
+      <div class="logo">ST</div>
+      <div id="waiting">
+        <h1>جارٍ الاتصال بالخادم المحلي…</h1>
+        <p>يبدأ الخادم مع ويندوز؛ قد يستغرق ذلك ثوانيَ بعد تشغيل الجهاز.</p>
+      </div>
+      <div id="down" class="down" hidden>
+        <h1>الخادم المحلي غير متاح</h1>
+        <p>لم تُفتح خدمة «Sky Towers Server». أعد المحاولة بعد قليل، وإن استمر ذلك فافتح سجل الأخطاء وأرسله للدعم.</p>
+        <div class="actions">
+          <button class="primary" id="retry">إعادة المحاولة</button>
+          <button class="link" id="logs">فتح سجل الأخطاء</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      const SERVER = "http://127.0.0.1:8471/";
+      let tries = 0;
+      async function reachable() {
+        try {
+          // no-cors: an opaque answer still proves the service is up; a refused connection rejects.
+          await fetch(SERVER + "api/v1/system/status", { mode: "no-cors", cache: "no-store" });
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      async function check() {
+        if (await reachable()) {
+          location.replace(SERVER);
+          return;
+        }
+        tries += 1;
+        if (tries >= 5) {
+          document.getElementById("waiting").hidden = true;
+          document.getElementById("down").hidden = false;
+        }
+        setTimeout(check, tries < 5 ? 1500 : 5000);
+      }
+      document.getElementById("retry").addEventListener("click", () => {
+        tries = 0;
+        document.getElementById("waiting").hidden = false;
+        document.getElementById("down").hidden = true;
+        check();
+      });
+      document.getElementById("logs").addEventListener("click", () => {
+        window.__TAURI__?.core.invoke("open_folder", {});
+      });
+      check();
+    </script>
+  </body>
+</html>

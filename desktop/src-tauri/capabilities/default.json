@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The main window: the local fallback page and the SPA served by the service.",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["http://127.0.0.1:8471/*"]
+  },
+  "permissions": ["core:default", "notification:default"]
+}

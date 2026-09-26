@@ -104,3 +104,20 @@ def load(home: Path | None = None, role_override: str | None = None) -> RuntimeC
         # One open cash shift per device (spec §6.5); defaults to the Windows computer name.
         device_name=raw.get("device_name") or platform.node() or "PC",
     )
+
+
+def init_config(home: Path, role: str) -> bool:
+    """Installer step: write ``config.json`` once (spec §11). Upgrades keep the existing file.
+
+    Reception gets a new hotel id; the owner PC leaves it empty until the first import adopts the hotel's.
+    Returns True when the file was written.
+    """
+    if role not in ROLES:
+        raise ValueError(f"role must be one of {ROLES}, got {role!r}")
+    config_file = home / "config.json"
+    if config_file.exists():
+        return False
+    home.mkdir(parents=True, exist_ok=True)
+    raw = {"role": role, "hotel_id": str(uuid.uuid4()) if role == "reception" else ""}
+    config_file.write_text(json.dumps(raw, indent=2), encoding="utf-8")
+    return True

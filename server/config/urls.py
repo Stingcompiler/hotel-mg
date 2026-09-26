@@ -1,10 +1,11 @@
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.backup.urls import backup_urls, owner_urls
 from apps.billing.urls import folio_urls, payment_urls
 from apps.cash.urls import expense_urls, shift_urls
+from apps.core import spa
 from apps.reports.urls import document_urls, report_urls
 from apps.rooms.urls import room_type_urls
 from apps.stays.urls import reservation_urls, room_board_urls, stay_urls
@@ -37,4 +38,7 @@ urlpatterns = [
     path("api/v1/", include(api_v1)),
     # Staff-only verification UI during the backend phases (spec §12).
     path("admin/", admin.site.urls),
+    # The SPA (F3): hashed assets, then index.html for every client route. Unknown API paths stay 404 JSON.
+    path("assets/<path:path>", spa.asset),
+    re_path(r"^(?!api/|admin/|static/)(?P<path>.*)$", spa.index),
 ]
