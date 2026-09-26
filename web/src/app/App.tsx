@@ -11,6 +11,7 @@ import { FollowupsPage } from "@/features/followups/FollowupsPage";
 import { GuestsPage } from "@/features/guests/GuestsPage";
 import { LoginPage } from "@/features/login/LoginPage";
 import { Placeholder } from "@/features/placeholder/Placeholder";
+import { ReportsPage } from "@/features/reports/ReportsPage";
 import { NewReservationPage } from "@/features/reservations/NewReservationPage";
 import { ReservationsPage } from "@/features/reservations/ReservationsPage";
 import { RoomBoardPage } from "@/features/rooms/RoomBoardPage";
@@ -68,8 +69,8 @@ const router = createBrowserRouter([
       { path: "/cash", element: <CashPage /> },
       { path: "/expenses", element: <ExpensesPage /> },
       { path: "/guests", element: <GuestsPage /> },
-      screen("/reports", "reports"),
-      screen("/reports/:name", "reports"),
+      { path: "/reports", element: <ReportsPage /> },
+      { path: "/reports/:name", element: <ReportsPage /> },
       screen("/settings/*", "settings"),
       screen("/owner", "owner"),
       screen("/backup", "backup"),
