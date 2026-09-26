@@ -824,3 +824,76 @@ def room_status(params: Params) -> Report:
         (params.date_from, params.date_to),
         totals={k: sum(r[k] for r in rows) for k in ("occupied_nights", "vacant_nights", "maintenance_nights")},
     )
+
+
+# --- Alert response (needs the follow-up engine, phase B3) -------------------------------------------
+
+
+def _neglected_count() -> int:
+    from apps.followups.models import FollowupTask
+
+    return FollowupTask.objects.filter(status="neglected").count()
+
+
+@report("alert_response", "الاستجابة للتنبيهات", badge=_neglected_count)
+def alert_response(params: Params) -> Report:
+    """Who acted on each alert and how fast — the owner's accountability view."""
+    from apps.followups.models import FollowupTask
+
+    tasks = (
+        FollowupTask.objects.filter(_in_period("due_at", params))
+        .select_related("rule", "room", "shift__created_by")
+        .prefetch_related("actions__created_by")
+        .order_by("due_at")
+    )
+    rows, minutes = [], []
+    for task in tasks:
+        actions = list(task.actions.all())
+        first = actions[0] if actions else None
+        final = next((a for a in reversed(actions) if a.action in ("extend", "confirm_checkout", "done")), None)
+        response = round((first.at - task.due_at).total_seconds() / 60) if first else None
+        if response is not None:
+            minutes.append(max(response, 0))
+        rows.append(
+            {
+                "due_at": task.due_at,
+                "title": task.title,
+                "rule": task.rule.name,
+                "first_action": first.get_action_display() if first else "—",
+                "response_minutes": response,
+                "snoozes": task.snooze_count,
+                "final": final.get_action_display() if final else task.get_status_display(),
+                "by": (final or first).created_by.full_name if (final or first) and (final or first).created_by else "",
+                "neglected_shift": task.shift.created_by.full_name
+                if task.status == "neglected" and task.shift_id and task.shift.created_by_id
+                else "",
+            }
+        )
+    neglected = sum(1 for r in rows if r["neglected_shift"])
+    return Report(
+        "alert_response",
+        "الاستجابة للتنبيهات",
+        [
+            Column("due_at", "موعد التنبيه", "datetime"),
+            Column("title", "التنبيه"),
+            Column("rule", "القاعدة"),
+            Column("first_action", "أول إجراء"),
+            Column("response_minutes", "زمن الاستجابة (دقيقة)", "int"),
+            Column("snoozes", "التأجيلات", "int"),
+            Column("final", "النتيجة"),
+            Column("by", "بواسطة"),
+            Column("neglected_shift", "مُهمَلة — وردية"),
+        ],
+        rows,
+        (params.date_from, params.date_to),
+        tiles=[
+            {"label": "التنبيهات", "value": len(rows), "type": "int"},
+            {
+                "label": "متوسط زمن الاستجابة (دقيقة)",
+                "value": round(sum(minutes) / len(minutes)) if minutes else 0,
+                "type": "int",
+            },
+            {"label": "مُهمَلة", "value": neglected, "type": "int"},
+        ],
+        note="كل إجراء مسجَّل باسم من نفّذه ووقته؛ المهمة المُهمَلة تُنسب إلى الوردية المسؤولة وقت الإهمال.",
+    )
