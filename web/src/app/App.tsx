@@ -5,6 +5,7 @@ import { createBrowserRouter, Navigate, RouterProvider, useLocation } from "reac
 
 import { useHotelSettings, useSystemStatus } from "@/api/queries";
 import { session } from "@/api/session";
+import { FollowupsPage } from "@/features/followups/FollowupsPage";
 import { LoginPage } from "@/features/login/LoginPage";
 import { Placeholder } from "@/features/placeholder/Placeholder";
 import { NewReservationPage } from "@/features/reservations/NewReservationPage";
@@ -59,7 +60,7 @@ const router = createBrowserRouter([
       screen("/reservations", "reservations"),
       { path: "/reservations/new", element: <NewReservationPage /> },
       { path: "/stays/:id", element: <StayDetailPage /> },
-      screen("/followups", "followups"),
+      { path: "/followups", element: <FollowupsPage /> },
       screen("/cash", "cash"),
       screen("/expenses", "expenses"),
       screen("/guests", "guests"),
