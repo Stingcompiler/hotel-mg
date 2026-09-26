@@ -8,6 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.models import User
 from apps.accounts.permissions import IsManager
 from apps.accounts.services import require_confirmation
 
@@ -32,8 +33,20 @@ class SystemStatusSerializer(serializers.Serializer):
     clock_last_seen_at = serializers.DateTimeField(allow_null=True, help_text="Latest recorded write on this PC.")
     disk_free_bytes = serializers.IntegerField(allow_null=True, help_text="Free space on the data disk.")
     disk_low = serializers.BooleanField(help_text="Free space under the backup safety margin (system bar).")
+    needs_setup = serializers.BooleanField(
+        help_text="Reception PC with no users yet: the login page creates the manager."
+    )
+    owner_public_key = serializers.CharField(
+        allow_null=True, help_text="Owner PC: public key to paste in the reception's backup settings (public)."
+    )
     version = serializers.CharField()
     schema_version = serializers.IntegerField()
+
+
+def _owner_public_key() -> str | None:
+    from apps.backup import keys
+
+    return str(keys.load().to_public()) if keys.identity_path().exists() else None
 
 
 def _disk_free(path) -> int | None:
@@ -72,6 +85,8 @@ class SystemStatusView(APIView):
             "clock_last_seen_at": last_seen_at(),
             "disk_free_bytes": free,
             "disk_low": rules.disk_low(free),
+            "needs_setup": settings.SKYTOWERS_ROLE == "reception" and not User.objects.exists(),
+            "owner_public_key": _owner_public_key() if settings.SKYTOWERS_ROLE == "owner" else None,
             "version": settings.APP_VERSION,
             "schema_version": SCHEMA_VERSION,
         }

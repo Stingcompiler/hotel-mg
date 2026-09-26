@@ -33,6 +33,11 @@ def setup_django() -> str:
     django.setup()
     # Updates: a newer build migrates the database on its first start (spec §11).
     call_command("migrate", interactive=False, verbosity=0)
+    if cfg.role == "owner":
+        # The owner's backup key is made on the first start; the login page shows its public half.
+        from apps.backup import keys
+
+        keys.generate()
     return cfg.role
 
 

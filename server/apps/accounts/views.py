@@ -1,9 +1,12 @@
+from django.conf import settings
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from apps.core.errors import ApiError
 
 from . import rules, services
 from .models import User
@@ -16,6 +19,7 @@ from .serializers import (
     PinLoginSerializer,
     ResetPinSerializer,
     SessionSerializer,
+    SetupSerializer,
     UserCreateSerializer,
     UserSerializer,
     UserUpdateSerializer,
@@ -59,6 +63,21 @@ class PasswordLoginView(APIView):
         data = PasswordLoginSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         return _session_response(services.login_with_password(**data.validated_data))
+
+
+class SetupView(APIView):
+    """First run: create the first manager when the reception PC has no users (login screen «إعداد النظام»)."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @extend_schema(request=SetupSerializer, responses=SessionSerializer)
+    def post(self, request):
+        if settings.SKYTOWERS_ROLE != "reception":
+            raise ApiError("owner_read_only", 403)
+        data = SetupSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        return _session_response(services.setup_first_manager(**data.validated_data))
 
 
 class ConfirmView(APIView):

@@ -261,6 +261,37 @@
           }
         },
         {
+          "name": "auth_setup_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/setup",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "setup"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "First run: create the first manager when the reception PC has no users (login screen «إعداد النظام»).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"\",\n  \"username\": \"\",\n  \"password\": \"\",\n  \"pin\": \"\"\n}"
+            }
+          }
+        },
+        {
           "name": "auth_users_list",
           "request": {
             "method": "GET",

@@ -29,6 +29,8 @@ def test_system_status_is_public(api):
         "clock_last_seen_at": None,
         "disk_free_bytes": body["disk_free_bytes"],
         "disk_low": body["disk_low"],
+        "needs_setup": True,
+        "owner_public_key": None,
         "version": settings.APP_VERSION,
         "schema_version": SCHEMA_VERSION,
     }

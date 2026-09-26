@@ -117,6 +117,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description First run: create the first manager when the reception PC has no users (login screen «إعداد النظام»). */
+        post: operations["auth_setup_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/users": {
         parameters: {
             query?: never;
@@ -3086,6 +3103,13 @@ export interface components {
             reason?: string;
             version?: number;
         };
+        /** @description First manager on a new reception PC. */
+        SetupRequest: {
+            full_name: string;
+            username: string;
+            password: string;
+            pin: string;
+        };
         Shift: {
             /** Format: uuid */
             readonly id: string;
@@ -3319,6 +3343,10 @@ export interface components {
             disk_free_bytes: number | null;
             /** @description Free space under the backup safety margin (system bar). */
             disk_low: boolean;
+            /** @description Reception PC with no users yet: the login page creates the manager. */
+            needs_setup: boolean;
+            /** @description Owner PC: public key to paste in the reception's backup settings (public). */
+            owner_public_key: string | null;
             version: string;
             schema_version: number;
         };
@@ -3632,6 +3660,31 @@ export interface operations {
                 "application/json": components["schemas"]["PinLoginRequest"];
                 "application/x-www-form-urlencoded": components["schemas"]["PinLoginRequest"];
                 "multipart/form-data": components["schemas"]["PinLoginRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+        };
+    };
+    auth_setup_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetupRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SetupRequest"];
+                "multipart/form-data": components["schemas"]["SetupRequest"];
             };
         };
         responses: {

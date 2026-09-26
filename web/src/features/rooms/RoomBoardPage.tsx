@@ -231,6 +231,15 @@ export function RoomBoardPage() {
               <RoomCardSkeleton key={i} />
             ))}
           </div>
+        ) : board.data.rooms.length === 0 ? (
+          // New install: nothing set up yet — point to the settings in the order they are needed.
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-card border border-dashed border-border-strong text-center">
+            <div className="text-section-title">{t("board.firstRunTitle")}</div>
+            <div className="max-w-md text-body text-text-secondary">{t("board.firstRunHint")}</div>
+            <button type="button" onClick={() => navigate("/settings/roomTypes")} className="h-11 rounded-control border-0 bg-primary px-6 font-sans text-body font-semibold text-primary-text-on hover:bg-primary-hover">
+              {t("board.firstRunAction")}
+            </button>
+          </div>
         ) : shown.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-card border border-dashed border-border-strong text-center">
             <SearchX className="h-10 w-10 text-text-disabled" strokeWidth={1.75} aria-hidden />
