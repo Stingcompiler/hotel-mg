@@ -23,6 +23,11 @@ def is_clock_blocked() -> bool:
     return SystemClock.objects.filter(pk=1, clock_blocked=True).exists()
 
 
+def last_seen_at() -> datetime | None:
+    """Latest time any write was recorded on this PC (the clock guard modal's «آخر عملية مسجَّلة»)."""
+    return SystemClock.objects.filter(pk=1).values_list("last_seen_at", flat=True).first()
+
+
 def observe_clock(now: datetime | None = None) -> bool:
     """Record the current time; return True when writes must be refused."""
     now = now or timezone.now()

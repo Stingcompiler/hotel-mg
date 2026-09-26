@@ -6,6 +6,8 @@ import { useMediaQuery } from "@/lib/useMediaQuery";
 
 import { OWNER_NAV } from "../nav";
 import { OwnerBanner } from "./OwnerBanner";
+import { ClockGuard } from "./ClockGuard";
+import { SessionLock } from "./SessionLock";
 import { Sidebar } from "./Sidebar";
 import { SystemBars } from "./SystemBars";
 import { useLogout } from "./useLogout";
@@ -33,11 +35,13 @@ export function OwnerShell() {
           dataAsOf={status?.data_as_of ?? null}
           lastImport={lastImport ? { seq: lastImport.backup_seq ?? null, at: lastImport.created_at } : null}
         />
-        <SystemBars />
+        <SystemBars reception={false} />
         <main className="min-h-0 flex-1 overflow-auto">
           <Outlet />
         </main>
       </div>
+      <ClockGuard />
+      <SessionLock />
     </div>
   );
 }

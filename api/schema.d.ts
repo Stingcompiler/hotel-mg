@@ -3310,6 +3310,15 @@ export interface components {
             /** @description Hours since the last backup once past the «no backup» alert threshold. */
             backup_stale_hours: number | null;
             clock_blocked: boolean;
+            /**
+             * Format: date-time
+             * @description Latest recorded write on this PC.
+             */
+            clock_last_seen_at: string | null;
+            /** @description Free space on the data disk. */
+            disk_free_bytes: number | null;
+            /** @description Free space under the backup safety margin (system bar). */
+            disk_low: boolean;
             version: string;
             schema_version: number;
         };

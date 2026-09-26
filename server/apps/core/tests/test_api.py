@@ -15,7 +15,9 @@ pytestmark = pytest.mark.django_db
 def test_system_status_is_public(api):
     res = api.get("/api/v1/system/status")
     assert res.status_code == 200
-    assert res.json() == {
+    body = res.json()
+    assert isinstance(body["disk_free_bytes"], int)
+    assert body == {
         "role": "reception",
         "hotel_id": str(settings.RUNTIME.hotel_id),
         "last_backup": None,
@@ -24,6 +26,9 @@ def test_system_status_is_public(api):
         "imported_seq": None,
         "device_name": settings.RUNTIME.device_name,
         "clock_blocked": False,
+        "clock_last_seen_at": None,
+        "disk_free_bytes": body["disk_free_bytes"],
+        "disk_low": body["disk_low"],
         "version": settings.APP_VERSION,
         "schema_version": SCHEMA_VERSION,
     }
@@ -80,3 +85,11 @@ def test_handler_keeps_field_errors_for_validation():
 def test_handler_maps_drf_exceptions():
     res = api_exception_handler(NotFound(), {})
     assert res.data == {"code": "not_found", "detail": "العنصر غير موجود."}
+
+
+def test_disk_low_threshold():
+    from apps.core import rules
+
+    assert rules.disk_low(None) is False
+    assert rules.disk_low(rules.DISK_LOW_BYTES - 1) is True
+    assert rules.disk_low(rules.DISK_LOW_BYTES) is False
