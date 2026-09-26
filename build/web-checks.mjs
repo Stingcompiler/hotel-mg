@@ -23,7 +23,7 @@ const STATE_COLOUR = /\b(?:bg|text|border|outline|ring|fill|stroke)-state-/;
 const PHYSICAL =
   /(?<![\w-])(?:-?(?:ml|mr|pl|pr|left|right|border-l|border-r|rounded-l|rounded-r|rounded-tl|rounded-tr|rounded-bl|rounded-br|scroll-ml|scroll-mr|scroll-pl|scroll-pr)-[\w[]|text-(?:left|right)\b|float-(?:left|right)\b)/;
 // JSX text between tags, and user-facing attributes, containing Latin letters.
-const JSX_TEXT = />\s*([^<>{}]*[A-Za-z][^<>{}]*)\s*</;
+const JSX_TEXT = /(?<![=-])>\s*([^<>{}]*[A-Za-z][^<>{}]*)\s*</;
 const ATTR_TEXT = /\b(?:aria-label|title|placeholder|alt)="([^"]*[A-Za-z][^"]*)"/;
 
 const problems = [];

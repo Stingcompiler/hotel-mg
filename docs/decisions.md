@@ -178,3 +178,7 @@ Append-only. Newest last. Each entry: date, phase, decision, reason.
 
 116. **Follow-ups page** reads `followups/board` (polled every 30 s): متأخرة (danger rows), اليوم, تنبيهات النظام (tasks without a stay: «تم» + snooze), القادمة (extend only, with «سيُنبَّه …»). The wording of «when» and «rule» comes from the API. «تمديد» and «تأكيد المغادرة» open the stay's extend / check-out dialogs; the engine supersedes the task when the stay changes. «بانتظار الرد» and «تأجيل (n من 3)» open a popover (in an hour, in 3 hours, tomorrow 09:00, a set time; waiting takes an optional note); the snooze button is disabled when the limit is reached (server `can_snooze`). With the server down the list stays from the last refresh with «آخر تحديث» and actions disabled.
 117. Times are shown in the browser's time zone; on the hotel PCs that is Khartoum time, the same as the server's (spec §5).
+
+## 2026-09-26 — F2 Cash & shift (6.7)
+
+118. **Cash page**: the open shift shows opening, receipts by method, cash expenses and the expected cash (from the API); closing takes the counted amount on a 44 px money field, previews the difference (success at zero, danger otherwise) and requires a reason when it is not zero. With no open shift a warning bar explains that cash movements are blocked and the open card proposes `suggested_opening` and shows the last closed shift. The history tab filters this week / this month / last month and by user, with shift count, shifts with a difference and the net difference. Signed amounts are laid out LTR so the sign stays in front («− 2,500»).
