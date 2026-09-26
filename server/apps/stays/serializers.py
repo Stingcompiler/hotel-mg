@@ -2,6 +2,7 @@ from datetime import date
 
 from rest_framework import serializers
 
+from apps.cash.models import PaymentMethod
 from apps.core.fields import MoneyMinorField
 from apps.guests.models import Guest
 from apps.rooms.models import Room, RoomType
@@ -50,6 +51,9 @@ class ReservationSerializer(serializers.ModelSerializer):
     room_type_name = serializers.CharField(source="room_type.name", read_only=True)
     total = MoneyMinorField(read_only=True)
     nights = serializers.IntegerField(read_only=True)
+    folio = serializers.UUIDField(source="folio.pk", read_only=True, default=None)
+    invoice = serializers.CharField(source="folio.invoice_label", read_only=True, default=None)
+    balance = serializers.SerializerMethodField()
 
     class Meta:
         model = Reservation
@@ -71,10 +75,23 @@ class ReservationSerializer(serializers.ModelSerializer):
             "rate_snapshot",
             "notes",
             "status_reason",
+            "folio",
+            "invoice",
+            "balance",
             "version",
             "created_at",
         ]
         read_only_fields = fields
+
+    def get_balance(self, reservation) -> int | None:
+        """Folio balance in minor units (> 0 owed by the guest)."""
+        balances = self.context.get("balances")
+        if balances is not None:
+            return balances.get(reservation.pk)
+        from apps.billing.services import FolioTotals
+
+        folio = getattr(reservation, "folio", None)
+        return FolioTotals.of(folio).balance if folio else None
 
 
 class ReservationCreateSerializer(serializers.Serializer):
@@ -89,9 +106,23 @@ class ReservationCreateSerializer(serializers.Serializer):
     override_reason = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
     notes = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
     check_in_now = serializers.BooleanField(default=False, help_text="Walk-in «تسكين الآن»: book and check in at once.")
+    discount = MoneyMinorField(required=False, min_value=0, default=0)
+    discount_reason = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
+    deposit = MoneyMinorField(required=False, min_value=0, default=0, help_text="Taken in the open shift.")
+    deposit_method = serializers.ChoiceField(choices=PaymentMethod.choices, default="cash")
+    deposit_reference = serializers.CharField(max_length=60, required=False, allow_blank=True, default="")
+    manager_password = serializers.CharField(
+        max_length=128,
+        required=False,
+        allow_blank=True,
+        default="",
+        style={"input_type": "password"},
+        help_text="Only for a discount above the hotel's limit.",
+    )
+    manager_reason = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
 
 
-class ReasonSerializer(serializers.Serializer):
+class CancelReservationSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=300)
     version = serializers.IntegerField(min_value=1, required=False)
 
@@ -223,6 +254,7 @@ class BoardStaySerializer(serializers.Serializer):
     days_left = serializers.IntegerField(help_text="0 = ends today; negative = overdue by that many days")
     duration_kind = serializers.CharField()
     balance = MoneyMinorField(allow_null=True)
+    invoice = serializers.CharField(allow_null=True)
 
 
 class BoardNextSerializer(serializers.Serializer):

@@ -1,7 +1,7 @@
-"""Stay use cases: check-in, extend, change room, checkout, cancel (spec §6.1-§6.3).
+"""Stay use cases: check-in, extend, change room, checkout, cancel (spec §6.1-§6.4).
 
-Money effects (folio lines, balance checks, refunds) are added with billing in phase B2;
-follow-up task supersession with the alert engine in B3.
+Each posts its folio lines (room charge, extension, room-change difference, cancellation settlement).
+Follow-up task supersession arrives with the alert engine in B3.
 """
 
 from dataclasses import dataclass
@@ -12,6 +12,9 @@ from django.utils import timezone
 
 from apps.accounts.services import verify_manager_override
 from apps.audit import services as audit
+from apps.billing import rules as billing_rules
+from apps.billing import services as billing
+from apps.billing.models import Folio
 from apps.core.concurrency import get_for_update
 from apps.core.errors import ApiError
 from apps.rooms import services as room_services
@@ -59,6 +62,31 @@ def record_check_in(actor, reservation: Reservation, room: Room, at=None) -> Sta
     StaySegment.objects.create(
         stay=stay, room=room, from_date=reservation.check_in_date, to_date=reservation.check_out_date, created_by=actor
     )
+    folio = billing.folio_of(reservation)
+    snap = reservation.rate_snapshot
+    billing.post_line(
+        actor,
+        folio,
+        kind="room",
+        description=rules.room_line_text(
+            reservation.duration_kind,
+            reservation.room_type.name,
+            room.number,
+            reservation.nights,
+            snap.get("label", ""),
+        ),
+        amount=reservation.total,
+        reason=snap.get("override_reason", ""),
+    )
+    if discount := snap.get("discount"):
+        billing.post_line(
+            actor,
+            folio,
+            kind="discount",
+            description=f"خصم: {discount['reason']}",
+            amount=-discount["amount"],
+            reason=discount["reason"],
+        )
     return stay
 
 
@@ -173,6 +201,14 @@ def extend(
     segment = _open_segment(stay)
     segment.to_date = q.check_out_date
     segment.save()
+    billing.post_line(
+        actor,
+        billing.folio_of(reservation),
+        kind="room",
+        description=f"تمديد — {option.label} حتى {rules.last_night(q.check_out_date):%d/%m}",
+        amount=final_total,
+        reason=override_reason,
+    )
     audit.record(
         actor=actor, action="stay.extend", entity="stay", entity_id=stay.pk, before=before, after=snapshot(reservation)
     )
@@ -264,6 +300,15 @@ def change_room(
         }
     )
     reservation.save()
+    if difference:
+        billing.post_line(
+            actor,
+            billing.folio_of(reservation),
+            kind="adjustment",
+            description=f"فرق تغيير الغرفة {old_room.number} ← {new_room.number}",
+            amount=difference,
+            reason=reason,
+        )
     audit.record(
         actor=actor,
         action="stay.change_room",
@@ -300,10 +345,18 @@ def checkout(
     override_reason: str = "",
     version: int | None = None,
 ) -> Stay:
-    """Record departure; the room needs cleaning (or maintenance). B2 adds the balance ≠ 0 override rule."""
+    """Record departure; the room needs cleaning (or maintenance).
+
+    With a balance ≠ 0 the manager must override with password and reason (spec §6.4, artboard 6.5 C);
+    what is left stays on the closed folio as a debt (or credit) for the debt report.
+    """
     stay = _stay_for_update(stay_id, version)
     before = snapshot(stay.reservation)
-    if override_password:
+    folio = Folio.objects.select_for_update().get(reservation=stay.reservation)
+    balance = billing.FolioTotals.of(folio).balance
+    if balance != 0:
+        if not override_password:
+            raise ApiError("balance_not_zero", 409, balance=balance)
         stay.override_by = verify_manager_override(override_password, override_reason)
         stay.override_reason = override_reason.strip()
     _close(
@@ -314,6 +367,7 @@ def checkout(
         maintenance_reason=maintenance_reason,
         why=f"مغادرة {stay.reservation.guest.full_name}",
     )
+    billing.close_folio(stay.reservation)
     stay.save()
     audit.record(
         actor=actor,
@@ -321,7 +375,11 @@ def checkout(
         entity="stay",
         entity_id=stay.pk,
         before=before,
-        after={**snapshot(stay.reservation), "override_by": str(stay.override_by_id or "") or None},
+        after={
+            **snapshot(stay.reservation),
+            "balance_at_checkout": balance,
+            "override_by": str(stay.override_by_id) if stay.override_by_id else None,
+        },
     )
     return stay
 
@@ -345,9 +403,14 @@ def cancel_stay(
     manual_total: int | None = None,
     override_password: str,
     override_reason: str = "",
+    refund_method: str = "cash",
     version: int | None = None,
 ) -> Stay:
-    """End a stay early as «ملغاة»: nothing is deleted; the new total covers the nights used."""
+    """End a stay early as «ملغاة»: nothing is deleted; the new total covers the nights used.
+
+    The room charges are settled to ``new_total`` with an adjustment line (discounts included), and
+    any excess already paid is refunded from the open shift (V2 artboard 6.5 F «يُرَدّ للنزيل»).
+    """
     if not reason.strip():
         raise ApiError("reason_required", 400, detail="سبب الإلغاء مطلوب.")
     stay = _stay_for_update(stay_id, version)
@@ -363,11 +426,30 @@ def cancel_stay(
 
     reservation = stay.reservation
     before = snapshot(reservation)
+    folio = Folio.objects.select_for_update().get(reservation=reservation)
+    totals = billing.FolioTotals.of(folio)
+    services_total = sum(folio.lines.filter(kind="service").values_list("amount", flat=True))
+    settlement_line = new_total - (totals.total - services_total)
+    if settlement_line:
+        billing.post_line(
+            actor,
+            folio,
+            kind="adjustment",
+            description=f"تسوية إلغاء الإقامة — {used} ليلة مستهلكة",
+            amount=settlement_line,
+            reason=reason,
+        )
+    refund = billing_rules.refund_due(new_total + services_total, totals.paid)
+    if refund:
+        billing.take_payment(
+            actor, folio, amount=-refund, method=refund_method, kind="refund", reason="ردّ عند إلغاء الإقامة"
+        )
     reservation.rate_snapshot["cancellation"] = {
         "nights_used": used,
         "settlement": settlement,
-        "previous_total": reservation.total,
+        "previous_total": totals.total,
         "new_total": new_total,
+        "refund": refund,
     }
     reservation.total = new_total
     reservation.status_reason = reason.strip()
@@ -380,6 +462,7 @@ def cancel_stay(
         maintenance_reason="",
         why=f"إلغاء إقامة {reservation.guest.full_name}",
     )
+    billing.close_folio(reservation)
     stay.save()
     audit.record(
         actor=actor,

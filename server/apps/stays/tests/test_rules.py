@@ -136,3 +136,9 @@ def test_after_room_statuses():
     assert rules.after_room_statuses("maintenance") == ["cleaning", "maintenance"]
     with pytest.raises(ValueError):
         rules.after_room_statuses("ready")
+
+
+def test_room_line_text():
+    assert rules.room_line_text("monthly", "مزدوجة", "203", 30) == "إقامة شهرية — مزدوجة 203 (30 ليلة)"
+    assert rules.room_line_text("daily", "مفردة", "101", 3) == "إقامة يومية — مفردة 101 (3 ليالٍ)"
+    assert rules.room_line_text("mixed", "مفردة", "101", 10, "أسبوع + 3 ليالٍ") == "إقامة — مفردة 101 (أسبوع + 3 ليالٍ)"

@@ -1,5 +1,3 @@
-import hashlib
-import uuid
 from pathlib import Path
 
 from django.conf import settings
@@ -7,10 +5,11 @@ from django.db import transaction
 from django.db.models import Q
 
 from apps.audit import services as audit
+from apps.core import imaging
 from apps.core.concurrency import get_for_update
 from apps.core.errors import ApiError
 
-from . import imaging, rules
+from . import rules
 from .models import Companion, Guest, GuestDocument
 
 GUEST_FIELDS = ["full_name", "phone", "nationality", "id_type", "id_number", "warning_note"]
@@ -89,20 +88,13 @@ def document_path(document: GuestDocument) -> Path:
 @transaction.atomic
 def add_document(actor, guest_id, raw: bytes) -> GuestDocument:
     guest = Guest.objects.get(pk=guest_id)
-    if len(raw) > rules.MAX_UPLOAD_BYTES:
-        raise ApiError("invalid_image", 400)
     try:
-        data = imaging.compress_to_jpeg(raw)
+        stored = imaging.store_image(raw, f"guests/{guest.pk}")
     except imaging.InvalidImage:
         raise ApiError("invalid_image", 400) from None
-
-    relative = f"guests/{guest.pk}/{uuid.uuid4().hex}.jpg"
-    target = settings.RUNTIME.attachments_dir / relative
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_bytes(data)
     try:
         document = GuestDocument.objects.create(
-            guest=guest, file_path=relative, size=len(data), sha256=hashlib.sha256(data).hexdigest(), created_by=actor
+            guest=guest, file_path=stored.relative_path, size=stored.size, sha256=stored.sha256, created_by=actor
         )
         audit.record(
             actor=actor,
@@ -112,7 +104,7 @@ def add_document(actor, guest_id, raw: bytes) -> GuestDocument:
             after={"document": str(document.pk), "size": document.size, "sha256": document.sha256},
         )
     except Exception:
-        target.unlink(missing_ok=True)  # no row, no file
+        stored.absolute_path.unlink(missing_ok=True)  # no row, no file
         raise
     return document
 

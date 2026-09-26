@@ -6,6 +6,9 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.billing import services as billing
+from apps.cash import services as cash
+from apps.cash.models import Shift
 from apps.core.seed import demo_data
 from apps.guests import rules as guest_rules
 from apps.guests.models import Guest
@@ -36,10 +39,12 @@ class Command(BaseCommand):
             users = self._load_users()
             types, rooms = self._load_rooms()
             stays, bookings = self._load_stays()
+            payments, expenses = self._load_money()
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Created: {users} users, {types} room types, {rooms} rooms, {stays} stays, {bookings} reservations."
+                f"Created: {users} users, {types} room types, {rooms} rooms, {stays} stays, {bookings} reservations, "
+                f"{payments} payments, {expenses} expenses."
             )
         )
 
@@ -161,3 +166,26 @@ class Command(BaseCommand):
             )
             bookings += 1
         return stays, bookings
+
+    def _load_money(self) -> tuple[int, int]:
+        """Earlier payments leave the brief's balances (203: 15,000, 305: 42,000, others settled); today's
+        shift opens with 50,000 and the two expenses of the Expenses artboard."""
+        if Shift.objects.exists():
+            return 0, 0
+        actor = User.objects.get(username="ahmed.ali")
+        manager = User.objects.get(username="manager")
+        payments = 0
+        cash.open_shift(manager, opening=0)  # back-office shift for payments taken before today
+        for reservation in Reservation.objects.filter(status="checked_in").select_related("room"):
+            folio = billing.folio_of(reservation)
+            due = billing.FolioTotals.of(folio).balance - demo_data.BALANCES.get(reservation.room.number, 0)
+            if due > 0:
+                billing.take_payment(
+                    manager, folio, amount=due, method="bankak", reference=f"BOK-{70000 + payments:05d}"
+                )
+                payments += 1
+        cash.close_shift(manager, counted=0)
+        cash.open_shift(actor, opening=demo_data.SHIFT["opening"])
+        for row in demo_data.EXPENSES:
+            cash.create_expense(actor, **row)
+        return payments, len(demo_data.EXPENSES)

@@ -9,9 +9,6 @@ _FOLD = str.maketrans({"أ": "ا", "إ": "ا", "آ": "ا", "ٱ": "ا", "ة": "ه
 _DIACRITICS = re.compile("[ً-ْٰـ]")  # harakat, superscript alef, tatweel
 _SPACES = re.compile(r"\s+")
 
-MAX_DOCUMENT_BYTES = 300 * 1024  # after compression (spec §5)
-MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # before compression
-
 
 def to_ascii_digits(text: str) -> str:
     return text.translate(ARABIC_INDIC)

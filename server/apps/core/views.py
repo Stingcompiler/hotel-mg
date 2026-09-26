@@ -1,7 +1,7 @@
 from django.conf import settings
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -9,7 +9,9 @@ from apps.accounts.permissions import IsManager
 from apps.accounts.services import require_confirmation
 
 from .clock import approve_clock, is_clock_blocked
-from .models import SCHEMA_VERSION
+from .fields import MoneyMinorField
+from .models import SCHEMA_VERSION, HotelSettings
+from .settings_service import update_settings
 
 
 class SystemStatusSerializer(serializers.Serializer):
@@ -51,3 +53,53 @@ class ClockApproveView(APIView):
         require_confirmation(request)
         approve_clock(request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class HotelSettingsSerializer(serializers.ModelSerializer):
+    expense_attachment_threshold = MoneyMinorField(min_value=0)
+
+    class Meta:
+        model = HotelSettings
+        fields = [
+            "name_ar",
+            "name_latin",
+            "address",
+            "phone",
+            "currency",
+            "digits",
+            "money_decimals",
+            "stay_day_end",
+            "session_lock_minutes",
+            "expense_attachment_threshold",
+            "max_discount_percent",
+            "auto_print_receipt",
+            "thermal_printer",
+            "hotel_id",
+            "version",
+            "updated_at",
+        ]
+        read_only_fields = ["currency", "hotel_id", "version", "updated_at"]
+
+
+class HotelSettingsUpdateSerializer(HotelSettingsSerializer):
+    version = serializers.IntegerField(min_value=1)
+
+    class Meta(HotelSettingsSerializer.Meta):
+        read_only_fields = ["currency", "hotel_id", "updated_at"]
+
+
+class HotelSettingsView(APIView):
+    """Settings → بيانات الفندق (V2 artboard 6.11 D). Anyone signed in reads (digits, names on prints)."""
+
+    def get_permissions(self):
+        return [IsManager()] if self.request.method == "PATCH" else [IsAuthenticated()]
+
+    @extend_schema(responses=HotelSettingsSerializer)
+    def get(self, request):
+        return Response(HotelSettingsSerializer(HotelSettings.load()).data)
+
+    @extend_schema(request=HotelSettingsUpdateSerializer, responses=HotelSettingsSerializer)
+    def patch(self, request):
+        data = HotelSettingsUpdateSerializer(HotelSettings.load(), data=request.data, partial=True)
+        data.is_valid(raise_exception=True)
+        return Response(HotelSettingsSerializer(update_settings(request.user, **data.validated_data)).data)

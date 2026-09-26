@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import secrets
 import sys
 import uuid
@@ -45,6 +46,7 @@ class RuntimeConfig:
     hotel_id: uuid.UUID | None
     secret_key: str
     second_backup_dir: Path | None = None
+    device_name: str = "RECEPTION-PC"
 
     @property
     def data_dir(self) -> Path:
@@ -99,4 +101,6 @@ def load(home: Path | None = None, role_override: str | None = None) -> RuntimeC
         hotel_id=hotel_id,
         secret_key=_secret_key(home, raw),
         second_backup_dir=Path(second) if second else None,
+        # One open cash shift per device (spec §6.5); defaults to the Windows computer name.
+        device_name=raw.get("device_name") or platform.node() or "PC",
     )

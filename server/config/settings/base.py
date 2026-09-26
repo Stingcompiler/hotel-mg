@@ -130,6 +130,7 @@ SPECTACULAR_SETTINGS = {
         "DurationKindEnum": "apps.stays.models.DurationKind",
         "BookingDurationKindEnum": "apps.stays.serializers.BOOKING_KINDS",
         "AfterRoomStatusEnum": "apps.stays.serializers.AFTER_ROOM_STATUS",
+        "PaymentMethodEnum": "apps.cash.models.PaymentMethod",
     },
 }
 

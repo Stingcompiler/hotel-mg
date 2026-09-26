@@ -177,8 +177,16 @@ class TestChangeRoom:
 
 
 class TestCheckout:
-    def test_checkout_frees_room_for_cleaning(self, reception_api, guest, single, rooms):
+    def test_checkout_needs_zero_balance(self, reception_api, guest, single, rooms):
         stay = stay_of(walk_in(reception_api, guest, single, rooms["101"]))
+        res = reception_api.post(f"/api/v1/stays/{stay.pk}/checkout", {}, format="json")
+        assert res.status_code == 409
+        assert res.json()["code"] == "balance_not_zero" and res.json()["balance"] == 3_600_000
+
+    def test_checkout_frees_room_for_cleaning(self, reception_api, guest, single, rooms, open_shift, pay):
+        r = walk_in(reception_api, guest, single, rooms["101"])
+        stay = stay_of(r)
+        pay(reception_api, r["id"])
         res = reception_api.post(f"/api/v1/stays/{stay.pk}/checkout", {}, format="json")
         assert res.status_code == 200
         assert res.json()["reservation"]["status"] == "checked_out"
@@ -188,7 +196,7 @@ class TestCheckout:
         again = reception_api.post(f"/api/v1/stays/{stay.pk}/checkout", {}, format="json")
         assert again.json()["code"] == "invalid_reservation_status"
 
-    def test_overdue_checkout_keeps_actual_nights(self, reception_api, guest, single, rooms, reception):
+    def test_overdue_checkout_keeps_actual_nights(self, reception_api, guest, single, rooms, reception, manager):
         stay = stay_of(walk_in(reception_api, guest, single, rooms["101"], count=1))  # last night 26th
         with time_machine.travel(timezone.now() + timedelta(days=2)):
             token = login_with_password(reception.username, PASSWORD).token  # the 12 h session has expired
@@ -196,7 +204,11 @@ class TestCheckout:
             board = reception_api.get("/api/v1/rooms/", {"view": "board"}).json()
             row = next(r for r in board["rooms"] if r["number"] == "101")
             assert row["display_status"] == "overdue" and row["stay"]["days_left"] == -2
-            res = reception_api.post(f"/api/v1/stays/{stay.pk}/checkout", {"room_status": "cleaning"}, format="json")
+            res = reception_api.post(
+                f"/api/v1/stays/{stay.pk}/checkout",
+                {"room_status": "cleaning", "override_password": PASSWORD, "override_reason": "سيسدد لاحقًا"},
+                format="json",
+            )
         assert res.json()["segments"][0]["to_date"] == "2026-09-28"
 
     def test_manager_override_is_recorded(self, reception_api, guest, single, rooms, manager):

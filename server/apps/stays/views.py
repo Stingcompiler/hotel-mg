@@ -15,6 +15,7 @@ from .serializers import (
     AssignRoomSerializer,
     AvailableRoomSerializer,
     CancelOptionsSerializer,
+    CancelReservationSerializer,
     CancelStaySerializer,
     ChangeRoomOptionSerializer,
     ChangeRoomSerializer,
@@ -25,7 +26,6 @@ from .serializers import (
     ExtendSerializer,
     QuoteRequestSerializer,
     QuoteSerializer,
-    ReasonSerializer,
     ReservationCreateSerializer,
     ReservationSerializer,
     StaySerializer,
@@ -121,10 +121,10 @@ class ReservationDetailView(APIView):
 class CancelReservationView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=ReasonSerializer, responses=ReservationSerializer)
+    @extend_schema(request=CancelReservationSerializer, responses=ReservationSerializer)
     def post(self, request, pk):
         get_object_or_404(Reservation, pk=pk)
-        data = ReasonSerializer(data=request.data)
+        data = CancelReservationSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         services.cancel_reservation(request.user, pk, **data.validated_data)
         return Response(ReservationSerializer(_reservations().get(pk=pk)).data)
