@@ -9,6 +9,7 @@ import { api, ApiError, data } from "@/api/client";
 import { keys } from "@/api/queries";
 import { ErrorBanner } from "@/components/ui/form";
 import { buttons, Modal } from "@/components/ui/Modal";
+import { Cancelled, useConfirmGate } from "@/features/settings/confirm";
 import { formatDate, formatTime } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
 import { t } from "@/i18n/t";
@@ -30,32 +31,37 @@ const STEPS = ["pick", "verify", "merge", "result"] as const;
 export function ImportModal({ initial, onClose }: { initial?: Candidate; onClose: () => void }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  // Importing is a sensitive action (spec §6.8): the server asks for the manager's password once users exist.
+  const { gate, modal: confirmModal } = useConfirmGate();
   const candidates = useQuery({ queryKey: ["owner", "import", "candidates"], queryFn: () => data(api.GET("/api/v1/owner/import/candidates")), retry: false });
   const [source, setSource] = useState<Source | null>(initial ? { kind: "drive", candidate: initial } : null);
   const [result, setResult] = useState<{ run: Run; ok: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const run = useMutation({
-    mutationFn: async ({ src, allowOlder }: { src: Source; allowOlder: boolean }): Promise<Run> => {
-      if (src.kind === "drive") {
-        return data(
-          api.POST("/api/v1/owner/import/drive", {
-            // A file already downloaded to incoming/ is imported by name; otherwise by its Drive id.
-            body: src.candidate.local
-              ? { name: src.candidate.name, allow_older: allowOlder }
-              : { drive_file_id: src.candidate.drive_file_id ?? undefined, name: src.candidate.name, allow_older: allowOlder },
-          }),
-        );
-      }
-      const body = new FormData();
-      body.append("file", src.file);
-      body.append("allow_older", allowOlder ? "true" : "false");
-      return data(api.POST("/api/v1/owner/import/run", { body: body as never, bodySerializer: (b: unknown) => b as FormData }));
-    },
+    mutationFn: ({ src, allowOlder }: { src: Source; allowOlder: boolean }): Promise<Run> =>
+      gate(t("importDlg.title"), (headers) => {
+        if (src.kind === "drive") {
+          return data(
+            api.POST("/api/v1/owner/import/drive", {
+              headers,
+              // A file already downloaded to incoming/ is imported by name; otherwise by its Drive id.
+              body: src.candidate.local
+                ? { name: src.candidate.name, allow_older: allowOlder }
+                : { drive_file_id: src.candidate.drive_file_id ?? undefined, name: src.candidate.name, allow_older: allowOlder },
+            }),
+          );
+        }
+        const body = new FormData();
+        body.append("file", src.file);
+        body.append("allow_older", allowOlder ? "true" : "false");
+        return data(api.POST("/api/v1/owner/import/run", { headers, body: body as never, bodySerializer: (b: unknown) => b as FormData }));
+      }),
     onSuccess: (value) => setResult({ run: value, ok: true }),
     onError: (e) => {
-      // 422: the checks rejected the file; the body is the failed ImportRun.
+      // 422: the checks rejected the file; the body is the failed ImportRun. A closed password window is not an error.
       if (e instanceof ApiError && e.status === 422 && Array.isArray(e.extra.checks)) setResult({ run: e.extra as unknown as Run, ok: false });
+      else if (e instanceof Cancelled) setSource(null);
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["owner"] });
@@ -126,7 +132,8 @@ export function ImportModal({ initial, onClose }: { initial?: Candidate; onClose
   return (
     <Modal title={title} width={640} onClose={() => !run.isPending && onClose()} footer={footer}>
       <Steps current={step} />
-      {run.isError && !result && <ErrorBanner>{(run.error as ApiError).message ?? t("errors.error")}</ErrorBanner>}
+      {run.isError && !result && !(run.error instanceof Cancelled) && <ErrorBanner>{(run.error as ApiError).message ?? t("errors.error")}</ErrorBanner>}
+      {confirmModal}
 
       {step === 0 && (
         <div className="flex flex-col gap-3">

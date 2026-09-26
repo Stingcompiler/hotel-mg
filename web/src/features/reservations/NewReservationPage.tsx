@@ -36,12 +36,14 @@ export function NewReservationPage() {
   const [saving, setSaving] = useState(false);
   const update = (patch: Partial<Form>) => setForm((f) => ({ ...f, ...patch }));
 
-  // From the room drawer: «حجز جديد لهذه الغرفة» preselects the room and its type.
+  // From the room drawer («حجز جديد لهذه الغرفة») or a timeline cell: the room, its type and — from the cell — the day.
   const preset = params.get("room");
+  const presetDate = params.get("date");
   useEffect(() => {
     const room = preset && board?.rooms.find((r) => r.id === preset);
-    if (room && !form.room_type) update({ room_type: room.room_type, room: room.id, check_in_date: board!.date });
-  }, [preset, board]);
+    const date = presetDate && board && presetDate >= board.date ? presetDate : board?.date;
+    if (room && !form.room_type) update({ room_type: room.room_type, room: room.id, check_in_date: date! });
+  }, [preset, presetDate, board]);
 
   // From the guest profile: «حجز جديد لهذا النزيل».
   const presetGuest = params.get("guest");
@@ -154,6 +156,8 @@ export function NewReservationPage() {
       );
       void queryClient.invalidateQueries({ queryKey: keys.roomBoard });
       void queryClient.invalidateQueries({ queryKey: keys.currentShift });
+      void queryClient.invalidateQueries({ queryKey: ["reservations"] });
+      void queryClient.invalidateQueries({ queryKey: ["guests"] });
       navigate(checkInNow ? "/" : `/reservations?focus=${reservation.id}`);
     } catch (e) {
       if (e instanceof ApiError && e.code === "override_required") update({ needManager: true });

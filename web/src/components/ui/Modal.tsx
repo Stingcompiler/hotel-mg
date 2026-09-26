@@ -1,27 +1,30 @@
 import { X } from "lucide-react";
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useId, useRef } from "react";
 
 import { t } from "@/i18n/t";
 
+import { useDialogFocus } from "./dialogFocus";
+
 type Props = { title: string; onClose: () => void; width?: number; footer: ReactNode; children: ReactNode };
 
-/** Dialog (6.5 B–D): 32 % scrim, 12 px radius, header with close, body, footer row of actions. Esc closes. */
+/**
+ * Dialog (6.5 B–D): 32 % scrim, 12 px radius, header with close, body, footer row of actions.
+ * Focus starts on the first field and stays inside; Esc closes; the opener gets focus back.
+ */
 export function Modal({ title, onClose, width = 560, footer, children }: Props) {
-  const closeRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    closeRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const panel = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useDialogFocus(panel, onClose);
   return (
     <div className="scrim-32 fixed inset-0 z-50 flex items-center justify-center" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div role="dialog" aria-modal="true" aria-label={title} style={{ width }} className="flex max-h-[90vh] flex-col rounded-modal bg-bg-surface shadow-elevated">
+      <div ref={panel} role="dialog" aria-modal="true" aria-labelledby={titleId} style={{ width }} className="flex max-h-[90vh] flex-col rounded-modal bg-bg-surface shadow-elevated">
         <div className="flex items-center justify-between border-b border-border px-6 py-5">
-          <h2 className="m-0 text-page-title">{title}</h2>
+          <h2 id={titleId} className="m-0 text-page-title">
+            {title}
+          </h2>
           <button
-            ref={closeRef}
             type="button"
+            data-dialog-close
             aria-label={t("common.close")}
             onClick={onClose}
             className="flex h-9 w-9 items-center justify-center rounded-control border-0 bg-transparent text-text-secondary hover:bg-bg-surface-2"

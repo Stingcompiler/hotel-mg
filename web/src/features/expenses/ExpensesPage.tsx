@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImageUp, Info, Plus, Printer, Undo2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { components } from "@api/schema";
 
@@ -32,9 +32,12 @@ export function ExpensesPage() {
   const [category, setCategory] = useState<Category | "">("");
   const [creating, setCreating] = useState(false);
   const [reversing, setReversing] = useState<Expense | null>(null);
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [scope, category]);
   const list = useQuery({
-    queryKey: ["expenses", scope, category],
-    queryFn: () => data(api.GET("/api/v1/expenses/", { params: { query: { scope, ...(category ? { category } : {}) } } })),
+    queryKey: ["expenses", scope, category, page],
+    queryFn: () => data(api.GET("/api/v1/expenses/", { params: { query: { scope, page, ...(category ? { category } : {}) } } })),
+    placeholderData: keepPreviousData,
   });
   const summary = useQuery({ queryKey: ["expenses", "summary"], queryFn: () => data(api.GET("/api/v1/expenses/summary")) }).data;
   const refresh = () => {
@@ -99,7 +102,18 @@ export function ExpensesPage() {
         </div>
       )}
 
-      <ExpenseTable rows={rows} total={list.data?.count ?? 0} offline={offline} onReverse={setReversing} onUploaded={refresh} />
+      <ExpenseTable
+        rows={rows}
+        total={list.data?.count ?? 0}
+        loading={list.isPending}
+        page={page}
+        hasPrev={!!list.data?.previous}
+        hasNext={!!list.data?.next}
+        onPage={setPage}
+        offline={offline}
+        onReverse={setReversing}
+        onUploaded={refresh}
+      />
 
       {creating && (
         <NewExpenseDrawer
@@ -140,29 +154,50 @@ const GRID = "grid grid-cols-[160px_140px_1fr_160px_120px_140px_140px_64px] item
 function ExpenseTable({
   rows,
   total,
+  loading,
+  page,
+  hasPrev,
+  hasNext,
+  onPage,
   offline,
   onReverse,
   onUploaded,
 }: {
   rows: Expense[];
   total: number;
+  loading: boolean;
+  page: number;
+  hasPrev: boolean;
+  hasNext: boolean;
+  onPage: (next: number) => void;
   offline: boolean;
   onReverse: (e: Expense) => void;
   onUploaded: () => void;
 }) {
+  const pager = "h-9 rounded-control border-0 bg-transparent px-2 font-sans text-label text-primary hover:bg-bg-surface-2 disabled:text-text-disabled disabled:hover:bg-transparent";
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
       <div className={`${GRID} h-10 flex-none bg-bg-surface-2 text-label text-text-secondary`}>
         {["colDate", "colCategory", "colText", "colAmount", "colMethod", "colAttachment", "colBy"].map((k) => (
-          <div key={k}>{t(`expenses.${k}`)}</div>
+          <div key={k} className={k === "colAmount" ? "text-end" : ""}>
+            {t(`expenses.${k}`)}
+          </div>
         ))}
         <div />
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
-        {rows.length === 0 && <div className="p-6 text-center text-body text-text-secondary">{t("expenses.empty")}</div>}
+        {loading &&
+          Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className={`${GRID} h-10 border-b border-border`}>
+              {Array.from({ length: 7 }, (_, j) => (
+                <div key={j} className="skeleton h-4 rounded" />
+              ))}
+            </div>
+          ))}
+        {!loading && rows.length === 0 && <div className="p-6 text-center text-body text-text-secondary">{t("expenses.empty")}</div>}
         {rows.map((e) => {
           const correction = !!e.reverses;
-          const muted = e.reversed ? "text-text-disabled line-through" : "";
+          const muted = e.reversed ? "text-text-secondary line-through" : "";
           return (
             <div key={e.id} className={`${GRID} h-10 border-b border-border text-table-cell ${correction ? "bg-danger-soft text-danger-text" : "hover:bg-bg-page"}`}>
               <div className="text-label font-normal text-text-secondary">
@@ -178,7 +213,7 @@ function ExpenseTable({
                   {e.room_number && ` · ${digits(e.room_number)}`}
                 </span>
               </div>
-              <div className={`font-semibold ${muted}`}>
+              <div className={`text-end font-semibold ${muted}`}>
                 <span dir="ltr">{correction ? "− " : ""}{formatMoney(Math.abs(e.amount))}</span> {t("money.currency")}
               </div>
               <div>{t(`payMethod.${e.method}`)}</div>
@@ -194,7 +229,7 @@ function ExpenseTable({
               <div className="text-text-secondary">{e.by}</div>
               <div>
                 {!correction && !e.reversed && (
-                  <button type="button" disabled={offline} onClick={() => onReverse(e)} className="border-0 bg-transparent p-0 font-sans text-label font-medium text-danger disabled:text-text-disabled">
+                  <button type="button" disabled={offline} onClick={() => onReverse(e)} className="h-9 rounded-control border-0 bg-transparent px-2 font-sans text-label font-medium text-danger hover:bg-danger-soft disabled:text-text-disabled disabled:hover:bg-transparent">
                     {t("expenses.reverse")}
                   </button>
                 )}
@@ -206,6 +241,15 @@ function ExpenseTable({
       </div>
       <div className="flex h-10 flex-none items-center justify-between border-t border-border px-4 text-label font-normal text-text-secondary">
         <span>{t("expenses.foot", { shown: digits(String(rows.length)), total: digits(String(total)) })}</span>
+        <span className="flex items-center gap-2">
+          <button type="button" disabled={!hasPrev} onClick={() => onPage(page - 1)} className={pager}>
+            {t("guests.prev")}
+          </button>
+          {t("guests.page", { n: digits(String(page)) })}
+          <button type="button" disabled={!hasNext} onClick={() => onPage(page + 1)} className={pager}>
+            {t("guests.next")}
+          </button>
+        </span>
         <span>{t("expenses.footNote")}</span>
       </div>
     </section>
@@ -224,7 +268,7 @@ function AttachButton({ expense, disabled, onDone }: { expense: Expense; disable
   const input = useRef<HTMLInputElement>(null);
   return (
     <>
-      <button type="button" disabled={disabled} onClick={() => input.current?.click()} className="border-0 bg-transparent p-0 font-sans text-label font-medium text-warning-text underline">
+      <button type="button" disabled={disabled} onClick={() => input.current?.click()} className="h-9 rounded-control border-0 bg-transparent px-2 font-sans text-label font-medium text-warning-text underline hover:bg-warning-soft">
         {t("expenses.missing")}
       </button>
       <input

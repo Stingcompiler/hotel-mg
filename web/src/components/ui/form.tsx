@@ -82,7 +82,7 @@ export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLIn
 export function MoneyInput({ invalid, ...rest }: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
   return (
     <span
-      className={`flex h-9 items-center justify-between gap-2 rounded-control border px-3 ${
+      className={`flex h-9 items-center justify-between gap-2 rounded-control border px-3 focus-within:border-primary ${
         invalid ? "border-danger bg-bg-surface" : rest.readOnly ? "border-border bg-bg-surface-2" : "border-border-strong bg-bg-surface"
       }`}
     >

@@ -86,6 +86,7 @@ function useWindow(from: string | undefined, to: string | undefined) {
 
 function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: string) => void }) {
   const navigate = useNavigate();
+  const offline = useSystemStatus().isError;
   const board = useRoomBoard().data;
   const narrow = useMediaQuery("(max-width: 1599px)");
   const span = narrow ? 7 : 14;
@@ -195,7 +196,24 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
                   <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${span}, 1fr)` }}>
                     {days.map((d) => {
                       const dow = new Date(toTime(d)).getUTCDay();
-                      return <div key={d} className={`border-s border-border ${dow === 5 || dow === 6 ? "bg-bg-page" : ""}`} />;
+                      const weekend = dow === 5 || dow === 6;
+                      // An empty day from today on starts a booking for this room on that day (artboard 6.3 «انقر يومًا فارغًا»).
+                      const bookable = d >= today! && room.status !== "maintenance";
+                      return bookable ? (
+                        <button
+                          key={d}
+                          type="button"
+                          disabled={offline}
+                          aria-label={t("reservations.bookCell", { room: digits(room.number), date: formatDayMonth(d) })}
+                          title={t("reservations.bookCell", { room: digits(room.number), date: formatDayMonth(d) })}
+                          onClick={() => navigate(`/reservations/new?room=${room.id}&date=${d}`)}
+                          className={`group border-0 border-s border-border p-0 ${weekend ? "bg-bg-page" : "bg-transparent"} hover:bg-primary-soft focus-visible:bg-primary-soft`}
+                        >
+                          <Plus className="mx-auto h-icon w-icon text-primary opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" strokeWidth={1.75} aria-hidden />
+                        </button>
+                      ) : (
+                        <div key={d} className={`border-s border-border ${weekend ? "bg-bg-page" : ""}`} />
+                      );
                     })}
                   </div>
                   {offset <= 0 && offset > -span && <div className="absolute inset-y-0 z-[2] w-0.5 bg-primary" style={{ insetInlineStart: pct(-offset) }} />}
@@ -322,7 +340,9 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
       <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
         <div className={`${GRID} h-10 flex-none bg-bg-surface-2 text-label text-text-secondary`}>
           {["colNo", "colRoom", "colGuest", "colArrival", "colDeparture", "colNights", "colKind", "colDeposit", "colStatus"].map((k) => (
-            <div key={k}>{t(`reservations.${k}`)}</div>
+            <div key={k} className={k === "colDeposit" ? "text-end" : ""}>
+              {t(`reservations.${k}`)}
+            </div>
           ))}
         </div>
         <div className="min-h-0 flex-1 overflow-auto">
@@ -340,7 +360,7 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
               <div
                 key={r.id}
                 onClick={() => onFocus(sel ? null : r.id)}
-                className={`${GRID} h-10 cursor-pointer border-b border-border text-table-cell ${sel ? "bg-primary-soft" : i % 2 ? "bg-bg-page" : "bg-bg-surface"} ${dead ? "text-text-disabled line-through" : ""}`}
+                className={`${GRID} h-10 cursor-pointer border-b border-border text-table-cell ${sel ? "bg-primary-soft" : i % 2 ? "bg-bg-page" : "bg-bg-surface"} ${dead ? "text-text-secondary line-through" : ""}`}
               >
                 <div dir="ltr" className="text-end text-label text-text-secondary">
                   {r.invoice}
@@ -386,7 +406,7 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
                     <div>{t(`duration.${r.duration_kind}`)}</div>
                   </>
                 )}
-                <div>{r.deposit ? formatMoney(r.deposit) : "—"}</div>
+                <div className="text-end">{r.deposit ? formatMoney(r.deposit) : "—"}</div>
                 <div>
                   <span className={`inline-flex h-6 items-center rounded-control px-2 text-label no-underline ${chip[r.status]}`}>{statusLabel[r.status]}</span>
                 </div>

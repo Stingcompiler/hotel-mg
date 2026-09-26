@@ -1,6 +1,6 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 
-import { useMe } from "@/api/queries";
+import { useMe, useSystemStatus } from "@/api/queries";
 import { session } from "@/api/session";
 import { t } from "@/i18n/t";
 
@@ -21,10 +21,11 @@ const MANAGER_ONLY: Tab[] = ["users", "audit"];
 export function SettingsPage() {
   const { tab } = useParams();
   const me = useMe().data;
+  const offline = useSystemStatus().isError;
   if (!me) return null;
   const manager = me.role === "manager" || me.role === "owner";
-  // Owner PC is read-only (spec §10.4); reception staff can look but not change.
-  const readOnly = !manager || session.role === "owner";
+  // Owner PC is read-only (spec §10.4); reception staff can look but not change; nothing saves without the server.
+  const readOnly = !manager || session.role === "owner" || offline;
   const visible = TABS.filter((k) => manager || !MANAGER_ONLY.includes(k));
   const active = visible.find((k) => k === tab);
   if (!active) return <Navigate to={`/settings/${visible[0]}`} replace />;
@@ -35,7 +36,7 @@ export function SettingsPage() {
         <h1 className="m-0 text-page-title">{t("nav.settings")}</h1>
         <span className="text-text-disabled">/</span>
         <span className="text-section-title">{t(`settings.tabs.${active}`)}</span>
-        {readOnly && <span className="text-label font-normal text-text-secondary">{t("settings.readOnly")}</span>}
+        {readOnly && <span className="text-label font-normal text-text-secondary">{offline ? t("settings.offline") : t("settings.readOnly")}</span>}
       </div>
       <nav className="flex flex-col gap-0.5 self-start rounded-card border border-border bg-bg-surface p-2">
         {visible.map((k) => (

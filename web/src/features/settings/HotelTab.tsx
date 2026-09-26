@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { components } from "@api/schema";
 
 import { api, data } from "@/api/client";
-import { keys, useHotelSettings } from "@/api/queries";
+import { keys, useHotelSettings, useSystemStatus } from "@/api/queries";
 import { ErrorBanner, Field, MoneyInput, Segmented, TextInput } from "@/components/ui/form";
 import { Toggle } from "@/components/ui/Toggle";
 import { formatWhen } from "@/i18n/dates";
@@ -176,6 +176,7 @@ export function HotelTab({ readOnly }: { readOnly: boolean }) {
           </div>
         </div>
       </Card>
+      <VersionLine />
       {!readOnly && (
         <div className="flex items-center gap-3">
           <button type="button" disabled={save.isPending || !draft.name_ar.trim()} onClick={() => save.mutate()} className={smallButton("primary")}>
@@ -186,6 +187,17 @@ export function HotelTab({ readOnly }: { readOnly: boolean }) {
           </span>
         </div>
       )}
+    </div>
+  );
+}
+
+/** «الإصدار» line under the cards: program version and database schema, from `system/status`. */
+function VersionLine() {
+  const status = useSystemStatus().data;
+  if (!status) return null;
+  return (
+    <div className="text-label font-normal text-text-secondary">
+      {t("settings.hotel.version", { version: digits(status.version), schema: digits(String(status.schema_version)) })}
     </div>
   );
 }
