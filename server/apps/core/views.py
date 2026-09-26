@@ -1,11 +1,14 @@
 from django.conf import settings
 from drf_spectacular.utils import extend_schema
-from rest_framework import serializers
+from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .clock import is_clock_blocked
+from apps.accounts.permissions import IsManager
+from apps.accounts.services import require_confirmation
+
+from .clock import approve_clock, is_clock_blocked
 from .models import SCHEMA_VERSION
 
 
@@ -36,3 +39,15 @@ class SystemStatusView(APIView):
             "schema_version": SCHEMA_VERSION,
         }
         return Response(SystemStatusSerializer(data).data)
+
+
+class ClockApproveView(APIView):
+    """Manager accepts the device clock after a rollback block (spec §6.7). Needs X-Confirm-Token."""
+
+    permission_classes = [IsManager]
+
+    @extend_schema(request=None, responses={204: None})
+    def post(self, request):
+        require_confirmation(request)
+        approve_clock(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)

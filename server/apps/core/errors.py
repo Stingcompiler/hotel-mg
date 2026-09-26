@@ -13,6 +13,9 @@ MESSAGES = {
     "validation_error": "البيانات المدخلة غير صحيحة.",
     "not_authenticated": "يجب تسجيل الدخول أولًا.",
     "authentication_failed": "بيانات الدخول غير صحيحة.",
+    "account_locked": "الدخول مقفل مؤقتًا بعد 5 محاولات خاطئة. حاول لاحقًا أو اطلب من المدير فتح القفل.",
+    "token_expired": "انتهت الجلسة. سجّل الدخول مرة أخرى.",
+    "confirmation_required": "هذا الإجراء يتطلب إعادة إدخال كلمة المرور.",
     "permission_denied": "ليست لديك صلاحية لهذا الإجراء.",
     "not_found": "العنصر غير موجود.",
     "method_not_allowed": "هذا الإجراء غير مسموح.",
@@ -26,11 +29,12 @@ class ApiError(exceptions.APIException):
 
     status_code = status.HTTP_400_BAD_REQUEST
 
-    def __init__(self, code: str, status_code: int | None = None, detail: str | None = None):
+    def __init__(self, code: str, status_code: int | None = None, detail: str | None = None, **extra):
         if status_code is not None:
             self.status_code = status_code
         super().__init__(detail=detail or MESSAGES.get(code, MESSAGES["error"]), code=code)
         self.error_code = code
+        self.extra = extra  # machine-readable context, e.g. attempts_left
 
 
 class VersionConflict(ApiError):
@@ -53,11 +57,11 @@ def api_exception_handler(exc, context):
         return None
 
     if isinstance(exc, ApiError):
-        response.data = error_body(exc.error_code, str(exc.detail))
+        response.data = error_body(exc.error_code, str(exc.detail), **exc.extra)
     elif isinstance(exc, exceptions.ValidationError):
         response.data = error_body("validation_error", errors=exc.detail)
     elif isinstance(exc, exceptions.APIException):
-        code = exc.default_code
+        code = exc.get_codes() if isinstance(exc.get_codes(), str) else exc.default_code
         response.data = error_body(code if code in MESSAGES else "error")
     elif isinstance(exc, Http404):
         response.data = error_body("not_found")

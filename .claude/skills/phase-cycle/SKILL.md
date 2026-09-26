@@ -23,8 +23,13 @@ This overrides the habit of stopping to ask. Do not ask the user to choose betwe
    python -m pytest
    ```
 5. **Commit and push** the branch: `git push -u origin <branch>` (retry network failures with backoff 2s/4s/8s/16s).
-6. **Check CI** for the pushed commit: `build/ci-status.sh $(git rev-parse HEAD)` (run it in the background; it polls once a minute). If it fails, read the failing job's log, fix, push, check again. Never merge red.
-7. **Merge** into `main`: `git checkout main && git pull --ff-only origin main && git merge --ff-only <branch>` (rebase the branch on `main` first if needed), then `git push origin main`, then confirm CI on `main` with `build/ci-status.sh`.
+6. **Check CI** for the pushed commit: `build/ci-status.sh $(git rev-parse HEAD)` (run it in the background; it polls every 30 s). If it fails, read the failing job's log, fix, push, check again. Never merge red.
+7. **Open a PR and merge it** (GitHub REST via `gh api`; GraphQL — `gh pr create/merge` — is blocked in cloud sessions):
+   ```
+   gh api repos/Stingcompiler/hotel-mg/pulls -f title="<phase>: <summary>" -f head=<branch> -f base=main -F body=@pr.md
+   gh api -X PUT repos/Stingcompiler/hotel-mg/pulls/<n>/merge -f merge_method=merge
+   ```
+   The PR body lists the phase gate, what was built, and how it was verified, and ends with the session attribution lines. Merge only after step 6 is green. Then `git fetch origin main` and start the next branch from it.
 8. **Report** to the user in a few lines: what was built, the decisions taken, CI result, what is next.
 9. **Continue** with the next item — go back to step 1 without waiting for the user.
 
@@ -33,4 +38,4 @@ This overrides the habit of stopping to ask. Do not ask the user to choose betwe
 - Track W items (Windows service, PyInstaller, NSIS, WebView2 printing, power-cut test) cannot be verified in a Linux cloud session: write and lint them, rely on the `windows-latest` CI job, and list what still needs a real Windows PC.
 - `design-package/` is read-only.
 - No custom React code before the API freeze (§12).
-- Pull requests: this environment has no GitHub PR API; merging is a fast-forward push to `main` after green CI. If PR tooling becomes available, open a PR and merge it instead.
+- `gh` is installed with `apt-get install -y gh` if missing (a fresh container won't have it). Only `gh api` REST calls work; the token comes from the environment.

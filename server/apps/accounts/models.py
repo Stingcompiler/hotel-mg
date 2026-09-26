@@ -1,8 +1,4 @@
-"""User model (spec §5). PIN/password login, lockout and confirm tokens arrive in phase B1.
-
-Defined in B0 because Django needs a custom user model before the first
-migration and ``BaseModel.created_by`` points here.
-"""
+"""Users and login events (spec §5, §6.8). Login flows live in services.py."""
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password, make_password
@@ -10,7 +6,7 @@ from django.contrib.auth.models import PermissionsMixin
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from apps.core.models import BaseModel
+from apps.core.models import AppendOnlyModel, BaseModel
 
 from . import rules
 
@@ -46,6 +42,8 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
     pin_hash = models.CharField(max_length=128, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False, help_text="May open the read-only Django admin.")
+    failed_attempts = models.PositiveSmallIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True)
 
     objects = UserManager()
 
@@ -62,3 +60,20 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
 
     def check_pin(self, pin: str) -> bool:
         return bool(self.pin_hash) and rules.is_valid_pin(pin) and check_password(pin, self.pin_hash)
+
+
+class LoginEvent(AppendOnlyModel):
+    class Kind(models.TextChoices):
+        PIN = "pin"
+        PASSWORD = "password"
+        FAILED = "failed"
+
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="login_events")
+    at = models.DateTimeField()
+    kind = models.CharField(max_length=16, choices=Kind.choices)
+
+    class Meta:
+        ordering = ["-at"]
+
+    def __str__(self):
+        return f"{self.user} {self.kind} {self.at:%Y-%m-%d %H:%M}"
