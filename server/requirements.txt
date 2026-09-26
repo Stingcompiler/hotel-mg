@@ -1,0 +1,6 @@
+# Runtime dependencies (pinned, spec §3). Windows-only packages are marked.
+Django==5.2.17
+djangorestframework==3.18.1
+drf-spectacular==0.30.0
+waitress==3.0.2
+pywin32==311; sys_platform == "win32"

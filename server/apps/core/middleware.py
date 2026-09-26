@@ -1,0 +1,24 @@
+from .clock import observe_clock
+from .errors import error_json_response
+
+WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
+# Still reachable while the clock is blocked, so a manager can sign in and approve.
+CLOCK_EXEMPT_PREFIXES = (
+    "/api/v1/auth/",
+    "/api/v1/system/clock/approve",
+    "/admin/login/",
+)
+
+
+class ClockGuardMiddleware:
+    """Refuse every write with HTTP 423 ``clock_rollback`` while the device clock is blocked."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.method in WRITE_METHODS and not request.path.startswith(CLOCK_EXEMPT_PREFIXES):
+            if observe_clock():
+                return error_json_response("clock_rollback", 423)
+        return self.get_response(request)
