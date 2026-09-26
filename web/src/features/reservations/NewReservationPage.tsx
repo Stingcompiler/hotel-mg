@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, LogIn } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useBlocker, useNavigate, useSearchParams } from "react-router-dom";
 
 import { api, ApiError, data } from "@/api/client";
 import { keys, useSystemStatus } from "@/api/queries";
@@ -11,6 +11,7 @@ import { formatRange } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
+import { notice } from "@/lib/notices";
 
 import { GuestSection } from "./GuestSection";
 import { amount, emptyForm, type Errors, errorSummary, type Form, guestReady, validate } from "./model";
@@ -35,6 +36,26 @@ export function NewReservationPage() {
   const [banner, setBanner] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const update = (patch: Partial<Form>) => setForm((f) => ({ ...f, ...patch }));
+  // «تغييرات غير محفوظة»: the form against its baseline (empty, or the presets from the URL); leaving asks first.
+  const [baseline, setBaseline] = useState<Form>(() => emptyForm(board?.date ?? todayIso()));
+  const saved = useRef(false);
+  const dirty = useRef(false);
+  dirty.current = !saved.current && JSON.stringify(form) !== JSON.stringify(baseline);
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => dirty.current && currentLocation.pathname !== nextLocation.pathname);
+  useEffect(() => {
+    if (blocker.state !== "blocked") return;
+    if (window.confirm(t("newRes.unsaved"))) blocker.proceed();
+    else blocker.reset();
+  }, [blocker]);
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      if (!dirty.current) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, []);
 
   // From the room drawer («حجز جديد لهذه الغرفة») or a timeline cell: the room, its type and — from the cell — the day.
   const preset = params.get("room");
@@ -42,7 +63,10 @@ export function NewReservationPage() {
   useEffect(() => {
     const room = preset && board?.rooms.find((r) => r.id === preset);
     const date = presetDate && board && presetDate >= board.date ? presetDate : board?.date;
-    if (room && !form.room_type) update({ room_type: room.room_type, room: room.id, check_in_date: date! });
+    if (room && !form.room_type) {
+      update({ room_type: room.room_type, room: room.id, check_in_date: date! });
+      setBaseline((b) => ({ ...b, room_type: room.room_type, room: room.id, check_in_date: date! }));
+    }
   }, [preset, presetDate, board]);
 
   // From the guest profile: «حجز جديد لهذا النزيل».
@@ -53,8 +77,11 @@ export function NewReservationPage() {
     enabled: !!presetGuest,
   }).data;
   useEffect(() => {
-    if (guestRow && form.guestMode !== "picked")
-      update({ guestMode: "picked", picked: { ...guestRow, stays_count: 0, last_stay: null, debt: 0, in_house: false } });
+    if (guestRow && form.guestMode !== "picked") {
+      const picked = { ...guestRow, stays_count: 0, last_stay: null, debt: 0, in_house: false };
+      update({ guestMode: "picked", picked });
+      setBaseline((b) => ({ ...b, guestMode: "picked", picked }));
+    }
   }, [guestRow]);
 
   const quote = useQuery({
@@ -158,6 +185,9 @@ export function NewReservationPage() {
       void queryClient.invalidateQueries({ queryKey: keys.currentShift });
       void queryClient.invalidateQueries({ queryKey: ["reservations"] });
       void queryClient.invalidateQueries({ queryKey: ["guests"] });
+      saved.current = true;
+      dirty.current = false;
+      notice(checkInNow ? t("newRes.savedCheckIn") : t("newRes.savedBooking"));
       navigate(checkInNow ? "/" : `/reservations?focus=${reservation.id}`);
     } catch (e) {
       if (e instanceof ApiError && e.code === "override_required") update({ needManager: true });

@@ -100,7 +100,7 @@ export function BackupCard({ onImport }: { onImport?: () => void }) {
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div className="flex flex-col gap-2">
-          <button type="button" disabled={offline || run.isPending} onClick={() => run.mutate()} className={button(!owner)}>
+          <button type="button" disabled={offline || run.isPending} title={offline ? t("common.offlineHint") : undefined} onClick={() => run.mutate()} className={button(!owner)}>
             <DatabaseBackup className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
             {run.isPending ? t("backup.running") : t("backup.now")}
           </button>
@@ -114,7 +114,7 @@ export function BackupCard({ onImport }: { onImport?: () => void }) {
           {syncLine()}
         </div>
         <div className="flex flex-col gap-2">
-          <button type="button" disabled={!onImport} onClick={onImport} className={button(owner)}>
+          <button type="button" disabled={!onImport} title={onImport ? undefined : t("backup.ownerOnly")} onClick={onImport} className={button(owner)}>
             <Download className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
             {t("backup.import")}
           </button>

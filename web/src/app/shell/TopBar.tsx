@@ -89,17 +89,22 @@ function GlobalSearch() {
   }).data;
 
   useEffect(() => {
+    // Keyboard shortcuts outside fields and dialogs: `/` search, `n` new reservation.
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       const typing = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable);
-      if (e.key === "/" && !typing) {
+      if (typing || e.ctrlKey || e.metaKey || e.altKey || document.querySelector("[role=dialog]")) return;
+      if (e.key === "/") {
         e.preventDefault();
         input.current?.focus();
+      } else if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        navigate("/reservations/new");
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [navigate]);
 
   const rooms: Hit[] = /^\d+$/.test(western)
     ? (board?.rooms ?? [])

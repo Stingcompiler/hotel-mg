@@ -8,6 +8,7 @@ import { openPrint } from "@/features/print/PrintPage";
 import { digits } from "@/i18n/digits";
 import { formatMoney, parseMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
+import { notice } from "@/lib/notices";
 
 type Method = "cash" | "bankak" | "transfer";
 type Props = { folioId: string; room: string; balance: number; onClose: () => void; onDone: () => void };
@@ -23,6 +24,8 @@ export function PaymentModal({ folioId, room, balance, onClose, onDone }: Props)
   const minor = parseMoney(amount);
   const invalidAmount = amount !== "" && (minor === null || minor <= 0);
   const needsReference = method !== "cash" && !reference.trim();
+  // Paying more than the balance is allowed (a deposit for the next nights) but is usually a typo: say so before saving.
+  const overpay = minor !== null && balance > 0 && minor > balance ? minor - balance : 0;
 
   const save = async () => {
     if (minor === null || minor <= 0) return setError(t("payment.errAmount"));
@@ -35,6 +38,7 @@ export function PaymentModal({ folioId, room, balance, onClose, onDone }: Props)
       );
       // «طباعة إيصال تلقائيًا بعد كل دفعة» (hotel settings, V2 6.11 D).
       if (autoPrint) openPrint("receipt", payment.id);
+      notice(t("payment.saved", { amount: `${formatMoney(minor)} ${t("money.currency")}`, room: digits(room) }));
       onDone();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t("errors.error"));
@@ -64,6 +68,11 @@ export function PaymentModal({ folioId, room, balance, onClose, onDone }: Props)
       <Field label={t("payment.amount")} error={invalidAmount ? t("payment.errAmount") : null}>
         <MoneyInput autoFocus value={amount} invalid={invalidAmount} onChange={(e) => setAmount(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void save()} />
       </Field>
+      {overpay > 0 && (
+        <div role="status" className="rounded-control bg-warning-soft px-3 py-2.5 text-body text-warning-text">
+          {t("payment.overpay", { amount: `${formatMoney(overpay)} ${t("money.currency")}` })}
+        </div>
+      )}
       <div className="flex flex-col gap-1.5">
         <span className="text-label text-text-secondary">{t("payment.method")}</span>
         <Segmented<Method>

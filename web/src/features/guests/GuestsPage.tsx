@@ -93,7 +93,7 @@ export function GuestsPage() {
         />
         <div className="flex-1" />
         {canWrite && (
-          <button type="button" disabled={offline} onClick={() => setForm({})} className={`${buttons.secondary} h-9 px-4`}>
+          <button type="button" disabled={offline} title={offline ? t("common.offlineHint") : undefined} onClick={() => setForm({})} className={`${buttons.secondary} h-9 px-4`}>
             <UserPlus className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
             {t("guests.new")}
           </button>

@@ -54,5 +54,12 @@ test("expected cash, the difference preview and a reason before closing", async 
   expect(await screen.findByRole("alert")).toHaveTextContent("سبب الفرق مطلوب عند وجود فرق");
   fireEvent.change(screen.getByLabelText(/سبب الفرق/), { target: { value: "أُعيد لنزيل" } });
   fireEvent.click(screen.getByRole("button", { name: "إغلاق الوردية" }));
+  // Closing is irreversible: a confirmation repeats expected, counted and the difference, then posts.
+  const dialog = await screen.findByRole("dialog", { name: "تأكيد إغلاق الوردية" });
+  expect(dialog).toHaveTextContent("227,500");
+  expect(dialog).toHaveTextContent("225,000");
+  expect(dialog).toHaveTextContent("− 2,500");
+  expect(posts).toEqual([]);
+  fireEvent.click(screen.getByRole("button", { name: "إغلاق الوردية الآن" }));
   await waitFor(() => expect(posts).toEqual([{ path: "/api/v1/shifts/close", body: { counted: 22_500_000, difference_reason: "أُعيد لنزيل", version: 2 } }]));
 });

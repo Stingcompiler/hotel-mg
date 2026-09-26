@@ -50,6 +50,9 @@ body:has(.sheet-thermal) {
   body {
     background: var(--color-bg-surface);
   }
+  .no-print {
+    display: none !important;
+  }
 }
 
 .sheet-a4 {
