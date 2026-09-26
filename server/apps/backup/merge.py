@@ -225,7 +225,8 @@ def import_backup(
     tmp_root = settings.RUNTIME.home / "tmp"
     tmp_root.mkdir(parents=True, exist_ok=True)
     try:
-        with _IncomingAlias(), tempfile.TemporaryDirectory(dir=tmp_root) as tmp:
+        # Alias closes before the folder is removed: Windows cannot delete an open SQLite file.
+        with tempfile.TemporaryDirectory(dir=tmp_root) as tmp, _IncomingAlias():
             manifest, files = _open(raw, identity)
             bad = rules.mismatched_files(manifest, files)
             checks.append(

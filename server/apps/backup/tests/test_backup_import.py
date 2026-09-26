@@ -110,7 +110,9 @@ def test_retention_and_second_folder(hotel, tmp_path):
         backup(hotel)
     assert len(list(settings.RUNTIME.backups_dir.glob("*.age"))) == 2
     assert len(list((tmp_path / "usb").glob("*.age"))) == 2
-    cfg.second_dir = "/proc/not-writable/usb"
+    blocker = tmp_path / "not-a-folder"
+    blocker.write_text("x")
+    cfg.second_dir = str(blocker / "usb")  # a folder under a file cannot be created on any OS
     cfg.save()
     run = export.run_backup(hotel)
     assert run.status == "ok" and run.second_error.startswith("المجلد الثاني غير متاح")
