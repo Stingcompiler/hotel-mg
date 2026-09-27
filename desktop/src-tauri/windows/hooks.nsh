@@ -11,8 +11,15 @@
   SetShellVarContext all
   IfFileExists "${SKYT_EXE}" 0 skyt_fresh
     DetailPrint "Stopping ${SKYT_SERVICE} and taking a pre-upgrade backup…"
+    ; No automatic restart while its files are replaced: the recovery actions (set again after install) would
+    ; bring an ended old build back within 5 s, it would lock its exe, and a silent install skips locked files.
+    nsExec::ExecToLog 'sc failure ${SKYT_SERVICE} reset= 0 actions= ""'
     nsExec::ExecToLog 'sc stop ${SKYT_SERVICE}'
-    Sleep 3000
+    ; Builds before 1.0.5 hang in STOP_PENDING while the app window is connected: give the stop time, then end the
+    ; process so its files can be replaced (SQLite keeps committed data). A stopped service makes this a no-op.
+    Sleep 8000
+    nsExec::ExecToLog 'taskkill /F /IM skytowers-server.exe'
+    Sleep 1000
     nsExec::ExecToLog '"${SKYT_EXE}" manage backup_now'
   skyt_fresh:
 !macroend
@@ -21,7 +28,8 @@
   SetShellVarContext all
   ; Role: asked once; an existing config.json (upgrade) is kept as it is.
   IfFileExists "$COMMONAPPDATA\SkyTowers\config.json" skyt_config_done 0
-    MessageBox MB_YESNO|MB_ICONQUESTION "هل هذا جهاز الاستقبال؟$\r$\n$\r$\nنعم: جهاز الاستقبال — تُسجَّل فيه كل عمليات الفندق.$\r$\nلا: جهاز المالك — للعرض واستيراد النسخ فقط." /SD IDYES IDYES skyt_reception
+    ; The buttons follow the language of Windows (Yes/No on an English Windows), so the text names both.
+    MessageBox MB_YESNO|MB_ICONQUESTION "هل هذا جهاز الاستقبال؟$\r$\n$\r$\n• اضغط «نعم» (Yes) إذا كان هذا الجهاز في مكتب الاستقبال: عليه يسجّل الموظفون الحجوزات والدفعات.$\r$\n$\r$\n• اضغط «لا» (No) إذا كان هذا جهاز المالك: لمتابعة الأرقام والتقارير فقط.$\r$\n$\r$\nإذا لم تكن متأكدًا فاضغط «نعم»." /SD IDYES IDYES skyt_reception
       nsExec::ExecToLog '"${SKYT_EXE}" init --role owner'
       Goto skyt_config_done
     skyt_reception:
@@ -45,8 +53,11 @@
 !macroend
 
 !macro NSIS_HOOK_PREUNINSTALL
+  nsExec::ExecToLog 'sc failure ${SKYT_SERVICE} reset= 0 actions= ""'
   nsExec::ExecToLog 'sc stop ${SKYT_SERVICE}'
-  Sleep 3000
+  Sleep 8000
+  nsExec::ExecToLog 'taskkill /F /IM skytowers-server.exe'
+  Sleep 1000
   nsExec::ExecToLog '"${SKYT_EXE}" remove'
 !macroend
 
