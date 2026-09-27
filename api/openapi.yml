@@ -7333,6 +7333,11 @@ components:
           type: boolean
           description: 'Reception PC with no users yet: the login page creates the
             manager.'
+        due_tasks:
+          type: integer
+          nullable: true
+          description: 'Reception PC: open follow-up tasks due now (login chip «N
+            مهام متابعة مستحقة»); a count only.'
         owner_public_key:
           type: string
           nullable: true
@@ -7355,6 +7360,7 @@ components:
       - disk_free_bytes
       - disk_low
       - needs_setup
+      - due_tasks
       - owner_public_key
       - version
       - schema_version

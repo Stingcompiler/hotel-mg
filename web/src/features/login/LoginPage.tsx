@@ -176,6 +176,12 @@ export function LoginPage() {
         <span className="inline-flex h-7 items-center rounded-control bg-bg-surface-2 px-2.5 text-label text-text-secondary">
           {owner ? t("login.ownerDevice") : t("login.receptionDevice")}
         </span>
+        {/* Artboard 6.1 backlog chip: a count only, from the public status (design gap #13). */}
+        {!!status.data?.due_tasks && (
+          <span className="inline-flex h-7 items-center gap-1.5 rounded-control bg-warning-soft px-2.5 text-label text-warning-text">
+            {t("login.backlog", { n: digits(String(status.data.due_tasks)) })}
+          </span>
+        )}
       </div>
 
       <div className="flex w-[400px] flex-col items-center gap-5 rounded-modal border border-border bg-bg-surface p-8 shadow-elevated">

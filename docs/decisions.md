@@ -281,3 +281,7 @@ Append-only. Newest last. Each entry: date, phase, decision, reason.
 170. **Alert-rule preview** lists the affected stays (room chip · guest · last night, «و n أخرى» beyond eight) under the preview line while a rule is being edited.
 171. **One `Tabs` strip** (`components/ui/Tabs.tsx`) for the stay detail and the guest profile: 48/44 px, underline, counts, roving tabindex with arrow keys (left = next in RTL).
 172. **Timeline**: floor group headers when no floor filter is set (rooms sorted by floor then number), checked-out stays drawn in grey at 40 % so a past window still reads, and a date field to jump the window. **Sidebar**: «طيّ/فتح القائمة» button; the manual choice is remembered on the PC (`localStorage`) and wins over the 1600 px rule. **Quick expense** (Gap Fill): one row above the list for the everyday cash expense — amount, category, note; above the receipt threshold the button turns into «مصروف جديد» and opens the full drawer; hidden on the owner PC and while the server is unreachable.
+
+## 2026-09-27 — Login backlog chip
+
+173. **«N مهام متابعة مستحقة» before sign-in** (artboard 6.1): `system/status` gains `due_tasks` on the reception PC — the number of open follow-up tasks due by now, nothing else (owner PC: null). The login page shows the amber chip when it is above zero. A count reveals no guest or room; the tasks themselves still need a session. Design gap #13 updated.

@@ -36,11 +36,24 @@ class SystemStatusSerializer(serializers.Serializer):
     needs_setup = serializers.BooleanField(
         help_text="Reception PC with no users yet: the login page creates the manager."
     )
+    due_tasks = serializers.IntegerField(
+        allow_null=True,
+        help_text="Reception PC: open follow-up tasks due now (login chip «N مهام متابعة مستحقة»); a count only.",
+    )
     owner_public_key = serializers.CharField(
         allow_null=True, help_text="Owner PC: public key to paste in the reception's backup settings (public)."
     )
     version = serializers.CharField()
     schema_version = serializers.IntegerField()
+
+
+def _due_tasks() -> int:
+    """Open tasks due by now — a number for the login chip, never the tasks themselves (design gap #13)."""
+    from apps.followups import rules as followup_rules
+    from apps.followups.models import FollowupTask
+
+    # The same number as the bell badge (`followups/tasks/count`), so the chip and the badge never disagree.
+    return FollowupTask.objects.filter(status__in=followup_rules.OPEN_STATES).count()
 
 
 def _owner_public_key() -> str | None:
@@ -86,6 +99,7 @@ class SystemStatusView(APIView):
             "disk_free_bytes": free,
             "disk_low": rules.disk_low(free),
             "needs_setup": settings.SKYTOWERS_ROLE == "reception" and not User.objects.exists(),
+            "due_tasks": _due_tasks() if settings.SKYTOWERS_ROLE == "reception" else None,
             "owner_public_key": _owner_public_key() if settings.SKYTOWERS_ROLE == "owner" else None,
             "version": settings.APP_VERSION,
             "schema_version": SCHEMA_VERSION,
