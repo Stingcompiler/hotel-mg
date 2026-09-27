@@ -82,7 +82,6 @@ function Footer({ version, reference }: { version: string; reference: ReactNode 
 export function InvoiceA4({ doc, version }: { doc: Invoice; version: string }) {
   const g = doc.guest;
   const s = doc.stay;
-  const totals = doc.ledger.reduce((acc, e) => ({ debit: acc.debit + e.debit, credit: acc.credit + e.credit }), { debit: 0, credit: 0 });
   return (
     <article className="sheet-a4">
       <HotelHeader
@@ -117,44 +116,65 @@ export function InvoiceA4({ doc, version }: { doc: Invoice; version: string }) {
         <Info label={t("print.stayState")}>{digits(s.state)}</Info>
       </section>
 
+      {/* Artboard 7.1: line items (البيان · الكمية · السعر · الإجمالي), then the payment list; the ledger stays on screen. */}
       <table className="print-table mt-5 text-[12pt]">
         <thead>
           <tr className="border-y-2 border-text-primary text-[11pt]">
             <th className="w-[26mm]">{t("print.colDate")}</th>
             <th>{t("print.colText")}</th>
-            <th className="num w-[26mm]">{t("print.colDebit")}</th>
-            <th className="num w-[26mm]">{t("print.colCredit")}</th>
-            <th className="num w-[28mm]">{t("print.colBalance")}</th>
+            <th className="num w-[18mm]">{t("print.colQty")}</th>
+            <th className="num w-[28mm]">{t("print.colUnit")}</th>
+            <th className="num w-[28mm]">{t("print.colLineTotal")}</th>
           </tr>
         </thead>
         <tbody>
-          {doc.ledger.map((e) => (
-            <tr key={e.id} className="border-b border-border">
-              <td className="whitespace-nowrap text-[11pt]">{formatDayMonth(e.at)}</td>
-              <td>
-                {e.reverses ? `${t("print.reversal")} ` : ""}
-                {digits(e.text)}
-                {e.reference && (
-                  <span dir="ltr" className="text-[10pt] text-text-secondary">
-                    {" "}
-                    {e.reference}
-                  </span>
-                )}
-              </td>
-              <td className="num">{e.debit ? money(e.debit) : ""}</td>
-              <td className="num">{e.credit ? money(e.credit) : ""}</td>
-              <td className="num font-semibold">{money(e.balance)}</td>
+          {doc.items.map((it, i) => (
+            <tr key={i} className="border-b border-border">
+              <td className="whitespace-nowrap text-[11pt]">{formatDayMonth(it.at)}</td>
+              <td>{digits(it.text)}</td>
+              <td className="num">{digits(String(it.quantity))}</td>
+              <td className="num">{money(it.unit_price)}</td>
+              <td className="num font-semibold">{money(it.total)}</td>
             </tr>
           ))}
           {/* Totals as the last body row: a <tfoot> makes Chromium repeat it and push it to a new page. */}
           <tr className="border-t-2 border-text-primary font-semibold">
-            <td colSpan={2}>{t("print.total")}</td>
-            <td className="num">{money(totals.debit)}</td>
-            <td className="num">{money(totals.credit)}</td>
-            <td />
+            <td colSpan={4}>{t("print.total")}</td>
+            <td className="num">{money(doc.totals.charges)}</td>
           </tr>
         </tbody>
       </table>
+
+      {doc.payments.length > 0 && (
+        <table className="print-table mt-4 text-[11pt]">
+          <thead>
+            <tr className="border-y border-text-primary">
+              <th className="w-[26mm]">{t("print.colDate")}</th>
+              <th className="w-[30mm]">{t("print.receiptNo")}</th>
+              <th>{t("print.colType")}</th>
+              <th>{t("print.colMethod")}</th>
+              <th>{t("print.reference")}</th>
+              <th className="num w-[28mm]">{t("print.colAmount")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {doc.payments.map((p) => (
+              <tr key={p.receipt} className="border-b border-border">
+                <td className="whitespace-nowrap">{formatDayMonth(p.at)}</td>
+                <td dir="ltr" className="text-end">
+                  {p.receipt}
+                </td>
+                <td>{p.kind}</td>
+                <td>{p.method}</td>
+                <td dir="ltr" className="text-end text-text-secondary">
+                  {p.reference}
+                </td>
+                <td className="num font-semibold">{money(p.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
       <section className="mt-5 flex items-start gap-6">
         <ul className="m-0 flex-1 list-none p-0 text-[10pt] text-text-secondary">
@@ -163,6 +183,8 @@ export function InvoiceA4({ doc, version }: { doc: Invoice; version: string }) {
           ))}
         </ul>
         <div className="w-[70mm] flex-none">
+          <Row label={t("print.total")} value={money(doc.totals.charges)} />
+          {doc.totals.discount > 0 && <Row label={t("print.discount")} value={`− ${money(doc.totals.discount)}`} />}
           <Row label={t("print.stayTotal")} value={money(doc.totals.total)} />
           <Row label={t("print.paid")} value={money(doc.totals.paid)} />
           <div className="mt-2 flex items-baseline justify-between rounded-control border-2 border-text-primary px-3 py-2">

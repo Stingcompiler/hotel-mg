@@ -145,6 +145,13 @@ class TestDocuments:
         assert doc["invoice"] == folio.invoice_label
         assert doc["guest"]["name"] == "محمد عثمان الطيب" and doc["guest"]["id_number"] == "211-8842-1023-7"
         assert doc["totals"]["balance"] == 1_500_000
+        # Artboard 7.1: line items net of reversals, the discount in the totals block, the payment list.
+        assert sum(i["total"] for i in doc["items"]) == doc["totals"]["charges"]
+        assert doc["totals"]["charges"] - doc["totals"]["discount"] == doc["totals"]["total"]
+        assert all(
+            i["quantity"] >= 1 and i["unit_price"] * i["quantity"] <= i["total"] + i["quantity"] for i in doc["items"]
+        )
+        assert sum(p["amount"] for p in doc["payments"]) == doc["totals"]["paid"]
         assert doc["stay"]["state"].startswith("جارية — تنتهي بنهاية يوم")
         assert doc["hotel"]["name_ar"] == "فندق سكاي تاورز"
 
@@ -153,6 +160,7 @@ class TestDocuments:
         doc = api_as_manager.get(f"/api/v1/payments/{payment.pk}/receipt").json()
         assert doc["receipt"] == payment.receipt_label and doc["amount"] == payment.amount
         assert doc["amount_in_words"].endswith("جنيه") and doc["balance"] >= 0
+        assert doc["nights"] >= 1 and doc["check_in_date"] <= doc["last_night"]  # design gap #11: the stay period
 
     def test_expense_receipt_and_shift_statement(self, api_as_manager):
         expense = Expense.objects.order_by("number").first()
