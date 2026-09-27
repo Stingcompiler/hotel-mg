@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
+from apps.accounts import rules as account_rules
 from apps.accounts.models import User
 from apps.billing import services as billing
 from apps.cash import services as cash
@@ -42,7 +43,11 @@ class Command(BaseCommand):
                 "Set SKYTOWERS_HOME to a test folder."
             )
         demo_names = {row["username"] for row in demo_data.USERS}
-        if User.objects.exclude(username__in=demo_names).exists():
+        real = User.objects.exclude(username__in=demo_names).exclude(
+            username=account_rules.DEFAULT_USERNAME,
+            default_password=True,  # the untouched install account
+        )
+        if real.exists():
             raise CommandError("seed_demo refuses a database with real users (a hotel's data).")
 
         with transaction.atomic():

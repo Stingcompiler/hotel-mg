@@ -4,7 +4,8 @@ import { useCurrentShift, useMe, useSystemStatus, useTaskCount } from "@/api/que
 import { formatTime, formatWhen } from "@/i18n/dates";
 import { t } from "@/i18n/t";
 
-import { RECEPTION_NAV } from "../nav";
+import { OWNER_NAV, RECEPTION_NAV } from "../nav";
+import { DefaultPasswordNotice } from "./DefaultPasswordNotice";
 import { ClockGuard } from "./ClockGuard";
 import { DesktopBridge } from "./DesktopBridge";
 import { Notices } from "./Notices";
@@ -25,6 +26,8 @@ export function ReceptionShell() {
   const sidebar = useSidebar();
 
   const userName = me?.full_name ?? "";
+  // The account decides the menu (owner decision 2026-09-27): the owner also gets «لوحة المالك», first.
+  const items = me?.role === "owner" ? [OWNER_NAV[0], ...RECEPTION_NAV] : RECEPTION_NAV;
   const backup =
     status?.backup_stale_hours != null
       ? ({ kind: "stale", hours: status.backup_stale_hours } as const)
@@ -35,7 +38,7 @@ export function ReceptionShell() {
   return (
     <div className="flex h-screen">
       <Sidebar
-        items={RECEPTION_NAV}
+        items={items}
         userName={userName}
         roleName={me ? t(`roles.${me.role}`) : ""}
         followups={alerts}
@@ -53,6 +56,7 @@ export function ReceptionShell() {
           alerts={alerts}
         />
         <SystemBars />
+        {me?.default_password && <DefaultPasswordNotice />}
         <main className="min-h-0 flex-1 overflow-auto">
           <Outlet />
         </main>

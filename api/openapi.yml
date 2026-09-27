@@ -3902,6 +3902,19 @@ components:
       - value
       - count
       - largest
+    DefaultLogin:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        pin:
+          type: string
+      required:
+      - username
+      - password
+      - pin
     DeviceRoleEnum:
       enum:
       - reception
@@ -5674,6 +5687,11 @@ components:
         version:
           type: integer
           minimum: 1
+        username:
+          type: string
+          minLength: 1
+          description: The owner or a manager renames a login.
+          maxLength: 64
         full_name:
           type: string
           minLength: 1
@@ -7419,6 +7437,12 @@ components:
           nullable: true
           description: 'Owner PC: public key to paste in the reception''s backup settings
             (public).'
+        default_login:
+          allOf:
+          - $ref: '#/components/schemas/DefaultLogin'
+          nullable: true
+          description: The install's default owner account while its password is unchanged
+            (the login page shows it).
         version:
           type: string
         schema_version:
@@ -7441,6 +7465,7 @@ components:
       - needs_setup
       - due_tasks
       - owner_public_key
+      - default_login
       - version
       - schema_version
       - spa_built
@@ -7713,6 +7738,11 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        default_password:
+          type: boolean
+          readOnly: true
+          description: Still the install's default password (the login page shows
+            it; a reminder after login).
         version:
           type: integer
           readOnly: true
@@ -7732,6 +7762,7 @@ components:
       - is_active
       - last_login
       - locked_until
+      - default_password
       - version
       - created_at
       - updated_at

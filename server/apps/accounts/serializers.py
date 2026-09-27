@@ -29,6 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_active",
             "last_login",
             "locked_until",
+            "default_password",
             "version",
             "created_at",
             "updated_at",
@@ -89,6 +90,7 @@ class UserCreateSerializer(serializers.Serializer):
 
 class UserUpdateSerializer(serializers.Serializer):
     version = serializers.IntegerField(min_value=1)
+    username = serializers.CharField(max_length=64, required=False, help_text="The owner or a manager renames a login.")
     full_name = serializers.CharField(max_length=120, required=False)
     role = serializers.ChoiceField(choices=Role.choices, required=False)
     is_active = serializers.BooleanField(required=False)

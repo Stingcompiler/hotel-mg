@@ -12,6 +12,13 @@ CONFIRM_LIFETIME = timedelta(minutes=5)
 
 MANAGER_ROLES = frozenset({"manager", "owner"})
 
+# The account a new install starts with (owner decision 2026-09-27): no setup screen, the login page shows these
+# until the password is changed, and a reminder after login suggests changing them (not forced).
+DEFAULT_USERNAME = "admin"
+DEFAULT_PASSWORD = "123456"
+DEFAULT_PIN = "123456"
+DEFAULT_FULL_NAME = "المالك"
+
 
 def is_valid_pin(pin: str) -> bool:
     """PIN is 4-6 ASCII digits (spec §5)."""

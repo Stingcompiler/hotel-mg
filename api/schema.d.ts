@@ -1942,6 +1942,11 @@ export interface components {
             count: number;
             largest: components["schemas"]["LargestDebt"] | null;
         };
+        DefaultLogin: {
+            username: string;
+            password: string;
+            pin: string;
+        };
         /**
          * @description * `reception` - reception
          *     * `owner` - owner
@@ -2709,6 +2714,8 @@ export interface components {
         };
         PatchedUserUpdateRequest: {
             version?: number;
+            /** @description The owner or a manager renames a login. */
+            username?: string;
             full_name?: string;
             role?: components["schemas"]["UserRoleEnum"];
             is_active?: boolean;
@@ -3415,6 +3422,8 @@ export interface components {
             due_tasks: number | null;
             /** @description Owner PC: public key to paste in the reception's backup settings (public). */
             owner_public_key: string | null;
+            /** @description The install's default owner account while its password is unchanged (the login page shows it). */
+            default_login: components["schemas"]["DefaultLogin"] | null;
             version: string;
             schema_version: number;
             /** @description static_spa/index.html is present next to this server (support). */
@@ -3538,6 +3547,8 @@ export interface components {
             readonly last_login: string | null;
             /** Format: date-time */
             readonly locked_until: string | null;
+            /** @description Still the install's default password (the login page shows it; a reminder after login). */
+            readonly default_password: boolean;
             readonly version: number;
             /** Format: date-time */
             readonly created_at: string;

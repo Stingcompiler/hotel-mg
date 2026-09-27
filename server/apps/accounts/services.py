@@ -170,6 +170,30 @@ def _create_first_manager(*, username, full_name, password, pin) -> User:
     return user
 
 
+@transaction.atomic
+def ensure_default_owner() -> User | None:
+    """A new install opens on the login page, not a setup form (owner decision 2026-09-27).
+
+    On a hotel PC with no users yet, create the owner account ``admin`` with the default password and PIN; the
+    login page shows them until the password is changed. Returns the account when it was created.
+    """
+    if User.objects.select_for_update().exists():
+        return None
+    user = User.objects.create_user(
+        rules.DEFAULT_USERNAME,
+        rules.DEFAULT_FULL_NAME,
+        role=Role.OWNER,
+        password=rules.DEFAULT_PASSWORD,
+        pin=rules.DEFAULT_PIN,
+        is_staff=True,
+        default_password=True,
+    )
+    audit.record(
+        actor=None, action="user.create", entity="user", entity_id=user.pk, after=audit.snapshot(user, USER_FIELDS)
+    )
+    return user
+
+
 def setup_first_manager(*, username, full_name, password, pin) -> LoginResult:
     """First run on a new reception PC (no users yet): create the manager from the login screen and sign in.
 
@@ -187,12 +211,15 @@ def update_user(actor: User, user_id, *, version: int, **changes) -> User:
         _ensure_can_manage(actor, changes["role"])
     if user.pk == actor.pk and (changes.get("is_active") is False or changes.get("role", actor.role) != actor.role):
         raise ApiError("permission_denied", 403, detail="لا يمكنك تعطيل حسابك أو تغيير دورك.")
+    if "username" in changes and User.objects.exclude(pk=user.pk).filter(username=changes["username"]).exists():
+        raise ApiError("username_taken", 400)
     before = audit.snapshot(user, USER_FIELDS)
     password = changes.pop("password", None)
     for field, value in changes.items():
         setattr(user, field, value)
     if password:
         user.set_password(password)
+        user.default_password = False  # the login page stops showing the install's default
     if "role" in changes:
         user.is_staff = rules.is_manager(user.role)
     user.full_clean(exclude=["password", "hotel_id"])

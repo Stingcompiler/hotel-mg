@@ -19,6 +19,25 @@ from .models import SCHEMA_VERSION, HotelSettings
 from .settings_service import update_settings
 
 
+class DefaultLoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+    pin = serializers.CharField()
+
+
+def _default_login() -> dict | None:
+    from apps.accounts import rules as account_rules
+
+    user = User.objects.filter(username=account_rules.DEFAULT_USERNAME, is_active=True, default_password=True).first()
+    if user is None:
+        return None
+    return {
+        "username": account_rules.DEFAULT_USERNAME,
+        "password": account_rules.DEFAULT_PASSWORD,
+        "pin": account_rules.DEFAULT_PIN,
+    }
+
+
 class SystemStatusSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=["reception", "owner"])
     hotel_id = serializers.UUIDField(allow_null=True)
@@ -42,6 +61,10 @@ class SystemStatusSerializer(serializers.Serializer):
     )
     owner_public_key = serializers.CharField(
         allow_null=True, help_text="Owner PC: public key to paste in the reception's backup settings (public)."
+    )
+    default_login = DefaultLoginSerializer(
+        allow_null=True,
+        help_text="The install's default owner account while its password is unchanged (the login page shows it).",
     )
     version = serializers.CharField()
     schema_version = serializers.IntegerField()
@@ -102,6 +125,7 @@ class SystemStatusView(APIView):
             "needs_setup": settings.SKYTOWERS_ROLE == "reception" and not User.objects.exists(),
             "due_tasks": _due_tasks() if settings.SKYTOWERS_ROLE == "reception" else None,
             "owner_public_key": _owner_public_key() if settings.SKYTOWERS_ROLE == "owner" else None,
+            "default_login": _default_login() if settings.SKYTOWERS_ROLE == "reception" else None,
             "version": settings.APP_VERSION,
             "schema_version": SCHEMA_VERSION,
             "spa_built": (settings.SPA_ROOT / "index.html").is_file(),

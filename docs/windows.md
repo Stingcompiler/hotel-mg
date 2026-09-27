@@ -4,14 +4,12 @@ Two ways to run the system on Windows 10/11.
 
 ## A. The installer (normal use — no command line)
 
-1. Download **SkyTowers-Setup-<version>.exe** from the Releases page:
-   <https://github.com/Stingcompiler/hotel-mg/releases/latest> (no GitHub account needed).
+1. Download the newest installer: <https://github.com/Stingcompiler/hotel-mg/releases/latest/download/SkyTowers-Setup.exe>
+   (no GitHub account needed; every release is also listed at <https://github.com/Stingcompiler/hotel-mg/releases>).
 2. Run it. The installer is not signed with a commercial certificate, so Windows may show
    «Windows protected your PC»: click **More info → Run anyway**. Accept the administrator prompt.
-3. The installer asks one question: **«هل هذا جهاز الاستقبال؟»** — *نعم* for the reception PC,
-   *لا* for the owner PC. It then, without further questions:
-   - writes `%ProgramData%\SkyTowers\config.json` (a new hotel id on reception; empty on the owner PC
-     until its first import);
+3. The installer asks **no question** (1.1). It:
+   - writes `%ProgramData%\SkyTowers\config.json` once (a new hotel id; an upgrade keeps the existing file);
    - lets only Administrators and the service account write `%ProgramData%\SkyTowers`;
    - adds a Microsoft Defender exclusion for the program and data folders;
    - installs and starts the Windows service **Sky Towers Server** (`SkyTowersServer`, automatic
@@ -20,24 +18,17 @@ Two ways to run the system on Windows 10/11.
 4. Open **Sky Towers** from the Start menu. Closing the window keeps the app in the tray
    (فتح · نسخة احتياطية الآن · خروج).
 
-### First run — reception PC
+### First run
 
-The app opens on **«إعداد النظام لأول مرة»**: enter the manager's name, username, password and a 4–6 digit
-PIN, and you are signed in. The empty room board then points to الإعدادات, in this order: أنواع الغرف والأسعار →
-الغرف → المستخدمون → بيانات الفندق → النسخ الاحتياطي (paste the owner PC's key there, see below). Then open a shift
-in «الصندوق» and start checking guests in.
+The app opens on the **login page**. On first start the service created the owner account **`admin`**, password
+and PIN **`123456`**; the login page shows them (with «تعبئة الحقول») until the password is changed, and after
+signing in a reminder offers «تغيير الآن» (الإعدادات › المستخدمون). One login page serves every role — the account
+decides what opens: the owner gets «لوحة المالك» and every screen, a manager the room board and settings, reception
+staff the daily screens. Then, in الإعدادات: أنواع الغرف والأسعار → الغرف → المستخدمون (each with a login, a password
+and a PIN) → بيانات الفندق. Open a shift in «الصندوق» and start checking guests in.
 
-To try the system with demo data instead (a test PC only, before creating the manager), from an administrator
-command prompt:
-
-```bat
-cd "C:\Program Files\Sky Towers\server"
-skytowers-server.exe manage seed_demo --allow-non-debug
-```
-
-Demo users: `manager` / `ahmed.ali` / `salma.h`, password `skytowers-dev`, PIN `123456`.
-
-### Owner PC
+The demo hotel is for development checkouts only (section B): `seed_demo` refuses the installed program's folder.
+### Owner PC (installed as an owner PC before 1.1)
 
 1. Open Sky Towers on the owner PC: it shows **«إعداد جهاز المالك»** with this PC's key (made on first
    start). Press **نسخ المفتاح** and paste it on the reception PC in الإعدادات › النسخ الاحتياطي › مفتاح المالك العام.
@@ -79,7 +70,7 @@ The command refuses a file from another hotel, a tampered file, the wrong key, o
 
 ### Starting over with an empty program
 
-A new install is empty: the reception PC opens on «إعداد النظام لأول مرة», the owner PC on «إعداد جهاز المالك».
+A new install is empty and opens on the login page with the default owner account (dmin / 123456).
 Uninstalling keeps `%ProgramData%\SkyTowers`, so a PC that was used for a trial (the demo hotel, test bookings)
 keeps that data through a reinstall. To empty it, from an administrator command prompt:
 
@@ -128,7 +119,7 @@ Open `http://127.0.0.1:8471/` in Edge or Chrome. For frontend work run `npm run 
   `server.log` says the same at start-up («SPA missing» / «cannot listen»). The installer and the service
   itself end a foreign process holding the port (`skytowers-server.exe free-port`); our own executable is never ended.
 - **«تعذّر الاتصال بالخادم المحلي» right after the page opened, service RUNNING, and `system/status` says
-  `"role":"owner"` on the reception PC**: the installer's question was answered «لا» (or an older config.json said
+  `"role":"owner"` on the reception PC**: the question of an installer before 1.1 was answered «لا» (or an older config.json said
   owner). Switch the role without losing data, from an administrator prompt:
   `sc stop SkyTowersServer` → `"C:\Program Files\Sky Towers\server\skytowers-server.exe" init --role reception --force`
   → `sc start SkyTowersServer`. The hotel id is taken from the database that is already there.
