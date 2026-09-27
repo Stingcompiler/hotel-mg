@@ -146,7 +146,7 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-APP_VERSION = "0.1.0"
+APP_VERSION = "1.0.1"
 
 LOGGING = {
     "version": 1,

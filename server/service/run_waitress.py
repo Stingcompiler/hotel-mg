@@ -72,13 +72,13 @@ def create_server():
     try:
         server = waitress_server(application, host=HOST, port=PORT, threads=THREADS)
     except OSError as e:
-        log.error(
-            "cannot listen on %s:%s (%s) — another Sky Towers server (a source checkout?) may hold the port",
-            HOST,
-            PORT,
-            e,
-        )
-        raise
+        # The port is ours by design (spec §2): end a foreign holder (a server run from a source
+        # checkout) and retry once.
+        from service import port
+
+        log.error("cannot listen on %s:%s (%s) — %s", HOST, PORT, e, port.describe(PORT))
+        log.warning(port.free_port(PORT))
+        server = waitress_server(application, host=HOST, port=PORT, threads=THREADS)
     if role == "reception":  # the owner PC has no hotel operations to watch
         scheduler.start()
     log.info(
