@@ -7423,6 +7423,9 @@ components:
           type: string
         schema_version:
           type: integer
+        spa_built:
+          type: boolean
+          description: static_spa/index.html is present next to this server (support).
       required:
       - role
       - hotel_id
@@ -7440,6 +7443,7 @@ components:
       - owner_public_key
       - version
       - schema_version
+      - spa_built
     TaskAction:
       type: object
       properties:

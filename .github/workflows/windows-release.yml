@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: write  # publish the GitHub release
+  pull-requests: write  # the installer end-to-end transcript is posted on the PR (job logs are not reachable everywhere)
 
 jobs:
   installer:
@@ -132,6 +133,84 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npx tauri build
+
+      - name: Install with the built installer and check the installed app end to end
+        run: |
+          function Fail([string]$message) {
+            $log = Get-Content "$env:ProgramData\SkyTowers\logs\server.log" -Tail 40 -ErrorAction SilentlyContinue | Out-String
+            $query = sc.exe query SkyTowersServer 2>&1 | Out-String
+            $tree = Get-ChildItem "$env:ProgramFiles\Sky Towers" -Recurse -Depth 2 -ErrorAction SilentlyContinue | Select-Object -First 40 | ForEach-Object { $_.FullName } | Out-String
+            $text = "$message`n--- sc query`n$query`n--- server.log`n$log`n--- install dir`n$tree"
+            Add-Content -Path "$env:RUNNER_TEMP\e2e.log" -Value $text -Encoding utf8
+            # Annotations: short and ASCII-only; the full text is in the e2e-log artifact.
+            $short = ($text -replace '[^\x20-\x7E]', '?')
+            if ($short.Length -gt 1500) { $short = $short.Substring(0, 1500) }
+            Write-Output ("::error title=Installer e2e::" + ($short -replace '%', '%25' -replace "`r", '' -replace "`n", '%0A'))
+            exit 1
+          }
+          Start-Transcript -Path "$env:RUNNER_TEMP\e2e-transcript.log" | Out-Null
+          try {
+            $setup = Get-ChildItem desktop/src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1
+            if (-not $setup) { Fail "no installer found under desktop/src-tauri/target/release/bundle/nsis" }
+            "installing $($setup.Name) silently"
+            # Silent install: the role question answers «نعم» (/SD IDYES) → reception; config.json from the previous step is kept.
+            $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+            if ($p.ExitCode -ne 0) { Fail "installer exited $($p.ExitCode)" }
+            $installed = "$env:ProgramFiles\Sky Towers"
+            if (-not (Test-Path "$installed\server\skytowers-server.exe")) { Fail "server exe not installed under $installed" }
+            if (-not (Test-Path "$installed\server\_internal\static_spa\index.html")) { Fail "the SPA is not inside the installed server folder" }
+            $status = $null
+            foreach ($i in 1..90) {
+              try { $status = Invoke-RestMethod http://127.0.0.1:8471/api/v1/system/status; break } catch { Start-Sleep -Seconds 1 }
+            }
+            if (-not $status) { Fail "the installed service did not answer on 127.0.0.1:8471" }
+            "status: role=$($status.role) version=$($status.version) spa_built=$($status.spa_built)"
+            if (-not $status.spa_built) { Fail "the installed service reports spa_built=false" }
+            $page = Invoke-WebRequest http://127.0.0.1:8471/reservations -UseBasicParsing -SkipHttpErrorCheck
+            if ($page.StatusCode -ne 200 -or $page.Content -notmatch 'id="root"') { Fail "the installed service does not serve the SPA: HTTP $($page.StatusCode)`n$($page.Content.Substring(0, [Math]::Min(600, $page.Content.Length)))" }
+            "installed app serves the SPA"
+            $un = Get-ChildItem "$installed\*uninstall*.exe" | Select-Object -First 1
+            if (-not $un) { Fail "no uninstaller under $installed" }
+            $u = Start-Process -FilePath $un.FullName -ArgumentList "/S" -Wait -PassThru
+            if ($u.ExitCode -ne 0) { Fail "uninstaller exited $($u.ExitCode)" }
+            Start-Sleep -Seconds 3
+            $after = sc.exe query SkyTowersServer 2>&1 | Out-String
+            if ($after -notmatch "1060|FAILED") { Fail "the service is still registered after uninstall:`n$after" }
+            "uninstalled cleanly"
+          } catch {
+            Fail "unexpected error: $($_.Exception.Message)`n$($_.ScriptStackTrace)"
+          }
+          Stop-Transcript | Out-Null
+          # The last native command was `sc.exe query` on a removed service (exit 1060); the pwsh shell would
+          # otherwise end the step with that code although every check passed.
+          exit 0
+
+      - name: Keep the end-to-end transcript
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-log
+          path: |
+            ${{ runner.temp }}/e2e.log
+            ${{ runner.temp }}/e2e-transcript.log
+          if-no-files-found: ignore
+
+      - name: Post the end-to-end transcript on the pull request
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          $body = "### Installer end-to-end (`$(Get-Date -Format u), commit ${{ github.sha }})`n`n"
+          foreach ($f in @("$env:RUNNER_TEMP\e2e.log", "$env:RUNNER_TEMP\e2e-transcript.log")) {
+            if (Test-Path $f) {
+              $text = Get-Content $f -Raw -ErrorAction SilentlyContinue
+              if ($text.Length -gt 12000) { $text = $text.Substring($text.Length - 12000) }
+              $body += "<details><summary>$(Split-Path $f -Leaf)</summary>`n`n``````text`n$text`n``````n</details>`n`n"
+            }
+          }
+          $body | Set-Content "$env:RUNNER_TEMP\e2e.md" -Encoding utf8
+          gh pr comment $env:PR --body-file "$env:RUNNER_TEMP\e2e.md"
 
       - uses: actions/upload-artifact@v4
         with:

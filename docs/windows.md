@@ -100,6 +100,12 @@ Open `http://127.0.0.1:8471/` in Edge or Chrome. For frontend work run `npm run 
 
 ## Troubleshooting
 
+- **«واجهة البرنامج غير مبنية بعد»** in the app window: the server that answered on 127.0.0.1:8471 has no
+  built SPA next to it. The page prints which executable answered and the folder it looked in. Two causes:
+  a server started from a source checkout (`python -m service.run_waitress` without `build_spa.py`) holding the
+  port — close it (`netstat -ano | findstr :8471`, then end that PID) and restart the service; or a broken install —
+  `C:\Program Files\Sky Towers\server\_internal\static_spa\index.html` must exist; run the installer again.
+  `server.log` says the same at start-up («SPA missing» / «cannot listen»).
 - **«الخادم المحلي غير متاح»**: the service is not running. `services.msc` → Sky Towers Server → Start, or
   `sc start SkyTowersServer` as administrator. The reason is in `server.log`.
 - **«ساعة الجهاز غير صحيحة»**: the Windows clock went back. Settings → Time & language → Set time

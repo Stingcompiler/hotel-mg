@@ -34,6 +34,7 @@ def test_system_status_is_public(api):
         "owner_public_key": None,
         "version": settings.APP_VERSION,
         "schema_version": SCHEMA_VERSION,
+        "spa_built": body["spa_built"],
     }
 
 
