@@ -233,6 +233,17 @@ function Preview({ rule, body }: { rule: Rule; body: Patch }) {
           {t("settings.alerts.previewAffected", { n: digits(String(p.affected_stays)) })}
         </span>
       )}
+      {p && p.stays.length > 0 && (
+        <ul className="m-0 flex w-full list-none flex-wrap gap-x-3 gap-y-1 p-0 text-label font-normal text-text-secondary">
+          {p.stays.map((s) => (
+            <li key={`${s.room}-${s.guest}`} className="inline-flex items-center gap-1.5">
+              <span className="inline-flex h-5 items-center rounded-control bg-bg-surface-2 px-1.5 font-medium text-text-primary">{digits(s.room)}</span>
+              {s.guest} · {formatDayDate(s.last_night)}
+            </li>
+          ))}
+          {p.affected_stays > p.stays.length && <li>{t("settings.alerts.previewMore", { n: digits(String(p.affected_stays - p.stays.length)) })}</li>}
+        </ul>
+      )}
       {preview.isError && <span className="text-danger">{apiErrorText(preview.error)}</span>}
     </div>
   );

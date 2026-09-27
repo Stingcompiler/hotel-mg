@@ -5,7 +5,7 @@
   size: A4 portrait;
   margin: 14mm 14mm 16mm;
   @bottom-left {
-    content: counter(page) " / " counter(pages);
+    content: "صفحة " counter(page) " من " counter(pages);
     font: 10pt "IBM Plex Sans Arabic", sans-serif;
     direction: ltr;
   }
@@ -15,7 +15,7 @@
   size: A4 landscape;
   margin: 12mm 12mm 14mm;
   @bottom-left {
-    content: counter(page) " / " counter(pages);
+    content: "صفحة " counter(page) " من " counter(pages);
     font: 10pt "IBM Plex Sans Arabic", sans-serif;
     direction: ltr;
   }

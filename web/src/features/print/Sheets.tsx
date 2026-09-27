@@ -298,7 +298,16 @@ function Tile({ label, value, shaded = false }: { label: string; value: string; 
   );
 }
 
-type Meta = { title?: string; as_of?: string; date_from?: string | null; date_to?: string | null; formula?: string; note?: string; totals?: Record<string, number> };
+type Meta = {
+  title?: string;
+  as_of?: string;
+  date_from?: string | null;
+  date_to?: string | null;
+  formula?: string;
+  note?: string;
+  totals?: Record<string, number>;
+  filters?: { key: string; label: string; value: string }[];
+};
 
 /** Any report as A4 landscape (Gap Fill 7.3): title, hotel, period, as-of, table with totals, formula, page numbers. */
 export function ReportA4({ report, hotel, printedBy, version }: { report: Report; hotel: Hotel; printedBy: string; version: string }) {
@@ -313,6 +322,8 @@ export function ReportA4({ report, hotel, printedBy, version }: { report: Report
         title={meta.title ?? report.name}
         lines={[
           period,
+          // The filters the report applied (brief §7: «filter summary line»), from the server's meta.
+          meta.filters?.length ? <span key="f">{t("print.filters", { list: meta.filters.map((f) => `${f.label}: ${f.value}`).join(" · ") })}</span> : null,
           meta.as_of && (
             <span key="a">
               {t("print.asOf")} {when(meta.as_of)}

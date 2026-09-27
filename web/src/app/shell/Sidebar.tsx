@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { LogOut, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { t } from "@/i18n/t";
@@ -13,10 +13,12 @@ type Props = {
   followups?: number;
   collapsed?: boolean;
   onLogout: () => void;
+  /** «طيّ/فتح القائمة»: the user's choice overrides the width rule until they change it again. */
+  onToggle?: () => void;
 };
 
 /** «Shell Sidebar»: 240 px (rail 64 px when collapsed), on the start (right) side in RTL. */
-export function Sidebar({ items, userName, roleName, followups = 0, collapsed = false, onLogout }: Props) {
+export function Sidebar({ items, userName, roleName, followups = 0, collapsed = false, onLogout, onToggle }: Props) {
   const justify = collapsed ? "justify-center" : "justify-start";
   return (
     <aside
@@ -70,6 +72,18 @@ export function Sidebar({ items, userName, roleName, followups = 0, collapsed = 
       </nav>
 
       <div className={`flex flex-col gap-2 border-t border-border py-3 ${collapsed ? "px-2" : "px-3"}`}>
+        {onToggle && (
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={collapsed ? t("nav.expand") : t("nav.collapse")}
+            title={collapsed ? t("nav.expand") : t("nav.collapse")}
+            className={`flex h-9 items-center gap-3 rounded-control bg-transparent px-3 text-body font-medium text-text-secondary hover:bg-bg-surface-2 ${justify}`}
+          >
+            {collapsed ? <PanelRightOpen className="h-icon w-icon flex-none" strokeWidth={1.75} aria-hidden /> : <PanelRightClose className="h-icon w-icon flex-none" strokeWidth={1.75} aria-hidden />}
+            {!collapsed && <span>{t("nav.collapse")}</span>}
+          </button>
+        )}
         <div className={`flex h-10 items-center gap-2.5 px-3 ${justify}`}>
           <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-primary-soft text-body font-semibold text-primary">
             {userName.trim().charAt(0)}

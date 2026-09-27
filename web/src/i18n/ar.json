@@ -15,7 +15,9 @@
     "settings": "الإعدادات",
     "owner": "لوحة المالك",
     "backup": "النسخ والاستيراد",
-    "logout": "تسجيل الخروج"
+    "logout": "تسجيل الخروج",
+    "collapse": "طيّ القائمة",
+    "expand": "فتح القائمة"
   },
   "roles": {
     "reception": "موظف استقبال",
@@ -691,7 +693,12 @@
     "errNote": "البيان مطلوب",
     "errReference": "المرجع مطلوب لغير النقدي",
     "errReceipt": "الإيصال مطلوب لهذا المبلغ",
-    "saved": "تم تسجيل مصروف {amount}"
+    "saved": "تم تسجيل مصروف {amount}",
+    "quickTitle": "مصروف سريع",
+    "quickNote": "البيان",
+    "quickSave": "تسجيل",
+    "quickHint": "نقدًا من الوردية المفتوحة · فوق {amount} يلزم إيصال فافتح «مصروف جديد»",
+    "quickAmount": "المبلغ"
   },
   "guests": {
     "title": "النزلاء",
@@ -799,7 +806,8 @@
     "cancelConfirm": "إلغاء الحجز",
     "noShowConfirm": "تسجيل «لم يحضر»؟ يبقى الحجز ظاهرًا بحالته.",
     "noRoom": "بلا غرفة",
-    "newHint": "اختصار: N"
+    "newHint": "اختصار: N",
+    "jumpTo": "الانتقال إلى"
   },
   "reports": {
     "title": "التقارير",
@@ -828,7 +836,14 @@
     "empty": "لا بيانات في هذه الفترة",
     "period": "الفترة: {range}",
     "asOf": "حتى {time}",
-    "pick": "اختر تقريرًا"
+    "pick": "اختر تقريرًا",
+    "periodToday": "اليوم",
+    "periodWeek": "هذا الأسبوع",
+    "allRoomTypes": "كل أنواع الغرف",
+    "allMethods": "كل الطرق",
+    "allCategories": "كل الفئات",
+    "filters": "المرشّحات: {list}",
+    "sortBy": "ترتيب حسب {col}"
   },
   "settings": {
     "tabs": {
@@ -956,7 +971,8 @@
       "kind_room_maintenance_too_long": "صيانة طويلة",
       "kind_no_backup": "نسخة احتياطية متأخرة",
       "kind_no_drive_upload": "لا رفع إلى Drive",
-      "actDisable": "إيقاف قاعدة التنبيه «{name}»"
+      "actDisable": "إيقاف قاعدة التنبيه «{name}»",
+      "previewMore": "و{n} أخرى"
     },
     "hotel": {
       "identity": "الهوية — تظهر في المطبوعات",
@@ -1250,7 +1266,8 @@
     "printA4": "طباعة A4",
     "saveAndPrint": "تسجيل وطباعة إيصال",
     "print": "طباعة",
-    "previewHint": "تُفتح نافذة الطباعة تلقائيًا؛ إن أُغلقت اضغط «طباعة» مرة أخرى."
+    "previewHint": "تُفتح نافذة الطباعة تلقائيًا؛ إن أُغلقت اضغط «طباعة» مرة أخرى.",
+    "filters": "المرشّحات: {list}"
   },
   "clock": {
     "title": "ساعة الجهاز غير صحيحة",

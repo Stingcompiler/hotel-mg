@@ -2,7 +2,6 @@ import { Outlet } from "react-router-dom";
 
 import { useLatestImport, useMe, useSystemStatus } from "@/api/queries";
 import { t } from "@/i18n/t";
-import { useMediaQuery } from "@/lib/useMediaQuery";
 
 import { OWNER_NAV } from "../nav";
 import { Notices } from "./Notices";
@@ -12,6 +11,7 @@ import { SessionLock } from "./SessionLock";
 import { Sidebar } from "./Sidebar";
 import { SystemBars } from "./SystemBars";
 import { useLogout } from "./useLogout";
+import { useSidebar } from "./useSidebar";
 
 /** Owner PC: read-only; the amber banner replaces the top bar (spec §10.4, artboard 6.12). */
 export function OwnerShell() {
@@ -19,8 +19,7 @@ export function OwnerShell() {
   const status = useSystemStatus().data;
   const lastImport = useLatestImport().data ?? null;
   const logout = useLogout();
-  // 1366×768 artboards: the sidebar folds to the 64 px rail below 1600 px.
-  const narrow = useMediaQuery("(max-width: 1599px)");
+  const sidebar = useSidebar();
 
   return (
     <div className="flex h-screen">
@@ -28,7 +27,8 @@ export function OwnerShell() {
         items={OWNER_NAV}
         userName={me?.full_name ?? ""}
         roleName={t("roles.owner")}
-        collapsed={narrow}
+        collapsed={sidebar.collapsed}
+        onToggle={sidebar.toggle}
         onLogout={logout}
       />
       <div className="flex min-w-0 flex-1 flex-col">

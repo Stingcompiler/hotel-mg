@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Download, Printer } from "lucide-react";
+import { ArrowDown, ArrowUp, Download, Printer } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 
@@ -9,6 +9,7 @@ import { api, ApiError, data, download } from "@/api/client";
 import { ErrorBanner, Segmented, Select, TextInput } from "@/components/ui/form";
 import { buttons } from "@/components/ui/Modal";
 import { openPrint } from "@/features/print/PrintPage";
+import { useRoomTypes } from "@/features/reservations/StaySection";
 import { formatDayMonth, formatRange, formatTime, formatWhen } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
 import { formatMoney } from "@/i18n/money";
@@ -26,12 +27,29 @@ const CONTROLS: Record<string, "debts" | "when" | "days" | "none" | "period"> = 
   current_guests: "none",
 };
 
+/** Filters a report accepts (server: room_type / method / expense_category, contract 1.1). */
+const FILTERS: Record<string, ("room_type" | "method" | "expense_category")[]> = {
+  revenue: ["room_type", "method"],
+  debts: ["room_type"],
+  current_guests: ["room_type"],
+  arrivals_departures: ["room_type"],
+  expenses: ["method", "expense_category"],
+};
+const METHODS = ["cash", "bankak", "transfer"] as const;
+const CATEGORIES = ["supplies", "purchases", "maintenance", "bills", "salaries", "other"] as const;
+
 function iso(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function periodParams(period: string, custom: { from: string; to: string }): Record<string, string> {
   const now = new Date();
+  if (period === "today") return { date_from: iso(now), date_to: iso(now) };
+  if (period === "week") {
+    // The week starts on Saturday (Sudan's working week).
+    const back = (now.getDay() + 1) % 7;
+    return { date_from: iso(new Date(now.getTime() - back * 86_400_000)), date_to: iso(now) };
+  }
   if (period === "lastMonth") return { date_from: iso(new Date(now.getFullYear(), now.getMonth() - 1, 1)), date_to: iso(new Date(now.getFullYear(), now.getMonth(), 0)) };
   if (period === "7") return { date_from: iso(new Date(now.getTime() - 6 * 86_400_000)), date_to: iso(now) };
   if (period === "30") return { date_from: iso(new Date(now.getTime() - 29 * 86_400_000)), date_to: iso(now) };
@@ -62,11 +80,16 @@ export function ReportsPage() {
   const [days, setDays] = useState("3");
   const [period, setPeriod] = useState("month");
   const [custom, setCustom] = useState({ from: "", to: "" });
+  const [filters, setFilters] = useState({ room_type: "", method: "", expense_category: "" });
   const [error, setError] = useState<string | null>(null);
+  const roomTypes = useRoomTypes().data ?? [];
 
   const kind = current ? CONTROLS[current] ?? "period" : "none";
-  const query: Record<string, string> =
-    kind === "debts" ? { status: debts } : kind === "when" ? { when } : kind === "days" ? { days } : kind === "period" ? periodParams(period, custom) : {};
+  const accepted = current ? FILTERS[current] ?? [] : [];
+  const query: Record<string, string> = {
+    ...(kind === "debts" ? { status: debts } : kind === "when" ? { when } : kind === "days" ? { days } : kind === "period" ? periodParams(period, custom) : {}),
+    ...Object.fromEntries(accepted.filter((k) => filters[k]).map((k) => [k, filters[k]])),
+  };
   const report = useQuery({
     queryKey: ["reports", current, query],
     queryFn: () => data(api.GET("/api/v1/reports/{name}", { params: { path: { name: current! }, query: query as never } })),
@@ -86,7 +109,17 @@ export function ReportsPage() {
   };
 
   const meta = r?.meta as
-    | { title?: string; as_of?: string; date_from?: string | null; date_to?: string | null; formula?: string; note?: string; tiles?: Tile[]; totals?: Record<string, number> }
+    | {
+        title?: string;
+        as_of?: string;
+        date_from?: string | null;
+        date_to?: string | null;
+        formula?: string;
+        note?: string;
+        tiles?: Tile[];
+        totals?: Record<string, number>;
+        filters?: { key: string; label: string; value: string }[];
+      }
     | undefined;
 
   return (
@@ -140,6 +173,8 @@ export function ReportsPage() {
           <>
             <div className="w-44">
               <Select aria-label={t("reports.periodMonth")} value={period} onChange={(e) => setPeriod(e.target.value)}>
+                <option value="today">{t("reports.periodToday")}</option>
+                <option value="week">{t("reports.periodWeek")}</option>
                 <option value="month">{t("reports.periodMonth")}</option>
                 <option value="lastMonth">{t("reports.periodLastMonth")}</option>
                 <option value="7">{t("reports.period7")}</option>
@@ -154,6 +189,42 @@ export function ReportsPage() {
               </>
             )}
           </>
+        )}
+        {accepted.includes("room_type") && (
+          <div className="w-40">
+            <Select aria-label={t("reports.allRoomTypes")} value={filters.room_type} onChange={(e) => setFilters({ ...filters, room_type: e.target.value })}>
+              <option value="">{t("reports.allRoomTypes")}</option>
+              {roomTypes.map((rt) => (
+                <option key={rt.id} value={rt.id}>
+                  {rt.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
+        {accepted.includes("method") && (
+          <div className="w-32">
+            <Select aria-label={t("reports.allMethods")} value={filters.method} onChange={(e) => setFilters({ ...filters, method: e.target.value })}>
+              <option value="">{t("reports.allMethods")}</option>
+              {METHODS.map((m) => (
+                <option key={m} value={m}>
+                  {t(`payMethod.${m}`)}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
+        {accepted.includes("expense_category") && (
+          <div className="w-36">
+            <Select aria-label={t("reports.allCategories")} value={filters.expense_category} onChange={(e) => setFilters({ ...filters, expense_category: e.target.value })}>
+              <option value="">{t("reports.allCategories")}</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {t(`expenseCategory.${c}`)}
+                </option>
+              ))}
+            </Select>
+          </div>
         )}
         <button type="button" disabled={!r} onClick={() => openPrint("report", current!, query)} className={`${buttons.secondary} h-9 px-4`}>
           <Printer className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
@@ -214,6 +285,7 @@ export function ReportsPage() {
             <div className="flex flex-wrap items-center justify-between gap-2 text-label font-normal text-text-secondary">
               <span>
                 {meta?.date_from && meta.date_to && t("reports.period", { range: formatRange(meta.date_from, meta.date_to) })}
+                {!!meta?.filters?.length && ` · ${t("reports.filters", { list: meta.filters.map((f) => `${f.label}: ${f.value}`).join(" · ") })}`}
                 {meta?.as_of && ` · ${t("reports.asOf", { time: formatWhen(meta.as_of) })}`}
               </span>
               <span>{meta?.formula || meta?.note}</span>
@@ -225,22 +297,45 @@ export function ReportsPage() {
   );
 }
 
+function compare(a: unknown, b: unknown): number {
+  if (a === b) return 0;
+  if (a === null || a === undefined || a === "") return 1;
+  if (b === null || b === undefined || b === "") return -1;
+  if (typeof a === "number" && typeof b === "number") return a - b;
+  return String(a).localeCompare(String(b), "ar", { numeric: true });
+}
+
 function ReportTable({ report, totals }: { report: Report; totals: Record<string, number> }) {
   const cols = report.columns;
   const template = cols.map((c) => (c.type === "text" ? "minmax(120px,1.4fr)" : "minmax(100px,1fr)")).join(" ");
   const hasTotals = Object.keys(totals).length > 0;
+  // Click a header to sort (twice: descending; a third time: the server's order). Not carried to print or export.
+  const [sort, setSort] = useState<{ key: string; dir: 1 | -1 } | null>(null);
+  const cell = (row: unknown, key: string) => (row as Record<string, unknown>)[key];
+  const rows = sort ? [...report.rows].sort((x, y) => sort.dir * compare(cell(x, sort.key), cell(y, sort.key))) : report.rows;
+  const cycle = (key: string) => setSort((s) => (s?.key !== key ? { key, dir: 1 } : s.dir === 1 ? { key, dir: -1 } : null));
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
       <div className="grid h-10 flex-none items-center gap-3 bg-bg-surface-2 px-4 text-label text-text-secondary" style={{ gridTemplateColumns: template }}>
         {cols.map((c) => (
-          <div key={c.key} className={numeric(c) ? "text-end" : ""}>
+          <button
+            key={c.key}
+            type="button"
+            aria-sort={sort?.key === c.key ? (sort.dir === 1 ? "ascending" : "descending") : "none"}
+            title={t("reports.sortBy", { col: c.label })}
+            onClick={() => cycle(c.key)}
+            className={`flex h-10 items-center gap-1 border-0 bg-transparent p-0 font-sans text-label ${numeric(c) ? "justify-end text-end" : "text-start"} ${
+              sort?.key === c.key ? "text-primary" : "text-text-secondary hover:text-text-primary"
+            }`}
+          >
             {c.label}
-          </div>
+            {sort?.key === c.key && (sort.dir === 1 ? <ArrowUp className="h-3.5 w-3.5" strokeWidth={2} aria-hidden /> : <ArrowDown className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />)}
+          </button>
         ))}
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
         {report.rows.length === 0 && <div className="p-8 text-center text-body text-text-secondary">{t("reports.empty")}</div>}
-        {report.rows.map((row, i) => (
+        {rows.map((row, i) => (
           <div key={i} className="grid h-10 items-center gap-3 border-b border-border px-4 text-table-cell hover:bg-bg-page" style={{ gridTemplateColumns: template }}>
             {cols.map((c) => (
               <div key={c.key} className={`truncate ${numeric(c) ? "text-end font-semibold" : ""}`}>
