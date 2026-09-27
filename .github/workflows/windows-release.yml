@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: write  # publish the GitHub release
+  pull-requests: write  # the installer end-to-end transcript is posted on the PR (job logs are not reachable everywhere)
 
 jobs:
   installer:
@@ -190,6 +191,23 @@ jobs:
             ${{ runner.temp }}/e2e.log
             ${{ runner.temp }}/e2e-transcript.log
           if-no-files-found: ignore
+
+      - name: Post the end-to-end transcript on the pull request
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          $body = "### Installer end-to-end (`$(Get-Date -Format u), commit ${{ github.sha }})`n`n"
+          foreach ($f in @("$env:RUNNER_TEMP\e2e.log", "$env:RUNNER_TEMP\e2e-transcript.log")) {
+            if (Test-Path $f) {
+              $text = Get-Content $f -Raw -ErrorAction SilentlyContinue
+              if ($text.Length -gt 12000) { $text = $text.Substring($text.Length - 12000) }
+              $body += "<details><summary>$(Split-Path $f -Leaf)</summary>`n`n``````text`n$text`n``````n</details>`n`n"
+            }
+          }
+          $body | Set-Content "$env:RUNNER_TEMP\e2e.md" -Encoding utf8
+          gh pr comment $env:PR --body-file "$env:RUNNER_TEMP\e2e.md"
 
       - uses: actions/upload-artifact@v4
         with:
