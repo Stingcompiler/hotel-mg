@@ -24,11 +24,12 @@ from django.conf import settings
 from django.core.management import call_command
 from django.db import connections, transaction
 from django.db.migrations.loader import MigrationLoader
+from pyrage import x25519
 
 from apps.audit import services as audit_services
 from apps.core.models import AppendOnlyModel
 
-from . import keys, rules
+from . import keys, keyslots, rules
 from .models import ImportRun
 
 INCOMING = "incoming"
@@ -76,17 +77,56 @@ class ImportResult:
 # --- Reading the file -------------------------------------------------------------------------
 
 
-def _open(raw: bytes, identity) -> tuple[dict, dict[str, bytes]]:
-    try:
-        archive = pyrage.decrypt(raw, [identity])
-    except Exception:  # noqa: BLE001 - wrong key, truncated or tampered ciphertext
-        raise ImportRejected(
-            "فشل فحص التوقيع — الملف مُعدَّل أو غير مكتمل أو ليس لهذا الجهاز.",
-            [rules.check("signature", "التوقيع", "تعذّر فك التشفير", "fail")],
-        ) from None
+def _signature_failed() -> ImportRejected:
+    return ImportRejected(
+        "فشل فحص التوقيع — الملف مُعدَّل أو غير مكتمل أو ليس لهذا الجهاز.",
+        [rules.check("signature", "التوقيع", "تعذّر فك التشفير", "fail")],
+    )
+
+
+def open_backup(raw: bytes, identities, credentials: tuple[str, str] | None = None):
+    """Decrypt a backup: (manifest, files, adopted identity or None).
+
+    Tries this PC's keys first (the hotel key, a pre-1.1 owner key). A format 2 file that none of them opens is
+    opened with the owner's or a manager's own login through the file's key slots; the unwrapped hotel key is
+    returned so the caller can keep it for the next imports.
+    """
+    header, payload = rules.unpack(raw)
+    archive, adopted = None, None
+    for identity in identities:
+        try:
+            archive = pyrage.decrypt(payload, [identity])
+            break
+        except Exception:  # noqa: BLE001, S112 - not this key: try the next one
+            continue
+    if archive is None and header is not None and header.get("slots"):
+        if not credentials:
+            raise ImportRejected(
+                "هذه النسخة تُفتح بحساب المالك أو المدير — أدخل اسم المستخدم وكلمة المرور كما في جهاز الاستقبال.",
+                [rules.check("credentials_required", "فتح النسخة", "مطلوب اسم المستخدم وكلمة المرور", "fail")],
+            )
+        wrapped = rules.slot_for(header, credentials[0])
+        adopted = keyslots.unwrap(wrapped, credentials[1]) if wrapped else None
+        if adopted is None:
+            raise ImportRejected(
+                "اسم المستخدم أو كلمة المرور غير صحيحة لهذه النسخة. استخدم حساب المالك أو مدير كما في جهاز "
+                "الاستقبال، بعد تغيير كلمة المرور الافتراضية.",
+                [rules.check("credentials_wrong", "فتح النسخة", "الحساب لا يفتح هذه النسخة", "fail")],
+            )
+        try:
+            archive = pyrage.decrypt(payload, [x25519.Identity.from_str(adopted)])
+        except Exception:  # noqa: BLE001 - a slot for another key, or a tampered payload
+            raise _signature_failed() from None
+    if archive is None:
+        raise _signature_failed()
     with zipfile.ZipFile(io.BytesIO(archive)) as zf:
         files = {name: zf.read(name) for name in zf.namelist()}
     manifest = json.loads(files.pop(rules.MANIFEST))
+    return manifest, files, adopted
+
+
+def _open(raw: bytes, identity) -> tuple[dict, dict[str, bytes]]:
+    manifest, files, _ = open_backup(raw, [identity])
     return manifest, files
 
 
@@ -216,18 +256,30 @@ def last_imported(target: str = "default") -> ImportRun | None:
 
 
 def import_backup(
-    actor, raw: bytes, *, source: str, file_name: str, allow_older: bool = False, target: str = "default", identity=None
+    actor,
+    raw: bytes,
+    *,
+    source: str,
+    file_name: str,
+    allow_older: bool = False,
+    target: str = "default",
+    identity=None,
+    credentials: tuple[str, str] | None = None,
 ) -> ImportResult:
-    """Run the five checks, then merge. Returns the ImportRun (ok or failed); never raises for bad files."""
+    """Run the five checks, then merge. Returns the ImportRun (ok or failed); never raises for bad files.
+
+    ``credentials`` (username, password) open a format 2 file this PC has no key for yet; the hotel key it unlocks
+    is kept here, so the next imports need no login.
+    """
     checks: list[dict] = []
     manifest: dict = {}
-    identity = identity or keys.load()
+    identities = [identity] if identity is not None else keys.local_identities()
     tmp_root = settings.RUNTIME.home / "tmp"
     tmp_root.mkdir(parents=True, exist_ok=True)
     try:
         # Alias closes before the folder is removed: Windows cannot delete an open SQLite file.
         with tempfile.TemporaryDirectory(dir=tmp_root) as tmp, _IncomingAlias():
-            manifest, files = _open(raw, identity)
+            manifest, files, adopted = open_backup(raw, identities, credentials)
             bad = rules.mismatched_files(manifest, files)
             checks.append(
                 rules.check(
@@ -319,6 +371,8 @@ def import_backup(
             _copy_attachments(files)
             if settings.RUNTIME.hotel_id is None and target == "default":
                 _set_hotel_id(theirs)
+            if adopted and target == "default":
+                keys.save_hotel_identity(adopted)
             return ImportResult(run, counts)
     except ImportRejected as exc:
         return ImportResult(_failed(target, source, file_name, manifest, exc.checks, str(exc), actor))

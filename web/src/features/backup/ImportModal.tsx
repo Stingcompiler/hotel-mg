@@ -36,10 +36,12 @@ export function ImportModal({ initial, onClose }: { initial?: Candidate; onClose
   const candidates = useQuery({ queryKey: ["owner", "import", "candidates"], queryFn: () => data(api.GET("/api/v1/owner/import/candidates")), retry: false });
   const [source, setSource] = useState<Source | null>(initial ? { kind: "drive", candidate: initial } : null);
   const [result, setResult] = useState<{ run: Run; ok: boolean } | null>(null);
+  // 1.1: a file this PC has no key for opens with the owner's or a manager's login (key slots).
+  const [login, setLogin] = useState({ username: "", password: "" });
   const fileRef = useRef<HTMLInputElement>(null);
 
   const run = useMutation({
-    mutationFn: ({ src, allowOlder }: { src: Source; allowOlder: boolean }): Promise<Run> =>
+    mutationFn: ({ src, allowOlder, creds }: { src: Source; allowOlder: boolean; creds?: { username: string; password: string } }): Promise<Run> =>
       gate(t("importDlg.title"), (headers) => {
         if (src.kind === "drive") {
           return data(
@@ -55,6 +57,10 @@ export function ImportModal({ initial, onClose }: { initial?: Candidate; onClose
         const body = new FormData();
         body.append("file", src.file);
         body.append("allow_older", allowOlder ? "true" : "false");
+        if (creds) {
+          body.append("username", creds.username.trim());
+          body.append("password", creds.password);
+        }
         return data(api.POST("/api/v1/owner/import/run", { headers, body: body as never, bodySerializer: (b: unknown) => b as FormData }));
       }),
     onSuccess: (value) => setResult({ run: value, ok: true }),
@@ -71,14 +77,15 @@ export function ImportModal({ initial, onClose }: { initial?: Candidate; onClose
     },
   });
 
-  const start = (src: Source, allowOlder = false) => {
+  const start = (src: Source, allowOlder = false, creds?: { username: string; password: string }) => {
     setSource(src);
     setResult(null);
-    run.mutate({ src, allowOlder });
+    run.mutate({ src, allowOlder, creds });
   };
 
   const step = result?.ok ? 3 : run.isPending || result ? 1 : 0;
   const older = !!result && !result.ok && result.run.checks.some((c) => c.key === "audit" && c.status === "warn");
+  const needsLogin = !!result && !result.ok && (result.run.code === "credentials_required" || result.run.code === "credentials_wrong");
   const newest = candidates.data?.filter((c) => c.state === "new").sort((a, b) => b.seq - a.seq)[0];
   const seq = result?.run.backup_seq ?? (source?.kind === "drive" ? source.candidate.seq : null);
   const title = seq ? t("importDlg.titleSeq", { seq: digits(String(seq)) }) : t("importDlg.title");
@@ -184,6 +191,41 @@ export function ImportModal({ initial, onClose }: { initial?: Candidate; onClose
           {t("importDlg.checking")}
           <div className="text-label font-normal">{t("importDlg.dontClose")}</div>
         </div>
+      )}
+
+      {needsLogin && source && (
+        <form
+          className="flex flex-col gap-3 rounded-card border border-primary bg-primary-soft p-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            start(source, false, login);
+          }}
+        >
+          <div className="text-body font-semibold">{t("adopt.step2")}</div>
+          <div className="text-label font-normal text-text-secondary">{t("adopt.step2Hint")}</div>
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              dir="ltr"
+              aria-label={t("login.username")}
+              placeholder={t("login.username")}
+              className="h-11 rounded-control border border-border-strong bg-bg-surface px-3 font-sans text-body"
+              value={login.username}
+              onChange={(e) => setLogin({ ...login, username: e.target.value })}
+            />
+            <input
+              dir="ltr"
+              type="password"
+              aria-label={t("login.password")}
+              placeholder={t("login.password")}
+              className="h-11 rounded-control border border-border-strong bg-bg-surface px-3 font-sans text-body"
+              value={login.password}
+              onChange={(e) => setLogin({ ...login, password: e.target.value })}
+            />
+          </div>
+          <button type="submit" className={buttons.primary} disabled={!login.username.trim() || !login.password}>
+            {t("adopt.open")}
+          </button>
+        </form>
       )}
 
       {result && !result.ok && (

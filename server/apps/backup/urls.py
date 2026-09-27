@@ -11,6 +11,8 @@ backup_urls = [
     path("drive/callback", views.DriveCallbackView.as_view(), name="backup-drive-callback"),
     path("drive/unlink", views.DriveUnlinkView.as_view(), name="backup-drive-unlink"),
     path("drive/sync", views.DriveSyncView.as_view(), name="backup-drive-sync"),
+    # 1.1: a new PC opens a hotel from a backup (view only / work on it).
+    path("adopt", views.AdoptView.as_view(), name="backup-adopt"),
 ]
 
 owner_urls = [

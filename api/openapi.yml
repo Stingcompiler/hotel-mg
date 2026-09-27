@@ -236,6 +236,29 @@ paths:
                 items:
                   $ref: '#/components/schemas/LoginUser'
           description: ''
+  /api/v1/backup/adopt:
+    post:
+      operationId: backup_adopt_create
+      description: '1.1: a new PC opens a hotel from a backup, when the owner chooses
+        to — view only or work on it.'
+      tags:
+      - backup
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdoptRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdoptResult'
+          description: ''
   /api/v1/backup/drive/auth-url:
     post:
       operationId: backup_drive_auth_url_create
@@ -3101,6 +3124,39 @@ components:
           description: Parameters for extend / confirm_checkout.
       required:
       - action
+    AdoptRequestRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+          description: A backup of the hotel (.age).
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/ModeEnum'
+          description: |-
+            view: this PC becomes the owner's read-only copy; work: it replaces a reception PC.
+
+            * `view` - view
+            * `work` - work
+        username:
+          type: string
+        password:
+          type: string
+      required:
+      - file
+      - mode
+    AdoptResult:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/ModeEnum'
+        restarting:
+          type: boolean
+          description: The service restarts within seconds to open the hotel.
+      required:
+      - mode
+      - restarting
     AfterRoomStatusEnum:
       enum:
       - cleaning
@@ -4694,6 +4750,12 @@ components:
           type: boolean
           default: false
           description: «متابعة رغم ذلك» for an older file.
+        username:
+          type: string
+          description: '1.1: the owner''s or a manager''s login when this PC has no
+            key yet.'
+        password:
+          type: string
       required:
       - file
     ImportRun:
@@ -4740,7 +4802,8 @@ components:
           nullable: true
           readOnly: true
           description: 'Failed runs: corrupt / foreign_hotel / upgrade_required /
-            audit_chain_broken / older_backup / error'
+            audit_chain_broken / older_backup / credentials_required / credentials_wrong
+            / error'
         by:
           type: string
       required:
@@ -5118,6 +5181,14 @@ components:
       - bankak
       - transfer
       - total
+    ModeEnum:
+      enum:
+      - view
+      - work
+      type: string
+      description: |-
+        * `view` - view
+        * `work` - work
     Movement:
       type: object
       properties:
@@ -7437,6 +7508,10 @@ components:
           nullable: true
           description: 'Owner PC: public key to paste in the reception''s backup settings
             (public).'
+        can_adopt:
+          type: boolean
+          description: '1.1: a new PC (only the untouched default account): «استيراد
+            نسخة» may open a hotel here.'
         default_login:
           allOf:
           - $ref: '#/components/schemas/DefaultLogin'
@@ -7465,6 +7540,7 @@ components:
       - needs_setup
       - due_tasks
       - owner_public_key
+      - can_adopt
       - default_login
       - version
       - schema_version

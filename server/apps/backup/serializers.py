@@ -83,6 +83,9 @@ IMPORT_CODES = {
     "hotel": "foreign_hotel",
     "version": "upgrade_required",
     "audit": "audit_chain_broken",
+    # 1.1: a format 2 file opened with the owner's or a manager's own login (no local key yet)
+    "credentials_required": "credentials_required",
+    "credentials_wrong": "credentials_wrong",
 }
 
 
@@ -90,7 +93,8 @@ class ImportRunSerializer(serializers.ModelSerializer):
     by = serializers.CharField(source="created_by.full_name", default=None)
     checks = ImportCheckSerializer(many=True)
     code = serializers.SerializerMethodField(
-        help_text="Failed runs: corrupt / foreign_hotel / upgrade_required / audit_chain_broken / older_backup / error",
+        help_text="Failed runs: corrupt / foreign_hotel / upgrade_required / audit_chain_broken / older_backup / "
+        "credentials_required / credentials_wrong / error",
     )
 
     class Meta:
@@ -125,6 +129,25 @@ class ImportRunSerializer(serializers.ModelSerializer):
 class ImportRequestSerializer(serializers.Serializer):
     file = serializers.FileField(help_text="Encrypted backup (.age) from USB or the incoming folder.")
     allow_older = serializers.BooleanField(default=False, help_text="«متابعة رغم ذلك» for an older file.")
+    username = serializers.CharField(
+        required=False, allow_blank=True, help_text="1.1: the owner's or a manager's login when this PC has no key yet."
+    )
+    password = serializers.CharField(required=False, allow_blank=True, style={"input_type": "password"})
+
+
+class AdoptRequestSerializer(serializers.Serializer):
+    file = serializers.FileField(help_text="A backup of the hotel (.age).")
+    mode = serializers.ChoiceField(
+        choices=["view", "work"],
+        help_text="view: this PC becomes the owner's read-only copy; work: it replaces a reception PC.",
+    )
+    username = serializers.CharField(required=False, allow_blank=True)
+    password = serializers.CharField(required=False, allow_blank=True, style={"input_type": "password"})
+
+
+class AdoptResultSerializer(serializers.Serializer):
+    mode = serializers.ChoiceField(choices=["view", "work"])
+    restarting = serializers.BooleanField(help_text="The service restarts within seconds to open the hotel.")
 
 
 class OwnerStatusSerializer(serializers.Serializer):

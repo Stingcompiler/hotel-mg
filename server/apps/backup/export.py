@@ -1,7 +1,8 @@
 """Encrypted backup files (spec §9.1).
 
 VACUUM INTO → hotel.db copy; attachments (all weekly, else changed since the last full); manifest with
-SHA-256 per file; zip; age-encrypt to the owner; write to the backups folder and the second folder;
+SHA-256 per file; zip; age-encrypt to the hotel key (and a pre-1.1 owner key); a plain header carries the key
+slots (keyslots.py); write to the backups folder and the second folder;
 apply retention. Backups are device records (``BackupRun``), not audit entries, so a backup does not
 count as a "change" for the next one.
 """
@@ -24,7 +25,7 @@ from apps.billing.services import next_number
 from apps.core.hotel import current_hotel_id
 from apps.core.models import SCHEMA_VERSION
 
-from . import keys, rules
+from . import keys, keyslots, rules
 from .models import BackupRun, BackupSettings
 
 
@@ -78,8 +79,6 @@ def _record(kind: str, status: str, actor=None, **fields) -> BackupRun:
 def run_backup(actor=None, kind: str = BackupRun.Kind.MANUAL, now: datetime | None = None) -> BackupRun:
     now = now or timezone.now()
     config = backup_settings()
-    if not config.owner_recipient:
-        return _record(kind, BackupRun.Status.FAILED, actor, message="لم يُضبط مفتاح المالك العام في إعدادات النسخ.")
     audit_seq = AuditLog.objects.order_by("-seq").values_list("seq", flat=True).first() or 0
     last = _last_ok()
     if kind != BackupRun.Kind.MANUAL and last and last.audit_seq == audit_seq:
@@ -114,7 +113,19 @@ def run_backup(actor=None, kind: str = BackupRun.Kind.MANUAL, now: datetime | No
                     zf.writestr(rules.MANIFEST, rules.manifest_bytes(manifest))
                     for name, data in files.items():
                         zf.writestr(name, data)
-                encrypted = pyrage.encrypt(buf.getvalue(), [keys.recipient(config.owner_recipient)])
+                # 1.1: always to the hotel key (made here on first use), plus a pre-1.1 owner key when one is set,
+                # so owner PCs installed earlier keep opening new backups.
+                recipients = [keys.recipient(keys.ensure_hotel_key())]
+                if config.owner_recipient:
+                    recipients.append(keys.recipient(config.owner_recipient))
+                header = {
+                    "format": 2,
+                    "hotel_id": str(hotel_id),
+                    "seq": seq,
+                    "created_at": manifest["created_at"],
+                    "slots": keyslots.for_export(),
+                }
+                encrypted = rules.pack(header, pyrage.encrypt(buf.getvalue(), recipients))
                 name = rules.file_name(str(hotel_id), seq, timezone.localtime(now))
                 folder = settings.RUNTIME.backups_dir
                 folder.mkdir(parents=True, exist_ok=True)

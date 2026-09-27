@@ -8,6 +8,7 @@ import { keys, useSystemStatus } from "@/api/queries";
 import { stateColor } from "@/design/state";
 import { digits } from "@/i18n/digits";
 import { formatMoney } from "@/i18n/money";
+import { NewPcCard } from "@/features/backup/AdoptModal";
 import { t } from "@/i18n/t";
 import { useNow } from "@/lib/useNow";
 
@@ -247,6 +248,9 @@ export function RoomBoardPage() {
             <button type="button" onClick={() => navigate("/settings/roomTypes")} className="h-11 rounded-control border-0 bg-primary px-6 font-sans text-body font-semibold text-primary-text-on hover:bg-primary-hover">
               {t("board.firstRunAction")}
             </button>
+            <div className="mt-4 w-full max-w-[720px]">
+              <NewPcCard />
+            </div>
           </div>
         ) : shown.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-card border border-dashed border-border-strong text-center">

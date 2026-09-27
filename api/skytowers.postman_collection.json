@@ -324,6 +324,32 @@
       "name": "backup",
       "item": [
         {
+          "name": "backup_adopt_create",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/backup/adopt",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "backup",
+                "adopt"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "1.1: a new PC opens a hotel from a backup, when the owner chooses to — view only or work on it.",
+            "body": {
+              "mode": "formdata",
+              "formdata": []
+            }
+          }
+        },
+        {
           "name": "backup_drive_auth_url_create",
           "request": {
             "method": "POST",

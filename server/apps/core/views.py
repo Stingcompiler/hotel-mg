@@ -38,6 +38,12 @@ def _default_login() -> dict | None:
     }
 
 
+def _can_adopt() -> bool:
+    from apps.backup.adopt import is_fresh  # core must not import backup at module load
+
+    return is_fresh()
+
+
 class SystemStatusSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=["reception", "owner"])
     hotel_id = serializers.UUIDField(allow_null=True)
@@ -61,6 +67,9 @@ class SystemStatusSerializer(serializers.Serializer):
     )
     owner_public_key = serializers.CharField(
         allow_null=True, help_text="Owner PC: public key to paste in the reception's backup settings (public)."
+    )
+    can_adopt = serializers.BooleanField(
+        help_text="1.1: a new PC (only the untouched default account): «استيراد نسخة» may open a hotel here."
     )
     default_login = DefaultLoginSerializer(
         allow_null=True,
@@ -126,6 +135,7 @@ class SystemStatusView(APIView):
             "due_tasks": _due_tasks() if settings.SKYTOWERS_ROLE == "reception" else None,
             "owner_public_key": _owner_public_key() if settings.SKYTOWERS_ROLE == "owner" else None,
             "default_login": _default_login() if settings.SKYTOWERS_ROLE == "reception" else None,
+            "can_adopt": _can_adopt(),
             "version": settings.APP_VERSION,
             "schema_version": SCHEMA_VERSION,
             "spa_built": (settings.SPA_ROOT / "index.html").is_file(),

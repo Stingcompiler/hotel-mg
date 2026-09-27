@@ -18,9 +18,11 @@ from apps.accounts.services import require_confirmation
 from apps.audit import services as audit
 from apps.core.errors import ApiError
 
-from . import drive, export, keys, merge, rules, services
+from . import adopt, drive, export, keys, merge, rules, services
 from .models import BackupRun, ImportRun
 from .serializers import (
+    AdoptRequestSerializer,
+    AdoptResultSerializer,
     AuthUrlSerializer,
     BackupRunSerializer,
     BackupSettingsSerializer,
@@ -141,6 +143,7 @@ class OwnerImportView(APIView):
             source=ImportRun.Source.FILE,
             file_name=upload.name,
             allow_older=data.validated_data["allow_older"],
+            credentials=_credentials(data.validated_data),
         )
         code = (
             status.HTTP_201_CREATED
@@ -148,6 +151,28 @@ class OwnerImportView(APIView):
             else status.HTTP_422_UNPROCESSABLE_ENTITY
         )
         return Response(ImportRunSerializer(result.run).data, status=code)
+
+
+def _credentials(data: dict) -> tuple[str, str] | None:
+    username, password = (data.get("username") or "").strip(), data.get("password") or ""
+    return (username, password) if username and password else None
+
+
+class AdoptView(APIView):
+    """1.1: a new PC opens a hotel from a backup, when the owner chooses to — view only or work on it."""
+
+    permission_classes = [IsManager]
+    parser_classes = [MultiPartParser]
+
+    @extend_schema(request=AdoptRequestSerializer, responses={202: AdoptResultSerializer})
+    def post(self, request):
+        data = AdoptRequestSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        upload = data.validated_data["file"]
+        result = adopt.prepare(
+            upload.read(), upload.name, _credentials(data.validated_data), data.validated_data["mode"]
+        )
+        return Response(AdoptResultSerializer(result).data, status=status.HTTP_202_ACCEPTED)
 
 
 class OwnerImportRunsView(ListAPIView):
