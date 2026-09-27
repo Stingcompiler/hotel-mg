@@ -30,13 +30,31 @@ ROLES = ("reception", "owner")
 DEV_HOTEL_ID = uuid.UUID("5a7e0000-0000-4000-8000-000000000001")
 
 
+def installed_home() -> Path | None:
+    """The installed program's data folder (%ProgramData%\\SkyTowers); None off Windows."""
+    if sys.platform != "win32":
+        return None
+    return Path(os.environ.get("ProgramData", r"C:\ProgramData")) / "SkyTowers"
+
+
 def default_home() -> Path:
+    """SKYTOWERS_HOME, else the installed folder for the installed program (the PyInstaller bundle), else
+    ``server/.devdata``. A source checkout on a Windows PC never defaults to the installed folder: a
+    ``seed_demo`` run from the checkout once filled a freshly installed app with the demo hotel."""
     env = os.environ.get("SKYTOWERS_HOME")
     if env:
         return Path(env)
-    if sys.platform == "win32":
-        return Path(os.environ.get("ProgramData", r"C:\ProgramData")) / "SkyTowers"
+    installed = installed_home()
+    if installed is not None and getattr(sys, "frozen", False):
+        return installed
     return Path(__file__).resolve().parent.parent / ".devdata"
+
+
+def is_installed_home(home: Path) -> bool:
+    installed = installed_home()
+    return installed is not None and os.path.normcase(os.path.abspath(home)) == os.path.normcase(
+        os.path.abspath(installed)
+    )
 
 
 @dataclass(frozen=True)
