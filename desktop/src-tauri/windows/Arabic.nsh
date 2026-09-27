@@ -1,4 +1,4 @@
-﻿LangString addOrReinstall ${LANG_ARABIC} "إضافة المكوّنات أو إعادة التثبيت"
+LangString addOrReinstall ${LANG_ARABIC} "إضافة المكوّنات أو إعادة التثبيت"
 LangString alreadyInstalled ${LANG_ARABIC} "البرنامج مثبّت من قبل"
 LangString alreadyInstalledLong ${LANG_ARABIC} "الإصدار ${VERSION} من ${PRODUCTNAME} مثبّت على هذا الجهاز. اختر ما تريد ثم اضغط «التالي»."
 LangString appRunning ${LANG_ARABIC} "نافذة ${PRODUCTNAME} مفتوحة الآن. أغلقها (ومن أيقونتها بجانب الساعة اختر «خروج») ثم أعد المحاولة."
