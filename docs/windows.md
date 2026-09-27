@@ -105,7 +105,8 @@ Open `http://127.0.0.1:8471/` in Edge or Chrome. For frontend work run `npm run 
   a server started from a source checkout (`python -m service.run_waitress` without `build_spa.py`) holding the
   port — close it (`netstat -ano | findstr :8471`, then end that PID) and restart the service; or a broken install —
   `C:\Program Files\Sky Towers\server\_internal\static_spa\index.html` must exist; run the installer again.
-  `server.log` says the same at start-up («SPA missing» / «cannot listen»).
+  `server.log` says the same at start-up («SPA missing» / «cannot listen»). The installer and the service
+  itself end a foreign process holding the port (`skytowers-server.exe free-port`); our own executable is never ended.
 - **«الخادم المحلي غير متاح»**: the service is not running. `services.msc` → Sky Towers Server → Start, or
   `sc start SkyTowersServer` as administrator. The reason is in `server.log`.
 - **«ساعة الجهاز غير صحيحة»**: the Windows clock went back. Settings → Time & language → Set time

@@ -38,6 +38,9 @@
   nsExec::ExecToLog '"${SKYT_EXE}" --startup auto install'
   nsExec::ExecToLog '"${SKYT_EXE}" --startup auto update'
   nsExec::ExecToLog 'sc failure ${SKYT_SERVICE} reset= 86400 actions= restart/5000/restart/5000/restart/30000'
+  ; 127.0.0.1:8471 belongs to the service: a server left running from a source checkout would otherwise answer
+  ; in its place («واجهة البرنامج غير مبنية بعد»). Our own executable is never ended.
+  nsExec::ExecToLog '"${SKYT_EXE}" free-port'
   nsExec::ExecToLog 'sc start ${SKYT_SERVICE}'
 !macroend
 

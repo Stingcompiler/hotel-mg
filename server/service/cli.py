@@ -3,6 +3,7 @@
 skytowers-server.exe run                          # serve in this console (debugging)
 skytowers-server.exe init --role reception        # installer: write config.json once
 skytowers-server.exe manage <command> [args]      # Django management (migrate, backup_now, …)
+skytowers-server.exe free-port                    # installer: end a foreign process holding 127.0.0.1:8471
 skytowers-server.exe --startup auto install       # Windows service commands (pywin32)
 skytowers-server.exe                              # started by the Service Control Manager
 """
@@ -48,6 +49,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if command == "manage":
         _django_manage(argv[1:])
+        return 0
+    if command == "free-port":
+        from service import port, run_waitress
+
+        print(port.free_port(run_waitress.PORT))
         return 0
 
     from service import win_service  # Windows only
