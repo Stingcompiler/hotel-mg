@@ -1,5 +1,6 @@
 """API error shape: ``{"code": <stable machine code>, "detail": <Arabic message>}`` (spec §7)."""
 
+from django.core.exceptions import ImproperlyConfigured
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.http import Http404, HttpResponseNotFound, JsonResponse
 from rest_framework import exceptions, status
@@ -46,6 +47,10 @@ MESSAGES = {
     "method_not_allowed": "هذا الإجراء غير مسموح.",
     "throttled": "محاولات كثيرة. انتظر قليلًا ثم حاول مرة أخرى.",
     "server_unavailable": "تعذّر الاتصال بالخادم المحلي. تأكد أن خدمة Sky Towers تعمل ثم حاول مرة أخرى.",
+    "no_hotel": (
+        "هذا الجهاز مضبوط كجهاز المالك ولم يستورد نسخة بعد. إن كان جهاز الاستقبال فشغّل "
+        "«skytowers-server.exe init --role reception --force» ثم أعد تشغيل الخدمة."
+    ),
     "error": "حدث خطأ غير متوقع.",
 }
 
@@ -87,6 +92,11 @@ def api_not_found(request, exception=None):
 def api_exception_handler(exc, context):
     response = exception_handler(exc, context)
     if response is None:
+        if isinstance(exc, ImproperlyConfigured) and "hotel_id" in str(exc):
+            # An owner PC with no hotel yet asked to write hotel data (e.g. a login event): a clear 409, not a 500.
+            from rest_framework.response import Response
+
+            return Response(error_body("no_hotel"), status=status.HTTP_409_CONFLICT)
         return None
 
     if isinstance(exc, ApiError):

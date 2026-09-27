@@ -107,6 +107,11 @@ Open `http://127.0.0.1:8471/` in Edge or Chrome. For frontend work run `npm run 
   `C:\Program Files\Sky Towers\server\_internal\static_spa\index.html` must exist; run the installer again.
   `server.log` says the same at start-up («SPA missing» / «cannot listen»). The installer and the service
   itself end a foreign process holding the port (`skytowers-server.exe free-port`); our own executable is never ended.
+- **«تعذّر الاتصال بالخادم المحلي» right after the page opened, service RUNNING, and `system/status` says
+  `"role":"owner"` on the reception PC**: the installer's question was answered «لا» (or an older config.json said
+  owner). Switch the role without losing data, from an administrator prompt:
+  `sc stop SkyTowersServer` → `"C:\Program Files\Sky Towers\server\skytowers-server.exe" init --role reception --force`
+  → `sc start SkyTowersServer`. The hotel id is taken from the database that is already there.
 - **«الخادم المحلي غير متاح»**: the service is not running. `services.msc` → Sky Towers Server → Start, or
   `sc start SkyTowersServer` as administrator. The reason is in `server.log`.
 - **«ساعة الجهاز غير صحيحة»**: the Windows clock went back. Settings → Time & language → Set time

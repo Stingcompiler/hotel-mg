@@ -1,7 +1,7 @@
 {
   "name": "skytowers-desktop",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Sky Towers desktop shell (Tauri 2): window over the local service, tray, notifications, NSIS installer.",
   "scripts": {
     "tauri": "tauri",
