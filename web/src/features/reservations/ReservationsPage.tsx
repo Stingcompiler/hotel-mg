@@ -100,26 +100,29 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
   if (!board || !start || !end) return <div className="skeleton h-96 rounded-card" />;
   const days = Array.from({ length: span }, (_, i) => addDays(start, i));
   const floors = [...new Set(board.rooms.map((r) => r.floor))].sort((a, b) => a - b);
-  const rooms = board.rooms.filter((r) => r.in_service && (floor === null || r.floor === floor));
+  const rooms = board.rooms.filter((r) => r.in_service && (floor === null || r.floor === floor)).sort((a, b) => a.floor - b.floor || a.number.localeCompare(b.number, "en", { numeric: true }));
   const pct = (n: number) => `${(n / span) * 100}%`;
 
   type Bar = { key: string; from: number; to: number; label: string; sub: string; tone: string; onClick?: () => void; conflict?: boolean };
   const barsFor = (roomId: string, room: (typeof rooms)[number]): Bar[] => {
     const bars: Bar[] = list
-      .filter((r) => r.room === roomId && (r.status === "confirmed" || r.status === "checked_in"))
+      .filter((r) => r.room === roomId && (r.status === "confirmed" || r.status === "checked_in" || r.status === "checked_out"))
       .map((r) => {
         const overdue = r.status === "checked_in" && diffDays(r.check_out_date, today!) <= 0;
+        // Finished stays stay visible in grey (40 %) so a past window still reads; they open the stay like the others.
         const tone =
           r.status === "confirmed"
             ? `bg-bg-surface ${reservedSoon.border} ${reservedSoon.text}`
-            : `${stateColor(overdue ? "overdue" : "occupied").solid} text-primary-text-on`;
+            : r.status === "checked_out"
+              ? "bg-bg-surface-2 text-text-secondary opacity-40"
+              : `${stateColor(overdue ? "overdue" : "occupied").solid} text-primary-text-on`;
         return {
           key: r.id,
           from: Math.max(diffDays(r.check_in_date, start), 0),
           // An overdue stay still holds the room: draw it through today.
           to: Math.min(overdue ? Math.max(diffDays(today!, start) + 1, diffDays(r.check_out_date, start)) : diffDays(r.check_out_date, start), span),
           label: r.guest_name,
-          sub: r.status === "confirmed" ? (r.deposit ? t("reservations.depositSub", { amount: formatMoney(r.deposit) }) : t("reservations.stConfirmed")) : t(`duration.${r.duration_kind}`),
+          sub: r.status === "confirmed" ? (r.deposit ? t("reservations.depositSub", { amount: formatMoney(r.deposit) }) : t("reservations.stConfirmed")) : r.status === "checked_out" ? t("reservations.stOut") : t(`duration.${r.duration_kind}`),
           tone,
           onClick: () => (r.stay ? navigate(`/stays/${r.stay}`) : onPick(r.id)),
         };
@@ -151,6 +154,16 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
         <button type="button" onClick={() => setOffset(0)} className={`${buttons.secondary} h-9 px-3`}>
           {t("reservations.today")}
         </button>
+        <label className="flex items-center gap-2 text-label text-text-secondary">
+          {t("reservations.jumpTo")}
+          <input
+            type="date"
+            aria-label={t("reservations.jumpTo")}
+            value={start}
+            onChange={(e) => e.target.value && setOffset(diffDays(e.target.value, today!))}
+            className="h-9 rounded-control border border-border-strong bg-bg-surface px-2 font-sans text-body text-text-primary"
+          />
+        </label>
         <div className="w-40">
           <Select aria-label={t("reservations.allFloors")} value={floor ?? ""} onChange={(e) => setFloor(e.target.value === "" ? null : Number(e.target.value))}>
             <option value="">{t("reservations.allFloors")}</option>
@@ -188,6 +201,11 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
           <div className="grid grid-cols-[120px_1fr]">
             {rooms.map((room, i) => (
               <div key={room.id} className="contents">
+                {floor === null && (i === 0 || rooms[i - 1].floor !== room.floor) && (
+                  <div className="col-span-2 flex h-8 items-center border-b border-border bg-bg-surface-2 px-4 text-label text-text-secondary">
+                    {t("reservations.floor", { n: digits(String(room.floor)) })}
+                  </div>
+                )}
                 <div className={`flex h-14 items-center gap-2 border-b border-e border-border px-4 ${i % 2 ? "bg-bg-page" : "bg-bg-surface"}`}>
                   <span className="text-section-title font-bold">{digits(room.number)}</span>
                   <span className="text-label font-normal text-text-secondary">{room.room_type_name}</span>

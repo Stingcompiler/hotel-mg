@@ -10,6 +10,7 @@ import { useMe, useSystemStatus } from "@/api/queries";
 import { session } from "@/api/session";
 import { Segmented } from "@/components/ui/form";
 import { buttons } from "@/components/ui/Modal";
+import { Tabs } from "@/components/ui/Tabs";
 import { stateColor } from "@/design/state";
 import { nights, staysCount } from "@/i18n/counts";
 import { formatDate, formatDayMonth, formatMonthYear, formatRange } from "@/i18n/dates";
@@ -249,20 +250,16 @@ function GuestProfile({ id, offline, canWrite, onEdit }: { id: string; offline: 
         </div>
       </div>
 
-      <div role="tablist" className="flex flex-none items-center gap-1 border-b border-border px-3">
-        {(["stays", "companions", "id"] as const).map((k) => (
-          <button
-            key={k}
-            type="button"
-            role="tab"
-            aria-selected={tab === k}
-            onClick={() => setTab(k)}
-            className={`-mb-px inline-flex h-11 items-center border-0 border-b-2 bg-transparent px-3 font-sans text-body ${tab === k ? "border-primary font-semibold text-primary" : "border-transparent text-text-secondary"}`}
-          >
-            {t(k === "stays" ? "guests.tabStays" : k === "companions" ? "guests.tabCompanions" : "guests.tabId")}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        size="sm"
+        value={tab}
+        onChange={setTab}
+        items={[
+          { key: "stays", label: t("guests.tabStays"), count: history.length },
+          { key: "companions", label: t("guests.tabCompanions"), count: companions.length },
+          { key: "id", label: t("guests.tabId") },
+        ]}
+      />
 
       <div className="min-h-0 flex-1 overflow-auto">
         {tab === "stays" &&

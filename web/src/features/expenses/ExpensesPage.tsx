@@ -7,7 +7,8 @@ import type { components } from "@api/schema";
 import { api, ApiError, data } from "@/api/client";
 import { keys, useCurrentShift, useHotelSettings, useSystemStatus } from "@/api/queries";
 import { Drawer } from "@/components/ui/Drawer";
-import { ErrorBanner, Field, Segmented, Select, TextInput } from "@/components/ui/form";
+import { session } from "@/api/session";
+import { ErrorBanner, Field, MoneyInput, Segmented, Select, TextInput } from "@/components/ui/form";
 import { buttons, Modal } from "@/components/ui/Modal";
 import { openPrint } from "@/features/print/PrintPage";
 import { useRoomBoard } from "@/features/rooms/RoomBoardPage";
@@ -103,6 +104,8 @@ export function ExpensesPage() {
         </div>
       )}
 
+      {!offline && session.role !== "owner" && <QuickExpense threshold={threshold} onSaved={refresh} onNeedsReceipt={() => setCreating(true)} />}
+
       <ExpenseTable
         rows={rows}
         total={list.data?.count ?? 0}
@@ -137,6 +140,76 @@ export function ExpensesPage() {
         />
       )}
     </div>
+  );
+}
+
+/**
+ * Gap Fill «Quick Expense»: one row above the list for the everyday cash expense (amount, category, note) with no
+ * drawer. Anything above the receipt threshold, or not cash, goes through «مصروف جديد».
+ */
+function QuickExpense({ threshold, onSaved, onNeedsReceipt }: { threshold: number; onSaved: () => void; onNeedsReceipt: () => void }) {
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState<Category>("supplies");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const minor = parseMoney(amount);
+  const needsReceipt = minor !== null && minor > threshold;
+  const save = useMutation({
+    mutationFn: () => data(api.POST("/api/v1/expenses/", { body: { category, amount: minor!, note: note.trim(), method: "cash", reference: "", room: null } })),
+    onSuccess: () => {
+      notice(t("expenses.saved", { amount: money(minor!) }));
+      setAmount("");
+      setNote("");
+      setError(null);
+      onSaved();
+    },
+    onError: (e) => setError(e instanceof ApiError ? e.message : t("errors.error")),
+  });
+  const submit = () => {
+    if (minor === null || minor <= 0) return setError(t("expenses.errAmount"));
+    if (!note.trim()) return setError(t("expenses.errNote"));
+    if (needsReceipt) return onNeedsReceipt();
+    setError(null);
+    save.mutate();
+  };
+  return (
+    <section className="flex flex-col gap-2 rounded-card border border-border bg-bg-surface px-4 py-3">
+      <div className="flex flex-wrap items-end gap-3">
+        <span className="text-label text-text-secondary">{t("expenses.quickTitle")}</span>
+        <label className="flex w-40 flex-col gap-1">
+          <span className="sr-only">{t("expenses.quickAmount")}</span>
+          <MoneyInput
+            value={amount}
+            placeholder={t("expenses.quickAmount")}
+            invalid={!!amount && (minor === null || minor <= 0)}
+            onChange={(e) => setAmount(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+          />
+        </label>
+        <div className="w-40">
+          <Select aria-label={t("expenses.category")} value={category} onChange={(e) => setCategory(e.target.value as Category)}>
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {t(`expenseCategory.${c}`)}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <TextInput
+          aria-label={t("expenses.quickNote")}
+          placeholder={t("expenses.quickNote")}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          className="max-w-md flex-1"
+        />
+        <button type="button" disabled={save.isPending} onClick={submit} className={`${buttons.primary} h-9 px-4`}>
+          {needsReceipt ? t("expenses.new") : t("expenses.quickSave")}
+        </button>
+        <span className="text-label font-normal text-text-secondary">{t("expenses.quickHint", { amount: money(threshold) })}</span>
+      </div>
+      {error && <ErrorBanner>{error}</ErrorBanner>}
+    </section>
   );
 }
 

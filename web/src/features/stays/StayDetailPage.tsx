@@ -6,6 +6,7 @@ import type { components } from "@api/schema";
 
 import { useSystemStatus } from "@/api/queries";
 import { buttons } from "@/components/ui/Modal";
+import { Tabs } from "@/components/ui/Tabs";
 import { stateColor } from "@/design/state";
 import { openPrint } from "@/features/print/PrintPage";
 import { days, nights } from "@/i18n/counts";
@@ -173,28 +174,17 @@ export function StayDetailPage() {
       </div>
 
       <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
-        <div role="tablist" className="flex h-12 flex-none items-center gap-1 border-b border-border px-4">
-          {tabs.map((tb) => (
-            <button
-              key={tb.key}
-              type="button"
-              role="tab"
-              aria-selected={tab === tb.key}
-              onClick={() => setTab(tb.key)}
-              className={`-mb-px inline-flex h-12 items-center gap-1.5 border-0 border-b-2 bg-transparent px-4 font-sans text-body ${
-                tab === tb.key ? "border-primary font-semibold text-primary" : "border-transparent font-medium text-text-secondary"
-              }`}
-            >
-              {tb.label}
-              {tb.count ? <span className="text-label font-normal text-text-secondary">{digits(String(tb.count))}</span> : null}
+        <Tabs
+          items={tabs}
+          value={tab}
+          onChange={setTab}
+          end={
+            <button type="button" onClick={() => openPrint("invoice", folio.id)} className={`${buttons.secondary} h-9 px-3`}>
+              <Printer className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
+              {t("print.printInvoice")}
             </button>
-          ))}
-          <div className="flex-1" />
-          <button type="button" onClick={() => openPrint("invoice", folio.id)} className={`${buttons.secondary} h-9 px-3`}>
-            <Printer className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
-            {t("print.printInvoice")}
-          </button>
-        </div>
+          }
+        />
         {tab === "invoice" && <InvoiceTab ledger={ledger} balance={totals.balance} />}
         {tab === "payments" && <PaymentsTab ledger={payments} />}
         {tab === "companions" && <CompanionsTab companions={stay.guest.companions} />}
