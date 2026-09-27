@@ -2778,6 +2778,8 @@ export interface components {
             second_at: string | null;
             repeat_hours: number;
             affected_stays: number;
+            /** @description Up to eight of the affected stays, soonest ending first. */
+            stays: components["schemas"]["PreviewStay"][];
         };
         PreviewRequestRequest: {
             /** Format: date */
@@ -2790,6 +2792,12 @@ export interface components {
             at_time?: string;
             /** @default 0 */
             repeat_hours?: number;
+        };
+        PreviewStay: {
+            room: string;
+            guest: string;
+            /** Format: date */
+            last_night: string;
         };
         Quote: {
             /** Format: date */
@@ -2845,7 +2853,7 @@ export interface components {
             rows: {
                 [key: string]: unknown;
             }[];
-            /** @description title, as_of, date_from, date_to, formula, note, tiles, totals */
+            /** @description title, as_of, date_from, date_to, formula, note, tiles, totals, filters */
             meta: {
                 [key: string]: unknown;
             };
@@ -4987,8 +4995,14 @@ export interface operations {
                 date_to?: string;
                 /** @description ending_soon window (default 3) */
                 days?: number;
+                /** @description expenses: supplies … other */
+                expense_category?: string;
+                /** @description revenue (collected), expenses */
+                method?: "bankak" | "cash" | "transfer";
                 /** @description audit_log: user, action, entity or id */
                 q?: string;
+                /** @description room type id: revenue, debts, current_guests, arrivals_departures */
+                room_type?: string;
                 /** @description debts */
                 status?: "all" | "due" | "late";
                 /** @description arrivals_departures */
@@ -5023,9 +5037,15 @@ export interface operations {
                 date_to?: string;
                 /** @description ending_soon window (default 3) */
                 days?: number;
+                /** @description expenses: supplies … other */
+                expense_category?: string;
                 format: "csv" | "xlsx";
+                /** @description revenue (collected), expenses */
+                method?: "bankak" | "cash" | "transfer";
                 /** @description audit_log: user, action, entity or id */
                 q?: string;
+                /** @description room type id: revenue, debts, current_guests, arrivals_departures */
+                room_type?: string;
                 /** @description debts */
                 status?: "all" | "due" | "late";
                 /** @description arrivals_departures */

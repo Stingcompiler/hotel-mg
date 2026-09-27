@@ -1639,6 +1639,20 @@ paths:
         schema:
           type: integer
         description: ending_soon window (default 3)
+      - in: query
+        name: expense_category
+        schema:
+          type: string
+        description: 'expenses: supplies … other'
+      - in: query
+        name: method
+        schema:
+          type: string
+          enum:
+          - bankak
+          - cash
+          - transfer
+        description: revenue (collected), expenses
       - in: path
         name: name
         schema:
@@ -1649,6 +1663,11 @@ paths:
         schema:
           type: string
         description: 'audit_log: user, action, entity or id'
+      - in: query
+        name: room_type
+        schema:
+          type: string
+        description: 'room type id: revenue, debts, current_guests, arrivals_departures'
       - in: query
         name: status
         schema:
@@ -1713,6 +1732,11 @@ paths:
           type: integer
         description: ending_soon window (default 3)
       - in: query
+        name: expense_category
+        schema:
+          type: string
+        description: 'expenses: supplies … other'
+      - in: query
         name: format
         schema:
           type: string
@@ -1720,6 +1744,15 @@ paths:
           - csv
           - xlsx
         required: true
+      - in: query
+        name: method
+        schema:
+          type: string
+          enum:
+          - bankak
+          - cash
+          - transfer
+        description: revenue (collected), expenses
       - in: path
         name: name
         schema:
@@ -1730,6 +1763,11 @@ paths:
         schema:
           type: string
         description: 'audit_log: user, action, entity or id'
+      - in: query
+        name: room_type
+        schema:
+          type: string
+        description: 'room type id: revenue, debts, current_guests, arrivals_departures'
       - in: query
         name: status
         schema:
@@ -5792,12 +5830,18 @@ components:
           type: integer
         affected_stays:
           type: integer
+        stays:
+          type: array
+          items:
+            $ref: '#/components/schemas/PreviewStay'
+          description: Up to eight of the affected stays, soonest ending first.
       required:
       - last_night
       - first_at
       - second_at
       - repeat_hours
       - affected_stays
+      - stays
     PreviewRequestRequest:
       type: object
       properties:
@@ -5825,6 +5869,20 @@ components:
           minimum: 0
           default: 0
       required:
+      - last_night
+    PreviewStay:
+      type: object
+      properties:
+        room:
+          type: string
+        guest:
+          type: string
+        last_night:
+          type: string
+          format: date
+      required:
+      - room
+      - guest
       - last_night
     Quote:
       type: object
@@ -5946,7 +6004,8 @@ components:
         meta:
           type: object
           additionalProperties: {}
-          description: title, as_of, date_from, date_to, formula, note, tiles, totals
+          description: title, as_of, date_from, date_to, formula, note, tiles, totals,
+            filters
       required:
       - name
       - columns
