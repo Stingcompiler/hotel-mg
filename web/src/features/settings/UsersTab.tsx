@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { components } from "@api/schema";
 
 import { api, data } from "@/api/client";
+import { useMe } from "@/api/queries";
 import { ErrorBanner, Field, Segmented, TextInput } from "@/components/ui/form";
 import { buttons, Modal } from "@/components/ui/Modal";
 import { Toggle } from "@/components/ui/Toggle";
@@ -16,7 +17,7 @@ import { Cancelled, useConfirmGate } from "./confirm";
 import { apiErrorText, Card, Footnote, HeadRow, linkButton, smallButton } from "./shared";
 
 type User = components["schemas"]["User"];
-type Role = "reception" | "manager";
+type Role = "reception" | "manager" | "owner";
 const GRID = "grid grid-cols-[1.4fr_1fr_1fr_100px_1fr_110px_80px] items-center gap-4 px-4";
 const USERS = ["settings", "users"] as const;
 
@@ -126,7 +127,7 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
   const [form, setForm] = useState({
     username: user?.username ?? "",
     full_name: user?.full_name ?? "",
-    role: (user?.role === "manager" ? "manager" : "reception") as Role,
+    role: (user?.role ?? "reception") as Role,
     pin: "",
     password: "",
   });
@@ -134,6 +135,8 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
   const [busy, setBusy] = useState(false);
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
   const owner = user?.role === "owner";
+  // Only the owner may give the owner role (accounts.rules.can_manage_user).
+  const actorIsOwner = useMe().data?.role === "owner";
 
   const action = () => {
     if (!user) return t("settings.users.actCreate", { name: form.full_name });
@@ -163,6 +166,7 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
         }
         const body: components["schemas"]["PatchedUserUpdateRequest"] = { version: user.version };
         if (form.full_name.trim() !== user.full_name) body.full_name = form.full_name.trim();
+        if (form.username.trim() && form.username.trim() !== user.username) body.username = form.username.trim();
         if (!owner && form.role !== user.role) body.role = form.role;
         if (form.password) body.password = form.password;
         if (Object.keys(body).length > 1) await data(api.PATCH("/api/v1/users/{id}", { params: { path: { id: user.id } }, headers, body }));
@@ -177,7 +181,7 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
   };
 
   const pinOk = user ? form.pin === "" || /^\d{4,6}$/.test(form.pin) : /^\d{4,6}$/.test(form.pin);
-  const needsPassword = !user && form.role === "manager";
+  const needsPassword = !user && form.role !== "reception";
   const valid = form.full_name.trim() && (user || form.username.trim()) && pinOk && (!needsPassword || form.password);
 
   return (
@@ -202,7 +206,7 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
           <TextInput value={form.full_name} onChange={(e) => set({ full_name: e.target.value })} />
         </Field>
         <Field label={t("settings.users.col_login")} required={!user}>
-          <TextInput dir="ltr" value={form.username} readOnly={!!user} onChange={(e) => set({ username: e.target.value })} />
+          <TextInput dir="ltr" value={form.username} onChange={(e) => set({ username: e.target.value })} />
         </Field>
       </div>
       {!owner && (
@@ -214,6 +218,7 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
             options={[
               { value: "reception", label: t("roles.reception") },
               { value: "manager", label: t("roles.manager") },
+              ...(actorIsOwner ? [{ value: "owner" as Role, label: t("roles.owner") }] : []),
             ]}
           />
         </Field>

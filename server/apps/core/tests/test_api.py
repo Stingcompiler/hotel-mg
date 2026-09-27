@@ -32,6 +32,7 @@ def test_system_status_is_public(api):
         "needs_setup": True,
         "due_tasks": 0,
         "owner_public_key": None,
+        "default_login": None,
         "version": settings.APP_VERSION,
         "schema_version": SCHEMA_VERSION,
         "spa_built": body["spa_built"],

@@ -36,6 +36,11 @@ def setup_django() -> str:
     _log_to_file(cfg.home / "logs")
     # Updates: a newer build migrates the database on its first start (spec §11).
     call_command("migrate", interactive=False, verbosity=0)
+    if cfg.role == "reception":
+        # A new install opens on the login page with the default owner account, never a setup form.
+        from apps.accounts.services import ensure_default_owner
+
+        ensure_default_owner()
     if cfg.role == "owner":
         # The owner's backup key is made on the first start; the login page shows its public half.
         from apps.backup import keys

@@ -3540,7 +3540,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"version\": 0,\n  \"full_name\": \"\",\n  \"role\": \"owner\",\n  \"is_active\": false,\n  \"password\": \"\"\n}"
+              "raw": "{\n  \"version\": 0,\n  \"username\": \"\",\n  \"full_name\": \"\",\n  \"role\": \"owner\",\n  \"is_active\": false,\n  \"password\": \"\"\n}"
             }
           }
         },

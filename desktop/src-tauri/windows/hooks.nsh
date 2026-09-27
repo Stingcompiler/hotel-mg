@@ -1,5 +1,5 @@
 ; Sky Towers installer hooks (spec §11), included by the Tauri NSIS template.
-;   install:   role (استقبال / مالك) → config.json once → ACLs on %ProgramData%\SkyTowers → Defender exclusion
+;   install:   config.json once (no question; the default owner account is created on first start) → ACLs on %ProgramData%\SkyTowers → Defender exclusion
 ;              → Windows service «SkyTowersServer» (auto start, restart on failure) → start
 ;   upgrade:   stop the service and take a pre-upgrade backup with the old build; the new build migrates on start
 ;   uninstall: stop and remove the service; %ProgramData%\SkyTowers (database, backups, keys) is never deleted
@@ -26,15 +26,9 @@
 
 !macro NSIS_HOOK_POSTINSTALL
   SetShellVarContext all
-  ; Role: asked once; an existing config.json (upgrade) is kept as it is.
-  IfFileExists "$COMMONAPPDATA\SkyTowers\config.json" skyt_config_done 0
-    ; The buttons follow the language of Windows (Yes/No on an English Windows), so the text names both.
-    MessageBox MB_YESNO|MB_ICONQUESTION "هل هذا جهاز الاستقبال؟$\r$\n$\r$\n• اضغط «نعم» (Yes) إذا كان هذا الجهاز في مكتب الاستقبال: عليه يسجّل الموظفون الحجوزات والدفعات.$\r$\n$\r$\n• اضغط «لا» (No) إذا كان هذا جهاز المالك: لمتابعة الأرقام والتقارير فقط.$\r$\n$\r$\nإذا لم تكن متأكدًا فاضغط «نعم»." /SD IDYES IDYES skyt_reception
-      nsExec::ExecToLog '"${SKYT_EXE}" init --role owner'
-      Goto skyt_config_done
-    skyt_reception:
-      nsExec::ExecToLog '"${SKYT_EXE}" init --role reception'
-  skyt_config_done:
+  ; No question (owner decision 2026-09-27): every PC installs the same way and opens on the login page with the
+  ; default owner account. init writes config.json once; an upgrade keeps the existing file (and its role).
+  nsExec::ExecToLog '"${SKYT_EXE}" init'
 
   ; Only Administrators and SYSTEM (the service account) write the data folder; users may read.
   nsExec::ExecToLog 'icacls "$COMMONAPPDATA\SkyTowers" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F *S-1-5-32-545:(OI)(CI)RX /T /C /Q'

@@ -44,6 +44,10 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False, help_text="May open the read-only Django admin.")
     failed_attempts = models.PositiveSmallIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
+    default_password = models.BooleanField(
+        default=False,
+        help_text="Still the install's default password (the login page shows it; a reminder after login).",
+    )
 
     objects = UserManager()
 
