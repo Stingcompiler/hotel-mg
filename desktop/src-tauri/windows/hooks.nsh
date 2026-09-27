@@ -11,6 +11,9 @@
   SetShellVarContext all
   IfFileExists "${SKYT_EXE}" 0 skyt_fresh
     DetailPrint "Stopping ${SKYT_SERVICE} and taking a pre-upgrade backup…"
+    ; No automatic restart while its files are replaced: the recovery actions (set again after install) would
+    ; bring an ended old build back within 5 s, it would lock its exe, and a silent install skips locked files.
+    nsExec::ExecToLog 'sc failure ${SKYT_SERVICE} reset= 0 actions= ""'
     nsExec::ExecToLog 'sc stop ${SKYT_SERVICE}'
     ; Builds before 1.0.5 hang in STOP_PENDING while the app window is connected: give the stop time, then end the
     ; process so its files can be replaced (SQLite keeps committed data). A stopped service makes this a no-op.
@@ -50,6 +53,7 @@
 !macroend
 
 !macro NSIS_HOOK_PREUNINSTALL
+  nsExec::ExecToLog 'sc failure ${SKYT_SERVICE} reset= 0 actions= ""'
   nsExec::ExecToLog 'sc stop ${SKYT_SERVICE}'
   Sleep 8000
   nsExec::ExecToLog 'taskkill /F /IM skytowers-server.exe'
