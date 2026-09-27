@@ -28,7 +28,7 @@ def setup_django() -> str:
     # A hotel adopted from a backup on this PC (1.1) takes its files and role before the database opens.
     from service import pending_import
 
-    if pending_import.apply(cfg.home):
+    if pending_import.apply(cfg.home) or runtime.promote_empty_owner(cfg.home):
         cfg = runtime.load()
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"config.settings.{cfg.role}")
 

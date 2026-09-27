@@ -53,3 +53,31 @@ def test_init_force_switches_the_role_and_keeps_the_databases_hotel(tmp_path):
     assert raw == {"role": "reception", "hotel_id": str(hotel)}
     assert runtime.init_config(tmp_path, "owner", force=True) is True
     assert json.loads((tmp_path / "config.json").read_text())["hotel_id"] == str(hotel)  # the owner keeps it too
+
+
+def test_an_owner_pc_that_never_opened_a_hotel_becomes_a_hotel_pc(tmp_path):
+    """1.1: no «إعداد جهاز المالك» screen — it starts like a new install, on the login page."""
+    (tmp_path / "config.json").write_text(json.dumps({"role": "owner", "hotel_id": ""}), encoding="utf-8")
+    assert runtime.promote_empty_owner(tmp_path) is True
+    config = json.loads((tmp_path / "config.json").read_text(encoding="utf-8"))
+    assert config["role"] == "reception" and uuid.UUID(config["hotel_id"])
+    assert runtime.promote_empty_owner(tmp_path) is False  # a hotel PC is left alone
+
+
+def test_an_owner_pc_holding_an_imported_hotel_keeps_its_role(tmp_path):
+    import sqlite3
+
+    (tmp_path / "config.json").write_text(
+        json.dumps({"role": "owner", "hotel_id": str(uuid.uuid4())}), encoding="utf-8"
+    )
+    (tmp_path / "data").mkdir()
+    con = sqlite3.connect(tmp_path / "data" / "hotel.db")
+    con.execute("create table accounts_user (id text)")
+    con.execute("insert into accounts_user values ('u1')")
+    con.commit()
+    con.close()
+    assert runtime.users_in_database(tmp_path / "data" / "hotel.db") == 1
+    assert runtime.promote_empty_owner(tmp_path) is False
+    assert json.loads((tmp_path / "config.json").read_text(encoding="utf-8"))["role"] == "owner"
+    (tmp_path / "data" / "hotel.db").write_bytes(b"not a database")
+    assert runtime.users_in_database(tmp_path / "data" / "hotel.db") == 0

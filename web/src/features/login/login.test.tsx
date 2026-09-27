@@ -168,3 +168,19 @@ test("«دخول سريع» switches to the PIN pad and back", async () => {
   fireEvent.click(screen.getByRole("button", { name: "الدخول باسم المستخدم وكلمة المرور" }));
   expect(await screen.findByRole("heading", { name: "تسجيل الدخول" })).toBeInTheDocument();
 });
+test("an owner PC with no accounts still opens on the login fields, never a setup screen", async () => {
+  status = { ...STATUS, role: "owner", owner_public_key: "age1xyz", needs_setup: false };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: Request) => {
+      const url = new URL(input.url);
+      if (url.pathname === "/api/v1/auth/users") return json(200, []);
+      if (url.pathname === "/api/v1/system/status") return json(200, status);
+      return json(404, { code: "not_found" });
+    }),
+  );
+  renderLogin("password");
+  expect(await screen.findByRole("heading", { name: "تسجيل الدخول" })).toBeInTheDocument();
+  expect(screen.getByLabelText("اسم المستخدم")).toBeInTheDocument();
+  expect(screen.queryByText("إعداد جهاز المالك")).not.toBeInTheDocument();
+});

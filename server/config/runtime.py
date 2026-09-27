@@ -163,3 +163,33 @@ def hotel_in_database(db_path: Path) -> uuid.UUID | None:
     except sqlite3.Error:
         return None
     return uuid.UUID(str(row[0])) if row and row[0] else None
+
+
+def users_in_database(db_path: Path) -> int:
+    """How many accounts the database holds, without Django (0 when there is no database yet)."""
+    import sqlite3
+
+    if not db_path.is_file():
+        return 0
+    try:
+        con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        try:
+            return con.execute("select count(*) from accounts_user").fetchone()[0]
+        finally:
+            con.close()
+    except sqlite3.Error:
+        return 0
+
+
+def promote_empty_owner(home: Path) -> bool:
+    """An owner PC that never opened a hotel (no accounts) becomes a hotel PC (1.1, no setup screens).
+
+    Installers before 1.1 asked for the role; such a PC opened on «إعداد جهاز المالك» with a key to copy. Now it
+    starts like any new install — the login page with the default owner account — and the owner opens a hotel from
+    a backup only when he wants («جهاز جديد»). An owner PC holding an imported hotel keeps its role. Returns True
+    when config.json was rewritten.
+    """
+    cfg = load(home)
+    if cfg.role != "owner" or users_in_database(cfg.db_path):
+        return False
+    return init_config(home, "reception", force=True)
