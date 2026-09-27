@@ -2,4 +2,5 @@
 *.ps1 text eol=crlf
 *.png binary
 *.ico binary
+*.bmp binary
 design-package/** -diff linguist-vendored

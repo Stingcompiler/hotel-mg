@@ -21,7 +21,8 @@
   SetShellVarContext all
   ; Role: asked once; an existing config.json (upgrade) is kept as it is.
   IfFileExists "$COMMONAPPDATA\SkyTowers\config.json" skyt_config_done 0
-    MessageBox MB_YESNO|MB_ICONQUESTION "هل هذا جهاز الاستقبال؟$\r$\n$\r$\nنعم: جهاز الاستقبال — تُسجَّل فيه كل عمليات الفندق.$\r$\nلا: جهاز المالك — للعرض واستيراد النسخ فقط." /SD IDYES IDYES skyt_reception
+    ; The buttons follow the language of Windows (Yes/No on an English Windows), so the text names both.
+    MessageBox MB_YESNO|MB_ICONQUESTION "هل هذا جهاز الاستقبال؟$\r$\n$\r$\n• اضغط «نعم» (Yes) إذا كان هذا الجهاز في مكتب الاستقبال: عليه يسجّل الموظفون الحجوزات والدفعات.$\r$\n$\r$\n• اضغط «لا» (No) إذا كان هذا جهاز المالك: لمتابعة الأرقام والتقارير فقط.$\r$\n$\r$\nإذا لم تكن متأكدًا فاضغط «نعم»." /SD IDYES IDYES skyt_reception
       nsExec::ExecToLog '"${SKYT_EXE}" init --role owner'
       Goto skyt_config_done
     skyt_reception:
