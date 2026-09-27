@@ -27,10 +27,12 @@ class Report:
     totals: dict = field(default_factory=dict)  # column key → total
     formula: str = ""
     note: str = ""
+    filters: list[dict] = field(default_factory=list)  # [{key, label, value}] — the filters applied, for print
 
     def meta(self) -> dict:
         return {
             "title": self.title,
+            "filters": self.filters,
             "as_of": timezone.now(),
             "date_from": self.period[0] if self.period else None,
             "date_to": self.period[1] if self.period else None,

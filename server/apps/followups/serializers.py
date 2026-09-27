@@ -157,9 +157,16 @@ class PreviewRequestSerializer(serializers.Serializer):
     repeat_hours = serializers.IntegerField(min_value=0, max_value=168, default=0)
 
 
+class PreviewStaySerializer(serializers.Serializer):
+    room = serializers.CharField()
+    guest = serializers.CharField()
+    last_night = serializers.DateField()
+
+
 class PreviewSerializer(serializers.Serializer):
     last_night = serializers.DateField()
     first_at = serializers.DateTimeField()
     second_at = serializers.DateTimeField(allow_null=True)
     repeat_hours = serializers.IntegerField()
     affected_stays = serializers.IntegerField()
+    stays = PreviewStaySerializer(many=True, help_text="Up to eight of the affected stays, soonest ending first.")

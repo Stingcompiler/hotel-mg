@@ -174,3 +174,30 @@ def test_invoice_masks_the_id_number_for_reception(seeded):
     folio = Reservation.objects.get(room__number="203", status="checked_in").folio
     doc = client.get(f"/api/v1/folios/{folio.pk}/invoice").json()
     assert doc["guest"]["id_number"] == "••••23-7"
+
+
+def test_report_filters_narrow_rows_and_are_echoed_in_meta(api_as_manager):
+    from apps.rooms.models import RoomType
+
+    double = RoomType.objects.get(name="مزدوجة")
+    everyone = get(api_as_manager, "current_guests")["rows"]
+    doubles = get(api_as_manager, "current_guests", room_type=str(double.pk))
+    assert 0 < len(doubles["rows"]) < len(everyone)
+    assert doubles["meta"]["filters"] == [{"key": "room_type", "label": "نوع الغرفة", "value": "مزدوجة"}]
+    assert get(api_as_manager, "current_guests")["meta"]["filters"] == []
+
+    cash_only = get(api_as_manager, "revenue", method="cash")
+    assert cash_only["meta"]["totals"]["bankak"] == 0 and cash_only["meta"]["totals"]["transfer"] == 0
+    assert cash_only["meta"]["totals"]["collected"] == cash_only["meta"]["totals"]["cash"]
+    assert cash_only["meta"]["filters"][0]["value"] == "نقدي"
+
+    supplies = get(api_as_manager, "expenses", expense_category="supplies")["rows"]
+    assert supplies and all(r["category"] == "مستلزمات" for r in supplies)
+
+    for name, bad in (
+        ("current_guests", {"room_type": "not-a-uuid"}),
+        ("expenses", {"method": "gold"}),
+        ("expenses", {"expense_category": "nope"}),
+    ):
+        res = api_as_manager.get(f"/api/v1/reports/{name}", bad)
+        assert res.status_code == 400 and res.json()["code"] == "validation_error", bad

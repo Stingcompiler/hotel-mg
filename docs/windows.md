@@ -61,6 +61,22 @@ service migrates the database on start. Uninstalling never deletes `%ProgramData
 | Service log | `%ProgramData%\SkyTowers\logs\server.log` («فتح سجل الأخطاء» on the start page) |
 | Owner key (owner PC only) | `%ProgramData%\SkyTowers\keys\` — keep a copy offline; backups cannot be opened without it |
 
+### Restoring a reception PC from a backup (disaster recovery)
+
+If the reception PC is lost, install Sky Towers on the new PC as *reception*, then, from an administrator
+command prompt with the service stopped:
+
+```bat
+sc stop SkyTowersServer
+cd "C:\Program Files\Sky Towers\server"
+skytowers-server.exe manage restore_full D:\skytowers-5a7e0000-000117-20260926-2053.age --identity D:\owner.key
+sc start SkyTowersServer
+```
+
+`owner.key` is the owner PC's `%ProgramData%\SkyTowers\keys\owner.key`, copied for the restore only — delete the
+copy afterwards. The previous database and attachments are kept in `%ProgramData%\SkyTowers\backups\pre-restore-<stamp>\`.
+The command refuses a file from another hotel, a tampered file, the wrong key, or a database that is still in use.
+
 ## B. From the source (development)
 
 Needs Python 3.12 and Node.js 20+.

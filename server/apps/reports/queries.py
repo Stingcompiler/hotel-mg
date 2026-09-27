@@ -11,17 +11,68 @@ from apps.audit import rules as audit_rules
 from apps.audit import services as audit
 from apps.billing.models import Folio, FolioLine, Payment
 from apps.billing.services import FolioTotals, balances_by_reservation
-from apps.cash.models import Expense, Shift
+from apps.cash.models import Expense, ExpenseCategory, PaymentMethod, Shift
 from apps.cash.services import ShiftTotals
 from apps.core import arabic
 from apps.core.errors import ApiError
 from apps.core.models import HotelSettings
-from apps.rooms.models import Room, RoomStatus, RoomStatusHistory
+from apps.rooms.models import Room, RoomStatus, RoomStatusHistory, RoomType
 from apps.stays import rules as stay_rules
 from apps.stays.models import DurationKind, Reservation, ReservationStatus, Stay, StaySegment
 
 from . import rules
 from .framework import Column, Params, Report, report
+
+# --- Optional filters (audit UI/UX §6.10): validated once, echoed in meta.filters for the screen and print ----
+
+
+def _room_type(params: Params) -> RoomType | None:
+    value = params.get("room_type")
+    if not value:
+        return None
+    room_type = RoomType.objects.filter(pk=value).first() if _is_uuid(value) else None
+    if room_type is None:
+        raise ApiError("validation_error", 400, detail="نوع الغرفة غير موجود.")
+    return room_type
+
+
+def _is_uuid(value: str) -> bool:
+    import uuid
+
+    try:
+        uuid.UUID(str(value))
+    except ValueError:
+        return False
+    return True
+
+
+def _method(params: Params) -> str | None:
+    value = params.get("method")
+    if not value:
+        return None
+    if value not in PaymentMethod.values:
+        raise ApiError("validation_error", 400, detail="طريقة الدفع غير معروفة.")
+    return value
+
+
+def _category(params: Params) -> str | None:
+    value = params.get("expense_category")
+    if not value:
+        return None
+    if value not in ExpenseCategory.values:
+        raise ApiError("validation_error", 400, detail="فئة المصروف غير معروفة.")
+    return value
+
+
+def _filters(room_type: RoomType | None = None, method: str | None = None, category: str | None = None) -> list[dict]:
+    out = []
+    if room_type:
+        out.append({"key": "room_type", "label": "نوع الغرفة", "value": room_type.name})
+    if method:
+        out.append({"key": "method", "label": "الطريقة", "value": PaymentMethod(method).label})
+    if category:
+        out.append({"key": "expense_category", "label": "الفئة", "value": ExpenseCategory(category).label})
+    return out
 
 
 def _start(day: date) -> datetime:
@@ -182,6 +233,7 @@ def occupancy(params: Params) -> Report:
 def arrivals_departures(params: Params) -> Report:
     today = timezone.localdate()
     when = params.get("when", "today")
+    room_type = _room_type(params)
     start = today + timedelta(days=1) if when == "tomorrow" else today
     end = start + timedelta(days=6 if when == "week" else 0)
     arrivals = Reservation.objects.filter(check_in_date__range=(start, end)).exclude(
@@ -191,6 +243,9 @@ def arrivals_departures(params: Params) -> Report:
         Q(check_out_date__range=(start + timedelta(days=1), end + timedelta(days=1)))
         | (Q(check_out_date__lte=today) if start == today else Q(pk__in=[]))
     )
+    if room_type:
+        arrivals = arrivals.filter(room_type=room_type)
+        departures = departures.filter(room_type=room_type)
     rows, needs_prep = [], 0
     all_ids = [r.pk for r in arrivals] + [r.pk for r in departures]
     balances = balances_by_reservation(all_ids)
@@ -231,7 +286,7 @@ def arrivals_departures(params: Params) -> Report:
             }
         )
     n_arr = sum(1 for r in rows if r["move"] == "وصول")
-    return Report(
+    out = Report(
         "arrivals_departures",
         "الوصول والمغادرة",
         [
@@ -252,6 +307,8 @@ def arrivals_departures(params: Params) -> Report:
         ],
         note="«جاهزة؟» تعكس حالة الغرفة الآن؛ الحجز المؤكد يظهر حتى لو لم يصل النزيل.",
     )
+    out.filters = _filters(room_type)
+    return out
 
 
 # --- Guests in house / ending soon -----------------------------------------------------------
@@ -268,7 +325,8 @@ def _in_house():
 @report("current_guests", "النزلاء الحاليون", default_days=0)
 def current_guests(params: Params) -> Report:
     today = timezone.localdate()
-    stays = list(_in_house())
+    room_type = _room_type(params)
+    stays = list(_in_house().filter(room_type=room_type) if room_type else _in_house())
     balances = balances_by_reservation([r.pk for r in stays])
     rows = [
         {
@@ -282,7 +340,7 @@ def current_guests(params: Params) -> Report:
         }
         for r in stays
     ]
-    return Report(
+    out = Report(
         "current_guests",
         "النزلاء الحاليون",
         [
@@ -300,6 +358,8 @@ def current_guests(params: Params) -> Report:
             {"label": "إجمالي المتبقي", "value": sum(r["balance"] or 0 for r in rows), "type": "money"},
         ],
     )
+    out.filters = _filters(room_type)
+    return out
 
 
 def _ending_soon_count() -> int:
@@ -375,10 +435,13 @@ def _debt_count() -> int:
 def debts(params: Params) -> Report:
     today = timezone.localdate()
     status = params.get("status", "due")
+    room_type = _room_type(params)
     rows = []
     if status in ("due", "all"):
         for folio, totals in _debts():
             r = folio.reservation
+            if room_type and r.room_type_id != room_type.pk:
+                continue
             stay = getattr(r, "stay", None)
             if r.status == ReservationStatus.CHECKED_IN:
                 left = (stay_rules.last_night(r.check_out_date) - today).days
@@ -436,7 +499,7 @@ def debts(params: Params) -> Report:
     charged = FolioLine.objects.filter(_in_period("posted_at", month)).aggregate(s=Sum("amount"))["s"] or 0
     collected = Payment.objects.filter(_in_period("received_at", month)).aggregate(s=Sum("amount"))["s"] or 0
     ages = [r["age_days"] for r in due]
-    return Report(
+    out = Report(
         "debts",
         "الديون",
         [
@@ -483,6 +546,8 @@ def debts(params: Params) -> Report:
         ],
         note="يشمل الجاري وبعد المغادرة",
     )
+    out.filters = _filters(room_type)
+    return out
 
 
 # --- Revenue and collection ------------------------------------------------------------------
@@ -490,22 +555,24 @@ def debts(params: Params) -> Report:
 
 @report("revenue", "الإيرادات والتحصيل")
 def revenue(params: Params) -> Report:
+    room_type, method = _room_type(params), _method(params)
+    scope = Q(folio__reservation__room_type=room_type) if room_type else Q()
     lines = defaultdict(lambda: defaultdict(int))
     for d, kind, s in (
-        FolioLine.objects.filter(_in_period("posted_at", params))
+        FolioLine.objects.filter(_in_period("posted_at", params), scope)
         .annotate(d=TruncDate("posted_at"))
         .values_list("d", "kind")
         .annotate(s=Sum("amount"))
     ):
         lines[d][kind] += s
     paid = defaultdict(lambda: defaultdict(int))
-    for d, method, s in (
-        Payment.objects.filter(_in_period("received_at", params))
+    for d, pay_method, s in (
+        Payment.objects.filter(_in_period("received_at", params), scope, **({"method": method} if method else {}))
         .annotate(d=TruncDate("received_at"))
         .values_list("d", "method")
         .annotate(s=Sum("amount"))
     ):
-        paid[d][method] += s
+        paid[d][pay_method] += s
     rows = []
     for day in _days(params):
         k, p = lines[day], paid[day]
@@ -552,6 +619,7 @@ def revenue(params: Params) -> Report:
             },
         ],
         formula="الإيراد يُحتسب عند التسكين/التمديد؛ المحصّل عند استلام الدفعة (صافي بعد الردّ والعكس).",
+        filters=_filters(room_type, method),
     )
 
 
@@ -561,11 +629,16 @@ def revenue(params: Params) -> Report:
 @report("expenses", "المصروفات")
 def expenses(params: Params) -> Report:
     threshold = HotelSettings.load().expense_attachment_threshold
+    method, category = _method(params), _category(params)
     qs = (
         Expense.objects.filter(_in_period("spent_at", params))
         .select_related("created_by", "room")
         .prefetch_related("attachments")
     )
+    if method:
+        qs = qs.filter(method=method)
+    if category:
+        qs = qs.filter(category=category)
     rows = []
     by_cat = defaultdict(int)
     for e in qs.order_by("spent_at"):
@@ -606,6 +679,7 @@ def expenses(params: Params) -> Report:
             {"label": "بانتظار مرفق", "value": sum(r["attachment"] == "ناقص" for r in rows), "type": "int"},
         ],
         note="المصروفات لا تُحذف — تُعكس بقيد مقابل مع سبب.",
+        filters=_filters(method=method, category=category),
     )
 
 

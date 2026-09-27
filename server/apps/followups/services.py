@@ -345,13 +345,23 @@ def preview(rule_values: dict, last_night, now: datetime | None = None) -> dict:
     if rule_values.get("second_days_before") is not None:
         second = rules.first_alert_at(last_night, rule_values["second_days_before"], at, tz)
     kind = rule_values.get("duration_kind")
-    affected = sum(1 for stay in engine._in_house() if engine._stay_kind(stay) == kind) if kind else 0
+    stays = [stay for stay in engine._in_house() if engine._stay_kind(stay) == kind] if kind else []
+    stays.sort(key=lambda s: s.reservation.check_out_date)
     return {
         "last_night": last_night,
         "first_at": first,
         "second_at": second,
         "repeat_hours": rule_values.get("repeat_hours", 0),
-        "affected_stays": affected,
+        "affected_stays": len(stays),
+        # The first few, soonest ending first, so the manager sees who the rule will wake (audit UI/UX §6).
+        "stays": [
+            {
+                "room": s.reservation.room.number if s.reservation.room_id else "",
+                "guest": s.reservation.guest.full_name,
+                "last_night": stay_rules.last_night(s.reservation.check_out_date),
+            }
+            for s in stays[:8]
+        ],
     }
 
 

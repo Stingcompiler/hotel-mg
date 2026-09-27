@@ -2045,7 +2045,22 @@
                   "disabled": true
                 },
                 {
+                  "key": "expense_category",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "method",
+                  "value": "",
+                  "disabled": true
+                },
+                {
                   "key": "q",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "room_type",
                   "value": "",
                   "disabled": true
                 },
@@ -2109,12 +2124,27 @@
                   "disabled": true
                 },
                 {
+                  "key": "expense_category",
+                  "value": "",
+                  "disabled": true
+                },
+                {
                   "key": "format",
                   "value": "",
                   "disabled": true
                 },
                 {
+                  "key": "method",
+                  "value": "",
+                  "disabled": true
+                },
+                {
                   "key": "q",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "room_type",
                   "value": "",
                   "disabled": true
                 },

@@ -267,6 +267,7 @@ def test_toasts_api_and_rules_api(monthly_stay, reception_api, manager_api, conf
         ).json()
         assert preview["first_at"].startswith("2026-10-25T09:00") and preview["second_at"].startswith("2026-10-28")
         assert preview["affected_stays"] == 1
+        assert len(preview["stays"]) == 1 and set(preview["stays"][0]) == {"room", "guest", "last_night"}
         counts = reception_api.get("/api/v1/followups/tasks", {"count": "1"}).json()
         assert counts["count"] == 1
         assert reception_api.get("/api/v1/followups/tasks/count").json() == counts

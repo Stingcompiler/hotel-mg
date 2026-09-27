@@ -49,7 +49,7 @@ jobs:
           workspaces: desktop/src-tauri
 
       - name: Server dependencies
-        run: pip install -r server/requirements.txt pyinstaller==6.16.0
+        run: pip install -r server/requirements.txt -r build/windows/requirements.txt
 
       - name: Build the SPA into server/static_spa
         run: python build/build_spa.py

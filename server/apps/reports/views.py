@@ -44,7 +44,7 @@ class ReportSerializer(serializers.Serializer):
     name = serializers.CharField()
     columns = ReportColumnSerializer(many=True)
     rows = serializers.ListField(child=serializers.DictField())
-    meta = serializers.DictField(help_text="title, as_of, date_from, date_to, formula, note, tiles, totals")
+    meta = serializers.DictField(help_text="title, as_of, date_from, date_to, formula, note, tiles, totals, filters")
 
 
 REPORT_PARAMS = [
@@ -54,6 +54,9 @@ REPORT_PARAMS = [
     OpenApiParameter("status", str, enum=["due", "late", "all"], description="debts"),
     OpenApiParameter("days", int, description="ending_soon window (default 3)"),
     OpenApiParameter("q", str, description="audit_log: user, action, entity or id"),
+    OpenApiParameter("room_type", str, description="room type id: revenue, debts, current_guests, arrivals_departures"),
+    OpenApiParameter("method", str, enum=["cash", "bankak", "transfer"], description="revenue (collected), expenses"),
+    OpenApiParameter("expense_category", str, description="expenses: supplies … other"),
     OpenApiParameter("category", str, enum=audit_rules.CATEGORY_KEYS, description="audit_log"),
 ]
 
