@@ -285,3 +285,8 @@ Append-only. Newest last. Each entry: date, phase, decision, reason.
 ## 2026-09-27 — Login backlog chip
 
 173. **«N مهام متابعة مستحقة» before sign-in** (artboard 6.1): `system/status` gains `due_tasks` on the reception PC — the number of open follow-up tasks due by now, nothing else (owner PC: null). The login page shows the amber chip when it is above zero. A count reveals no guest or room; the tasks themselves still need a session. Design gap #13 updated.
+
+
+## 2026-09-27 — Owner decisions taken on the open gaps
+
+174. **Every design-gap fallback becomes the decision** (gaps 1–9, 12, 13 as recorded there; the four RTL exceptions as built). The two print deviations are resolved in favour of the artboards: the A4 invoice prints the artboard's line items (`items`: charges net of reversals, quantity = nights when one room line covers the stay, else 1), the payment list and a totals block with «الخصم» (`totals.charges/discount`, additive); the 80 mm payment receipt prints the stay period. The running ledger remains on the stay screen and in the document for the record.

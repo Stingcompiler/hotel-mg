@@ -37,8 +37,47 @@ def _stay_state(reservation) -> str:
     return ReservationStatus(reservation.status).label
 
 
+def _invoice_items(folio: Folio, nights: int) -> list[dict]:
+    """Artboard 7.1 line items (البيان · الكمية · السعر · الإجمالي): charges net of reversals; discounts go to the
+    totals block. A single room line covers the whole stay, so its quantity is the nights; the rest count one."""
+    lines = list(folio.lines.select_related("reverses"))
+    reversed_ids = {line.reverses_id for line in lines if line.reverses_id}
+    live = [line for line in lines if line.kind not in ("discount", "reversal") and line.pk not in reversed_ids]
+    room_lines = [line for line in live if line.kind == "room"]
+    items = []
+    for line in live:
+        quantity = nights if (line.kind == "room" and len(room_lines) == 1 and nights > 0) else 1
+        items.append(
+            {
+                "at": line.posted_at,
+                "kind": line.get_kind_display(),
+                "text": line.description,
+                "quantity": quantity,
+                "unit_price": line.amount // quantity if quantity else line.amount,
+                "total": line.amount,
+            }
+        )
+    return items
+
+
+def _invoice_payments(folio: Folio) -> list[dict]:
+    """Every payment, refund and reversal in time order (the artboard's payment list)."""
+    return [
+        {
+            "at": p.received_at,
+            "receipt": p.receipt_label,
+            "kind": p.get_kind_display(),
+            "method": p.get_method_display(),
+            "reference": p.reference,
+            "amount": p.amount,
+        }
+        for p in folio.payments.all()
+    ]
+
+
 def invoice(folio: Folio, printed_by) -> dict:
-    """Artboard 7.1: header, guest, room and stay, ledger with running balance, totals, signatures."""
+    """Artboard 7.1: header, guest, room and stay, line items, totals with the discount, payment list, signatures.
+    The running ledger stays in the document for the stay screen and older clients."""
     r = folio.reservation
     g = r.guest
     totals = FolioTotals.of(folio)
@@ -66,7 +105,15 @@ def invoice(folio: Folio, printed_by) -> dict:
             "state": _stay_state(r),
         },
         "ledger": ledger(folio),
-        "totals": {"total": totals.total, "paid": totals.paid, "balance": totals.balance},
+        "items": _invoice_items(folio, r.nights),
+        "payments": _invoice_payments(folio),
+        "totals": {
+            "charges": totals.charges,
+            "discount": -totals.discounts,
+            "total": totals.total,
+            "paid": totals.paid,
+            "balance": totals.balance,
+        },
         "notes": [
             "الأسعار بالجنيه السوداني. القيود المسبوقة بـ «عكس» تُلغي قيدًا سابقًا ولا تُحذف.",
             "المتبقي مستحق عند تسجيل الخروج أو قبله. التمديد يُحسب بالسعر الساري وقت التمديد.",
@@ -89,6 +136,10 @@ def payment_receipt(payment: Payment) -> dict:
         "room": r.room.number if r.room_id else None,
         "guest": r.guest.full_name,
         "invoice": folio.invoice_label,
+        # The stay period (design gap #11): the guest sees what the receipt is for.
+        "check_in_date": r.check_in_date,
+        "last_night": stay_rules.last_night(r.check_out_date),
+        "nights": r.nights,
         "amount": payment.amount,
         "amount_in_words": rules.amount_in_words(payment.amount),
         "method": payment.get_method_display(),

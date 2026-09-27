@@ -2302,6 +2302,9 @@ export interface components {
             guest: components["schemas"]["InvoiceGuest"];
             stay: components["schemas"]["InvoiceStay"];
             ledger: components["schemas"]["LedgerEntry"][];
+            /** @description Charges net of reversals (artboard 7.1 table). */
+            items: components["schemas"]["InvoiceItem"][];
+            payments: components["schemas"]["InvoicePayment"][];
             totals: components["schemas"]["InvoiceTotals"];
             notes: string[];
         };
@@ -2311,6 +2314,24 @@ export interface components {
             id_type: string;
             id_number: string;
             companions: string[];
+        };
+        InvoiceItem: {
+            /** Format: date-time */
+            at: string;
+            kind: string;
+            text: string;
+            quantity: number;
+            unit_price: number;
+            total: number;
+        };
+        InvoicePayment: {
+            /** Format: date-time */
+            at: string;
+            receipt: string;
+            kind: string;
+            method: string;
+            reference: string;
+            amount: number;
         };
         InvoiceStay: {
             room: string | null;
@@ -2325,6 +2346,10 @@ export interface components {
             state: string;
         };
         InvoiceTotals: {
+            /** @description Before the discount. */
+            charges: number;
+            /** @description Positive amount taken off. */
+            discount: number;
             total: number;
             paid: number;
             balance: number;
@@ -2741,6 +2766,11 @@ export interface components {
             room: string | null;
             guest: string;
             invoice: string;
+            /** Format: date */
+            check_in_date: string;
+            /** Format: date */
+            last_night: string;
+            nights: number;
             amount: number;
             amount_in_words: string;
             method: string;

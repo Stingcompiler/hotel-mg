@@ -41,9 +41,29 @@ class InvoiceStaySerializer(serializers.Serializer):
 
 
 class InvoiceTotalsSerializer(serializers.Serializer):
+    charges = MoneyMinorField(help_text="Before the discount.")
+    discount = MoneyMinorField(help_text="Positive amount taken off.")
     total = MoneyMinorField()
     paid = MoneyMinorField()
     balance = MoneyMinorField()
+
+
+class InvoiceItemSerializer(serializers.Serializer):
+    at = serializers.DateTimeField()
+    kind = Text()
+    text = Text()
+    quantity = serializers.IntegerField()
+    unit_price = MoneyMinorField()
+    total = MoneyMinorField()
+
+
+class InvoicePaymentSerializer(serializers.Serializer):
+    at = serializers.DateTimeField()
+    receipt = Text()
+    kind = Text()
+    method = Text()
+    reference = Text()
+    amount = MoneyMinorField()
 
 
 class InvoiceDocumentSerializer(serializers.Serializer):
@@ -54,6 +74,8 @@ class InvoiceDocumentSerializer(serializers.Serializer):
     guest = InvoiceGuestSerializer()
     stay = InvoiceStaySerializer()
     ledger = LedgerEntrySerializer(many=True)
+    items = InvoiceItemSerializer(many=True, help_text="Charges net of reversals (artboard 7.1 table).")
+    payments = InvoicePaymentSerializer(many=True)
     totals = InvoiceTotalsSerializer()
     notes = serializers.ListField(child=Text())
 
@@ -66,6 +88,9 @@ class PaymentReceiptDocumentSerializer(serializers.Serializer):
     room = Text(allow_null=True)
     guest = Text()
     invoice = Text()
+    check_in_date = serializers.DateField()
+    last_night = serializers.DateField()
+    nights = serializers.IntegerField()
     amount = MoneyMinorField()
     amount_in_words = Text()
     method = Text()

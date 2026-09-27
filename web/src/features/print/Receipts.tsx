@@ -55,6 +55,7 @@ export function PaymentReceipt({ doc, version }: { doc: Payment; version: string
       {doc.room && <Line label={t("print.room")} value={digits(doc.room)} />}
       <Line label={t("print.guest")} value={doc.guest} />
       <Line label={t("print.invoice")} value={<span dir="ltr">{doc.invoice}</span>} />
+      <Line label={t("print.periodLabel")} value={`${formatDayMonth(doc.check_in_date)} – ${formatDayMonth(doc.last_night)} · ${t("print.nights", { n: digits(String(doc.nights)) })}`} />
       <div className="rule-dotted my-2" />
       <Line label={t("print.amountPaid")} value={formatMoney(doc.amount)} strong />
       <Line label={t("print.method")} value={doc.method} />

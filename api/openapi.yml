@@ -4772,6 +4772,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LedgerEntry'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceItem'
+          description: Charges net of reversals (artboard 7.1 table).
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoicePayment'
         totals:
           $ref: '#/components/schemas/InvoiceTotals'
         notes:
@@ -4786,6 +4795,8 @@ components:
       - guest
       - stay
       - ledger
+      - items
+      - payments
       - totals
       - notes
     InvoiceGuest:
@@ -4809,6 +4820,52 @@ components:
       - id_type
       - id_number
       - companions
+    InvoiceItem:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        kind:
+          type: string
+        text:
+          type: string
+        quantity:
+          type: integer
+        unit_price:
+          type: integer
+        total:
+          type: integer
+      required:
+      - at
+      - kind
+      - text
+      - quantity
+      - unit_price
+      - total
+    InvoicePayment:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        receipt:
+          type: string
+        kind:
+          type: string
+        method:
+          type: string
+        reference:
+          type: string
+        amount:
+          type: integer
+      required:
+      - at
+      - receipt
+      - kind
+      - method
+      - reference
+      - amount
     InvoiceStay:
       type: object
       properties:
@@ -4841,6 +4898,12 @@ components:
     InvoiceTotals:
       type: object
       properties:
+        charges:
+          type: integer
+          description: Before the discount.
+        discount:
+          type: integer
+          description: Positive amount taken off.
         total:
           type: integer
         paid:
@@ -4848,6 +4911,8 @@ components:
         balance:
           type: integer
       required:
+      - charges
+      - discount
       - total
       - paid
       - balance
@@ -5736,6 +5801,14 @@ components:
           type: string
         invoice:
           type: string
+        check_in_date:
+          type: string
+          format: date
+        last_night:
+          type: string
+          format: date
+        nights:
+          type: integer
         amount:
           type: integer
         amount_in_words:
@@ -5762,6 +5835,9 @@ components:
       - room
       - guest
       - invoice
+      - check_in_date
+      - last_night
+      - nights
       - amount
       - amount_in_words
       - method

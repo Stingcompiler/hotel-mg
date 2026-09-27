@@ -1268,7 +1268,13 @@
     "saveAndPrint": "تسجيل وطباعة إيصال",
     "print": "طباعة",
     "previewHint": "تُفتح نافذة الطباعة تلقائيًا؛ إن أُغلقت اضغط «طباعة» مرة أخرى.",
-    "filters": "المرشّحات: {list}"
+    "filters": "المرشّحات: {list}",
+    "colQty": "الكمية",
+    "colUnit": "السعر",
+    "colLineTotal": "الإجمالي",
+    "discount": "الخصم",
+    "receiptNo": "رقم الإيصال",
+    "periodLabel": "الفترة"
   },
   "clock": {
     "title": "ساعة الجهاز غير صحيحة",
