@@ -4,3 +4,5 @@
 *.ico binary
 *.bmp binary
 design-package/** -diff linguist-vendored
+*.pdf binary
+*.woff2 binary
