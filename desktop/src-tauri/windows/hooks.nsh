@@ -58,6 +58,9 @@
   Sleep 8000
   nsExec::ExecToLog 'taskkill /F /IM skytowers-server.exe'
   Sleep 1000
+  ; «Uninstall before installing» (the update page's default) removes the old build before PREINSTALL runs, so the
+  ; pre-upgrade backup is taken here as well; on the owner PC (no backup key) it fails harmlessly.
+  nsExec::ExecToLog '"${SKYT_EXE}" manage backup_now'
   nsExec::ExecToLog '"${SKYT_EXE}" remove'
 !macroend
 

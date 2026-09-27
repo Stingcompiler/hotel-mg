@@ -3,7 +3,7 @@
 Offline Windows desktop hotel management system (Arabic, RTL) for Sky Towers Hotel, Khartoum.
 A reception PC records every operation; an owner PC imports encrypted backups and reads.
 
-- **Download the installer:** <https://github.com/Stingcompiler/hotel-mg/releases/latest> · دليل التثبيت بالعربية (لغير التقنيين): [`docs/install-guide.ar.md`](docs/install-guide.ar.md) · technical guide: [`docs/windows.md`](docs/windows.md).
+- **Download the installer (always the newest):** <https://github.com/Stingcompiler/hotel-mg/releases/latest/download/SkyTowers-Setup.exe> · all releases: <https://github.com/Stingcompiler/hotel-mg/releases> · دليل التثبيت بالعربية (لغير التقنيين): [`docs/install-guide.ar.md`](docs/install-guide.ar.md) · technical guide: [`docs/windows.md`](docs/windows.md).
 - `docs/spec/SkyTowers-System-Build-Spec.md` — system build specification (source of truth for architecture, rules, phases).
 - `design-package/` — UI design package exported from Claude Design. **Read-only**: never edit in place.
 - `docs/decisions.md` — decisions log; `docs/design-gaps.md` — where the design package and the spec disagree, and what was built.
