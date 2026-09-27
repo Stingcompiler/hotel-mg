@@ -30,6 +30,7 @@ def test_system_status_is_public(api):
         "disk_free_bytes": body["disk_free_bytes"],
         "disk_low": body["disk_low"],
         "needs_setup": True,
+        "due_tasks": 0,
         "owner_public_key": None,
         "version": settings.APP_VERSION,
         "schema_version": SCHEMA_VERSION,
@@ -95,3 +96,12 @@ def test_disk_low_threshold():
     assert rules.disk_low(None) is False
     assert rules.disk_low(rules.DISK_LOW_BYTES - 1) is True
     assert rules.disk_low(rules.DISK_LOW_BYTES) is False
+
+
+def test_status_counts_due_tasks_for_the_login_chip(api_as_manager, api):
+    from apps.followups import engine
+
+    engine.tick()
+    badge = api_as_manager.get("/api/v1/followups/tasks/count").json()["count"]
+    body = api.get("/api/v1/system/status").json()  # public: the number only
+    assert body["due_tasks"] == badge > 0

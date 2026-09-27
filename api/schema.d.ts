@@ -3381,6 +3381,8 @@ export interface components {
             disk_low: boolean;
             /** @description Reception PC with no users yet: the login page creates the manager. */
             needs_setup: boolean;
+            /** @description Reception PC: open follow-up tasks due now (login chip «N مهام متابعة مستحقة»); a count only. */
+            due_tasks: number | null;
             /** @description Owner PC: public key to paste in the reception's backup settings (public). */
             owner_public_key: string | null;
             version: string;
