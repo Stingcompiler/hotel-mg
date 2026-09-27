@@ -50,7 +50,7 @@ python manage.py migrate && python manage.py seed_demo   # dev data (DEBUG only)
 python -m service.run_waitress             # serve on 127.0.0.1:8471
 ```
 
-`SKYTOWERS_HOME` picks the data directory (default: `%ProgramData%\SkyTowers` on Windows, `server/.devdata` elsewhere). `manage.py` uses `config.settings.dev`.
+`SKYTOWERS_HOME` picks the data directory (default: `server/.devdata` for a source checkout on every OS; only the installed bundle uses `%ProgramData%\SkyTowers`). `seed_demo` refuses the installed folder and any database with real users; `manage reset_data` empties a PC (data moved to `backups/pre-reset-<stamp>/`). `manage.py` uses `config.settings.dev`.
 
 ## Frontend rules (for F1+, §10)
 

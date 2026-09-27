@@ -17,6 +17,7 @@ from apps.stays import rules as stay_rules
 from apps.stays import services as reservation_services
 from apps.stays import stay_services
 from apps.stays.models import Reservation
+from config import runtime
 
 
 class Command(BaseCommand):
@@ -34,6 +35,15 @@ class Command(BaseCommand):
             raise CommandError("seed_demo creates users with known PINs; refusing to run with DEBUG off.")
         if settings.SKYTOWERS_ROLE != "reception":
             raise CommandError("seed_demo runs on the reception role only; the owner PC gets data by import.")
+        # The installed program starts empty (first-run setup); the demo hotel never goes into its folder.
+        if runtime.is_installed_home(settings.RUNTIME.home):
+            raise CommandError(
+                f"seed_demo refuses the installed program's data folder ({settings.RUNTIME.home}). "
+                "Set SKYTOWERS_HOME to a test folder."
+            )
+        demo_names = {row["username"] for row in demo_data.USERS}
+        if User.objects.exclude(username__in=demo_names).exists():
+            raise CommandError("seed_demo refuses a database with real users (a hotel's data).")
 
         with transaction.atomic():
             users = self._load_users()

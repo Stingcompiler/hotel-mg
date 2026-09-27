@@ -77,7 +77,27 @@ sc start SkyTowersServer
 copy afterwards. The previous database and attachments are kept in `%ProgramData%\SkyTowers\backups\pre-restore-<stamp>\`.
 The command refuses a file from another hotel, a tampered file, the wrong key, or a database that is still in use.
 
+### Starting over with an empty program
+
+A new install is empty: the reception PC opens on «إعداد النظام لأول مرة», the owner PC on «إعداد جهاز المالك».
+Uninstalling keeps `%ProgramData%\SkyTowers`, so a PC that was used for a trial (the demo hotel, test bookings)
+keeps that data through a reinstall. To empty it, from an administrator command prompt:
+
+```bat
+sc stop SkyTowersServer
+cd "C:\Program Files\Sky Towers\server"
+skytowers-server.exe manage reset_data --yes
+sc start SkyTowersServer
+```
+
+Nothing is deleted: the database, attachments and backup files move to
+`%ProgramData%\SkyTowers\backups\pre-reset-<stamp>\`. The role, the secret and the owner's key stay (the two PCs
+stay paired); an owner PC forgets the hotel and adopts it again with its first import.
+
 ## B. From the source (development)
+
+A source checkout keeps its data in `server\.devdata` (or `SKYTOWERS_HOME`), never in the installed program's
+`%ProgramData%\SkyTowers`, and `seed_demo` refuses that folder — the demo hotel cannot leak into an installed app.
 
 Needs Python 3.12 and Node.js 20+.
 
