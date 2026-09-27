@@ -181,6 +181,9 @@ jobs:
             Fail "unexpected error: $($_.Exception.Message)`n$($_.ScriptStackTrace)"
           }
           Stop-Transcript | Out-Null
+          # The last native command was `sc.exe query` on a removed service (exit 1060); the pwsh shell would
+          # otherwise end the step with that code although every check passed.
+          exit 0
 
       - name: Keep the end-to-end transcript
         if: always()
