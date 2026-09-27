@@ -43,6 +43,8 @@
         "languages": ["Arabic"],
         "displayLanguageSelector": false,
         "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico",
+        "uninstallerHeaderImage": "windows/installer-header.bmp",
         "headerImage": "windows/installer-header.bmp",
         "sidebarImage": "windows/installer-sidebar.bmp",
         "installerHooks": "./windows/hooks.nsh"
