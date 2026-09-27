@@ -52,3 +52,32 @@ def test_reception_cannot_open_the_dashboard(seeded):
     token = login_with_password("ahmed.ali", demo_data.DEMO_PASSWORD).token
     client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
     assert client.get("/api/v1/reports/owner-dashboard").status_code == 403
+
+
+def test_period_average_matches_the_occupancy_report(api_as_manager):
+    for period in ("month", "previous", "90days"):
+        data = _dashboard(api_as_manager, period=period)
+        span = data["period"]
+        report = api_as_manager.get(
+            "/api/v1/reports/occupancy", {"date_from": span["date_from"], "date_to": span["date_to"]}
+        ).json()
+        assert data["kpis"]["occupancy_today"]["period_average"] == report["meta"]["totals"]["occupancy"], period
+
+
+def test_ninety_days_weeks_carry_their_months(api_as_manager):
+    weeks = _dashboard(api_as_manager, period="90days")["weeks"]
+    assert len(weeks) == 13
+    assert all("/" in w["label"] and "الأسبوع" not in w["label"] for w in weeks)
+    assert _dashboard(api_as_manager)["weeks"][0]["label"].startswith("الأسبوع 1 (1–")
+
+
+def test_staff_counts_alerts_that_fell_due_before_the_shift_opened(api_as_manager):
+    from apps.followups import engine
+    from apps.followups.models import FollowupTask
+
+    engine.tick()
+    tasks = FollowupTask.objects.count()
+    assert tasks > 0
+    staff = _dashboard(api_as_manager, period="90days")["staff"]
+    # The seeded shift opened after these alerts fell due: they were waiting for it, not dropped.
+    assert sum(s["total"] for s in staff) == tasks

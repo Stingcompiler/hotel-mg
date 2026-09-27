@@ -1,6 +1,7 @@
 """Pure helpers for reports, exports and printed documents. No ORM."""
 
-from datetime import date, datetime
+import calendar
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 _ONES = [
@@ -112,6 +113,46 @@ def days_between(start: date, end: date) -> int:
 def occupancy_percent(occupied_nights: int, available_nights: int, maintenance_nights: int) -> int:
     """الإشغال = الغرف المشغولة ÷ (إجمالي الغرف − غرف الصيانة) × 100 (spec §6.4)."""
     return percent(occupied_nights, available_nights - maintenance_nights)
+
+
+PERIOD_LABELS = {"month": "هذا الشهر", "previous": "الشهر السابق", "90days": "آخر 90 يومًا"}
+
+
+def dashboard_period(kind: str, today: date) -> tuple[date, date]:
+    """Owner dashboard period, both ends included: month to date, the whole previous month, or the last 90 days."""
+    first = today.replace(day=1)
+    if kind == "previous":
+        end = first - timedelta(days=1)
+        return end.replace(day=1), end
+    if kind == "90days":
+        return today - timedelta(days=89), today
+    return first, today
+
+
+def comparison_period(kind: str, start: date, end: date) -> tuple[date, date]:
+    """The period the revenue is compared with, of the same length: month to date → the same days of the previous
+    month (clamped to its end), a whole month → the month before, 90 days → the 90 days before."""
+    if kind == "90days":
+        length = (end - start).days + 1
+        return start - timedelta(days=length), start - timedelta(days=1)
+    prev_end = start - timedelta(days=1)
+    prev_start = prev_end.replace(day=1)
+    if kind == "previous":
+        return prev_start, prev_end
+    return prev_start, prev_start.replace(day=min(end.day, calendar.monthrange(prev_start.year, prev_start.month)[1]))
+
+
+def week_label(n: int, start: date, stop: date, one_month: bool) -> str:
+    """«الأسبوع 2 (8–14)» inside one calendar month; «29/6–5/7» when the period spans months (90 days)."""
+    if one_month:
+        return f"الأسبوع {n} ({start.day}–{stop.day})"
+    return f"{start.day}/{start.month}–{stop.day}/{stop.month}"
+
+
+def pounds_text(minor: int) -> str:
+    """Whole pounds with thousands separators and a sign for negatives: −1,500 (not -2 from floor division)."""
+    whole = abs(minor) // 100
+    return f"{'−' if minor < 0 and whole else ''}{whole:,}"
 
 
 OCCUPANCY_FORMULA = (

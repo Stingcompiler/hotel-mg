@@ -20,16 +20,6 @@ from .framework import Params
 from .queries import _debts, _in_house, _in_period, _maintenance_rooms_by_night, _occupied_rooms_by_night
 
 
-def _period(kind: str, today: date) -> tuple[date, date, str]:
-    first = today.replace(day=1)
-    if kind == "previous":
-        end = first - timedelta(days=1)
-        return end.replace(day=1), end, "الشهر السابق"
-    if kind == "90days":
-        return today - timedelta(days=89), today, "آخر 90 يومًا"
-    return first, today, "هذا الشهر"
-
-
 def _sum(qs, field="amount") -> int:
     return qs.aggregate(s=Sum(field))["s"] or 0
 
@@ -43,21 +33,27 @@ def _occupancy_series(days: list[date]) -> list[dict]:
             "date": d,
             "occupied": len(occupied[d]),
             "rooms": available,
+            "available": available - len(maintenance[d]),  # room-nights for the period average
             "percent": rules.occupancy_percent(len(occupied[d]), available, len(maintenance[d])),
         }
         for d in days
     ]
 
 
+def _days(start: date, end: date) -> list[date]:
+    return [start + timedelta(days=i) for i in range((end - start).days + 1)]
+
+
 def _weeks(start: date, end: date) -> list[dict]:
     """Revenue vs collected per week of the period (1–7, 8–14, 15–21, 22–end)."""
+    one_month = (start.year, start.month) == (end.year, end.month)
     weeks, cursor, n = [], start, 1
     while cursor <= end:
         stop = min(cursor + timedelta(days=6), end)
         p = Params(cursor, stop, {})
         weeks.append(
             {
-                "label": f"الأسبوع {n} ({cursor.day}–{stop.day})",
+                "label": rules.week_label(n, cursor, stop, one_month),
                 "date_from": cursor,
                 "date_to": stop,
                 "revenue": _sum(FolioLine.objects.filter(_in_period("posted_at", p))),
@@ -99,7 +95,8 @@ def _attention(today: date, debt_limit: int, month: Params) -> list[dict]:
                     "kind": "debt",
                     "label": "دين",
                     "report": "debts",
-                    "text": f"دين فوق الحد ({debt_limit // 100:,}): غرفة {r.room.number} · {totals.balance // 100:,}",
+                    "text": f"دين فوق الحد ({rules.pounds_text(debt_limit)}): غرفة {r.room.number} · "
+                    f"{rules.pounds_text(totals.balance)} ج.س",
                 }
             )
     for shift in Shift.objects.filter(_in_period("closed_at", month)).select_related("created_by"):
@@ -110,7 +107,7 @@ def _attention(today: date, debt_limit: int, month: Params) -> list[dict]:
                     "label": "فرق وردية",
                     "report": "cash_shifts",
                     "text": f"وردية {shift.created_by.full_name if shift.created_by_id else '—'} "
-                    f"{timezone.localtime(shift.opened_at):%d/%m} · فرق {shift.difference // 100:,} ج.س",
+                    f"{timezone.localtime(shift.opened_at):%d/%m} · فرق {rules.pounds_text(shift.difference)} ج.س",
                 }
             )
     for room in Room.objects.filter(status="maintenance", in_service=True, status_changed_at__isnull=False):
@@ -130,15 +127,19 @@ def _staff_response(month: Params) -> list[dict]:
     """Per employee: alerts that fell due in their shift, handled with an explicit action, neglected, delay.
 
     Delay = alert time → first explicit action (extend / confirm departure / awaiting reply / done);
-    a snooze is not an action (artboard 6.12 note).
+    a snooze is not an action (artboard 6.12 note). An alert that fell due while no shift was open (the
+    midnight alerts before the morning shift) belongs to the next shift that opened: it was waiting for them.
     """
     shifts = list(Shift.objects.select_related("created_by").order_by("opened_at"))
 
     def owner_of(when):
-        for s in reversed(shifts):
-            if s.opened_at <= when and (s.closed_at is None or when < s.closed_at):
-                return s.created_by.full_name if s.created_by_id else "—"
-        return None
+        shift = next(
+            (s for s in reversed(shifts) if s.opened_at <= when and (s.closed_at is None or when < s.closed_at)),
+            None,
+        ) or next((s for s in shifts if s.opened_at > when), None)
+        if shift is None:
+            return None
+        return shift.created_by.full_name if shift.created_by_id else "—"
 
     stats = defaultdict(lambda: {"total": 0, "handled": 0, "neglected": 0, "delays": []})
     for task in FollowupTask.objects.filter(_in_period("due_at", month)).prefetch_related("actions"):
@@ -168,18 +169,20 @@ def _staff_response(month: Params) -> list[dict]:
 
 def owner_dashboard(period: str = "month") -> dict:
     today = timezone.localdate()
-    start, end, label = _period(period, today)
+    start, end = rules.dashboard_period(period, today)
+    label = rules.PERIOD_LABELS[period]
     month = Params(start, end, {})
     settings_row = HotelSettings.load()
 
     revenue = _sum(FolioLine.objects.filter(_in_period("posted_at", month)))
     collected = _sum(Payment.objects.filter(_in_period("received_at", month)))
-    prev_start, prev_end, _ = _period("previous", start)
+    prev_start, prev_end = rules.comparison_period(period, start, end)
     prev_revenue = _sum(FolioLine.objects.filter(_in_period("posted_at", Params(prev_start, prev_end, {}))))
 
-    series = _occupancy_series([today - timedelta(days=i) for i in range(29, -1, -1)])
+    series = _occupancy_series(_days(today - timedelta(days=29), today))
     tonight = series[-1]
-    in_period = [p for p in series if p["date"] >= start]
+    # The period average covers every night of the selected period, not the chart's last 30 nights.
+    in_period = _occupancy_series(_days(start, end))
     debts = [(folio, totals) for folio, totals in _debts()]
     largest = max(debts, key=lambda d: d[1].balance) if debts else None
     neglected = (
@@ -192,7 +195,9 @@ def owner_dashboard(period: str = "month") -> dict:
             "value": tonight["percent"],
             "occupied": tonight["occupied"],
             "rooms": tonight["rooms"],
-            "period_average": round(sum(p["percent"] for p in in_period) / len(in_period)) if in_period else 0,
+            "period_average": rules.percent(
+                sum(p["occupied"] for p in in_period), sum(p["available"] for p in in_period)
+            ),
         },
         "revenue": {
             "value": revenue,

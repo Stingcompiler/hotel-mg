@@ -102,7 +102,8 @@ export function UsersTab({ readOnly }: { readOnly: boolean }) {
           </div>
         );
       })}
-      <Footnote>{t("settings.users.footnote")}</Footnote>
+      {/* How changes are confirmed: meaningless where nothing can be changed (owner PC, reception staff). */}
+      {!readOnly && <Footnote>{t("settings.users.footnote")}</Footnote>}
       {editing && (
         <UserModal
           user={editing === "new" ? null : editing}

@@ -55,11 +55,12 @@ export function OwnerDashboardPage() {
       ) : (
         <>
           <Kpis d={d} />
-          <div className="grid grid-cols-[3fr_2fr] gap-4 max-[1599px]:gap-3">
+          {/* minmax(0, …): a long week list (90 days = 13 weeks) must not widen its column and squeeze the other. */}
+          <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-4 max-[1599px]:gap-3">
             <OccupancyChart d={d} />
             <WeeksChart weeks={d.weeks} />
           </div>
-          <div className="grid grid-cols-[3fr_2fr] items-start gap-4 max-[1599px]:gap-3">
+          <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start gap-4 max-[1599px]:gap-3">
             <AttentionList rows={d.attention} />
             <StaffTable rows={d.staff} />
           </div>
@@ -268,9 +269,13 @@ function compact(minor: number): string {
   return digits(String(Math.round(units)));
 }
 
+// Above this many weeks (the 90-day period) the bars narrow and their values move to the tooltip.
+const DENSE_WEEKS = 6;
+
 /** Revenue (primary) against collected (chart-secondary) per week; the latest week on the right. */
 function WeeksChart({ weeks }: { weeks: Dashboard["weeks"] }) {
   const max = Math.max(1, ...weeks.flatMap((w) => [w.revenue, w.collected]));
+  const dense = weeks.length > DENSE_WEEKS;
   return (
     <Panel
       title={t("ownerDash.weeks")}
@@ -287,14 +292,21 @@ function WeeksChart({ weeks }: { weeks: Dashboard["weeks"] }) {
         </div>
       }
     >
-      <div className="flex h-[232px] items-end justify-around gap-3 p-4 pb-2">
+      <div className={`flex h-[232px] items-end justify-around p-4 pb-2 ${dense ? "gap-1" : "gap-3"}`}>
         {[...weeks].reverse().map((w) => (
-          <div key={w.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-            <div className="flex h-full w-full items-end justify-center gap-1.5">
-              <Bar value={w.revenue} max={max} className="bg-primary" />
-              <Bar value={w.collected} max={max} className="bg-chart-secondary" />
+          <div
+            key={w.label}
+            className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"
+            title={`${digits(w.label)} · ${t("ownerDash.revenue")} ${formatMoney(w.revenue)} · ${t("ownerDash.collected")} ${formatMoney(w.collected)}`}
+          >
+            <div className={`flex h-full w-full items-end justify-center ${dense ? "gap-0.5" : "gap-1.5"}`}>
+              <Bar value={w.revenue} max={max} dense={dense} className="bg-primary" />
+              <Bar value={w.collected} max={max} dense={dense} className="bg-chart-secondary" />
             </div>
-            <div className="whitespace-nowrap text-label font-normal text-text-secondary">{w.label}</div>
+            {/* Dense: the week's first day only (29/6); the full range is in the tooltip. */}
+            <div className="max-w-full truncate whitespace-nowrap text-label font-normal text-text-secondary" dir={dense ? "ltr" : undefined}>
+              {digits(dense ? w.label.split("–")[0] : w.label)}
+            </div>
           </div>
         ))}
       </div>
@@ -302,10 +314,10 @@ function WeeksChart({ weeks }: { weeks: Dashboard["weeks"] }) {
   );
 }
 
-function Bar({ value, max, className }: { value: number; max: number; className: string }) {
+function Bar({ value, max, dense, className }: { value: number; max: number; dense: boolean; className: string }) {
   return (
-    <div className="flex h-full w-10 flex-col items-center justify-end gap-1">
-      <span className="text-label font-normal text-text-secondary">{compact(value)}</span>
+    <div className={`flex h-full flex-col items-center justify-end gap-1 ${dense ? "w-full max-w-4" : "w-10"}`}>
+      {!dense && <span className="text-label font-normal text-text-secondary">{compact(value)}</span>}
       <div className={`w-full rounded-t-sm ${className}`} style={{ height: `${Math.max(value ? 2 : 0, (value / max) * 80)}%` }} />
     </div>
   );

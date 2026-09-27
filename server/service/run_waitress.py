@@ -10,6 +10,7 @@ The settings module follows ``role`` in config.json, so one build serves both PC
 import logging
 import logging.handlers
 import os
+import socket
 import sys
 from pathlib import Path
 
@@ -25,12 +26,14 @@ def setup_django() -> str:
 
     cfg = runtime.load()
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"config.settings.{cfg.role}")
-    _log_to_file(cfg.home / "logs")
 
     import django
     from django.core.management import call_command
 
     django.setup()
+    # After django.setup(): settings.LOGGING replaces the root handlers, so a file handler added
+    # earlier is dropped and server.log stays empty.
+    _log_to_file(cfg.home / "logs")
     # Updates: a newer build migrates the database on its first start (spec §11).
     call_command("migrate", interactive=False, verbosity=0)
     if cfg.role == "owner":
@@ -53,6 +56,24 @@ def _log_to_file(folder: Path) -> None:
     root.setLevel(logging.INFO)
 
 
+def listen_socket(host: str = HOST, port: int = PORT) -> socket.socket:
+    """The listening socket, bound exclusively. Waitress's own bind sets SO_REUSEADDR, which on Windows lets a
+    second server bind the same port beside the service and take part of its requests (found with a source
+    checkout running next to an installed owner PC). SO_EXCLUSIVEADDRUSE makes that second bind fail instead,
+    so the port guard below sees the conflict."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):  # Windows
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        else:  # POSIX: reuse only skips TIME_WAIT; a live listener still refuses the bind
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind((host, port))
+    except OSError:
+        sock.close()
+        raise
+    return sock
+
+
 def create_server():
     """The Waitress server with the scheduler started; ``.run()`` blocks, ``.close()`` stops (Windows service)."""
     role = setup_django()
@@ -70,7 +91,7 @@ def create_server():
             settings.SPA_ROOT,
         )
     try:
-        server = waitress_server(application, host=HOST, port=PORT, threads=THREADS)
+        sock = listen_socket()
     except OSError as e:
         # The port is ours by design (spec §2): end a foreign holder (a server run from a source
         # checkout) and retry once.
@@ -78,7 +99,8 @@ def create_server():
 
         log.error("cannot listen on %s:%s (%s) — %s", HOST, PORT, e, port.describe(PORT))
         log.warning(port.free_port(PORT))
-        server = waitress_server(application, host=HOST, port=PORT, threads=THREADS)
+        sock = listen_socket()
+    server = waitress_server(application, sockets=[sock], threads=THREADS)
     if role == "reception":  # the owner PC has no hotel operations to watch
         scheduler.start()
     log.info(
