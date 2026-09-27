@@ -47,3 +47,43 @@ def test_shift_label_and_helpers():
     assert rules.percent(18, 30) == 60 and rules.percent(1, 0) == 0
     assert rules.days_between(date(2026, 9, 1), date(2026, 9, 26)) == 25
     assert rules.occupancy_percent(17, 30, 1) == 59
+
+
+@pytest.mark.parametrize(
+    ("kind", "today", "period"),
+    [
+        ("month", date(2026, 9, 27), (date(2026, 9, 1), date(2026, 9, 27))),
+        ("previous", date(2026, 9, 27), (date(2026, 8, 1), date(2026, 8, 31))),
+        ("previous", date(2026, 1, 5), (date(2025, 12, 1), date(2025, 12, 31))),
+        ("90days", date(2026, 9, 27), (date(2026, 6, 30), date(2026, 9, 27))),
+    ],
+)
+def test_dashboard_period(kind, today, period):
+    assert rules.dashboard_period(kind, today) == period
+
+
+@pytest.mark.parametrize(
+    ("kind", "start", "end", "compared"),
+    [
+        # Month to date: the same days of the previous month, not the whole of it.
+        ("month", date(2026, 9, 1), date(2026, 9, 5), (date(2026, 8, 1), date(2026, 8, 5))),
+        # Clamped to a shorter previous month.
+        ("month", date(2026, 3, 1), date(2026, 3, 31), (date(2026, 2, 1), date(2026, 2, 28))),
+        ("previous", date(2026, 8, 1), date(2026, 8, 31), (date(2026, 7, 1), date(2026, 7, 31))),
+        ("90days", date(2026, 6, 30), date(2026, 9, 27), (date(2026, 4, 1), date(2026, 6, 29))),
+    ],
+)
+def test_comparison_period_has_the_same_length(kind, start, end, compared):
+    assert rules.comparison_period(kind, start, end) == compared
+
+
+def test_week_label():
+    assert rules.week_label(2, date(2026, 9, 8), date(2026, 9, 14), True) == "الأسبوع 2 (8–14)"
+    assert rules.week_label(1, date(2026, 6, 30), date(2026, 7, 6), False) == "30/6–6/7"
+
+
+def test_pounds_text():
+    assert rules.pounds_text(150_000_000) == "1,500,000"
+    assert rules.pounds_text(-150) == "−1"
+    assert rules.pounds_text(-50) == "0"
+    assert rules.pounds_text(0) == "0"

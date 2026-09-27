@@ -98,6 +98,9 @@ export function Sidebar({ items, userName, roleName, followups = 0, collapsed = 
         <button
           type="button"
           onClick={onLogout}
+          // Collapsed, the icon is the only content: the name has to come from the label.
+          aria-label={t("nav.logout")}
+          title={collapsed ? t("nav.logout") : undefined}
           className={`flex h-9 items-center gap-3 rounded-control bg-transparent px-3 text-body font-medium text-text-secondary hover:bg-bg-surface-2 ${justify}`}
         >
           <LogOut className="h-icon w-icon flex-none" strokeWidth={1.75} aria-hidden />

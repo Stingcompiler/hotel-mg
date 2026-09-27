@@ -28,7 +28,8 @@ const ATTR_TEXT = /\b(?:aria-label|title|placeholder|alt)="([^"]*[A-Za-z][^"]*)"
 
 const problems = [];
 for (const path of files(src)) {
-  const rel = relative(web, path);
+  // Forward slashes on Windows too, so the exempt files (tokens.css, state.ts) are recognised there.
+  const rel = relative(web, path).replaceAll("\\", "/");
   const isTest = /\.test\.tsx?$/.test(path);
   readFileSync(path, "utf8")
     .split("\n")
