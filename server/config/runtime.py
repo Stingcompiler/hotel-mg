@@ -106,18 +106,42 @@ def load(home: Path | None = None, role_override: str | None = None) -> RuntimeC
     )
 
 
-def init_config(home: Path, role: str) -> bool:
+def init_config(home: Path, role: str, force: bool = False) -> bool:
     """Installer step: write ``config.json`` once (spec §11). Upgrades keep the existing file.
 
     Reception gets a new hotel id; the owner PC leaves it empty until the first import adopts the hotel's.
+    ``force`` rewrites the role of an existing install (the installer's question answered wrongly): the other
+    keys stay, and a reception PC takes the hotel id its database already carries rather than a fresh one.
     Returns True when the file was written.
     """
     if role not in ROLES:
         raise ValueError(f"role must be one of {ROLES}, got {role!r}")
     config_file = home / "config.json"
-    if config_file.exists():
+    if config_file.exists() and not force:
         return False
     home.mkdir(parents=True, exist_ok=True)
-    raw = {"role": role, "hotel_id": str(uuid.uuid4()) if role == "reception" else ""}
+    raw = json.loads(config_file.read_text(encoding="utf-8")) if config_file.exists() else {}
+    raw["role"] = role
+    if role == "reception":
+        raw["hotel_id"] = raw.get("hotel_id") or str(hotel_in_database(home / "data" / "hotel.db") or uuid.uuid4())
+    else:
+        raw["hotel_id"] = raw.get("hotel_id") or ""
     config_file.write_text(json.dumps(raw, indent=2), encoding="utf-8")
     return True
+
+
+def hotel_in_database(db_path: Path) -> uuid.UUID | None:
+    """The hotel the database belongs to (its first user's row), without Django — for ``init --force``."""
+    import sqlite3
+
+    if not db_path.is_file():
+        return None
+    try:
+        con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        try:
+            row = con.execute("select hotel_id from accounts_user order by created_at limit 1").fetchone()
+        finally:
+            con.close()
+    except sqlite3.Error:
+        return None
+    return uuid.UUID(str(row[0])) if row and row[0] else None

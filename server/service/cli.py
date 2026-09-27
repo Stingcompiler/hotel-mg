@@ -2,6 +2,7 @@
 
 skytowers-server.exe run                          # serve in this console (debugging)
 skytowers-server.exe init --role reception        # installer: write config.json once
+skytowers-server.exe init --role reception --force # switch this PC's role (config.json rewritten, data kept)
 skytowers-server.exe manage <command> [args]      # Django management (migrate, backup_now, …)
 skytowers-server.exe free-port                    # installer: end a foreign process holding 127.0.0.1:8471
 skytowers-server.exe --startup auto install       # Windows service commands (pywin32)
@@ -44,8 +45,8 @@ def main(argv: list[str] | None = None) -> int:
         from config import runtime
 
         role = argv[argv.index("--role") + 1] if "--role" in argv else "reception"
-        written = runtime.init_config(runtime.default_home(), role)
-        print("config.json written" if written else "config.json kept (existing install)")
+        written = runtime.init_config(runtime.default_home(), role, force="--force" in argv)
+        print(f"config.json written (role {role})" if written else "config.json kept (existing install)")
         return 0
     if command == "manage":
         _django_manage(argv[1:])
