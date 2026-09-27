@@ -57,15 +57,34 @@ def create_server():
     """The Waitress server with the scheduler started; ``.run()`` blocks, ``.close()`` stops (Windows service)."""
     role = setup_django()
 
+    from django.conf import settings
     from waitress import create_server as waitress_server
 
     from config.wsgi import application
     from service import scheduler
 
+    log = logging.getLogger(__name__)
+    if not (settings.SPA_ROOT / "index.html").is_file():
+        log.error(
+            "SPA missing: %s has no index.html — the app window will show «واجهة البرنامج غير مبنية بعد»",
+            settings.SPA_ROOT,
+        )
+    try:
+        server = waitress_server(application, host=HOST, port=PORT, threads=THREADS)
+    except OSError as e:
+        log.error(
+            "cannot listen on %s:%s (%s) — another Sky Towers server (a source checkout?) may hold the port",
+            HOST,
+            PORT,
+            e,
+        )
+        raise
     if role == "reception":  # the owner PC has no hotel operations to watch
         scheduler.start()
-    logging.getLogger(__name__).info("Sky Towers server (%s) on http://%s:%s", role, HOST, PORT)
-    return waitress_server(application, host=HOST, port=PORT, threads=THREADS)
+    log.info(
+        "Sky Towers server (%s) on http://%s:%s · SPA %s · exe %s", role, HOST, PORT, settings.SPA_ROOT, sys.executable
+    )
+    return server
 
 
 def main() -> None:

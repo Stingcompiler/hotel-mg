@@ -45,6 +45,7 @@ class SystemStatusSerializer(serializers.Serializer):
     )
     version = serializers.CharField()
     schema_version = serializers.IntegerField()
+    spa_built = serializers.BooleanField(help_text="static_spa/index.html is present next to this server (support).")
 
 
 def _due_tasks() -> int:
@@ -103,6 +104,7 @@ class SystemStatusView(APIView):
             "owner_public_key": _owner_public_key() if settings.SKYTOWERS_ROLE == "owner" else None,
             "version": settings.APP_VERSION,
             "schema_version": SCHEMA_VERSION,
+            "spa_built": (settings.SPA_ROOT / "index.html").is_file(),
         }
         return Response(SystemStatusSerializer(data).data)
 

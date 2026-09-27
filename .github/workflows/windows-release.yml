@@ -133,6 +133,36 @@ jobs:
           npm ci --no-audit --no-fund
           npx tauri build
 
+      - name: Install with the built installer and check the installed app end to end
+        run: |
+          function Fail([string]$message) {
+            $log = Get-Content "$env:ProgramData\SkyTowers\logs\server.log" -Tail 40 -ErrorAction SilentlyContinue | Out-String
+            $query = sc.exe query SkyTowersServer | Out-String
+            $text = "$message`n--- sc query`n$query`n--- server.log`n$log"
+            Write-Output ("::error title=Installer end-to-end::" + ($text -replace '%', '%25' -replace "`r", '' -replace "`n", '%0A'))
+            exit 1
+          }
+          $setup = Get-ChildItem desktop/src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1
+          # Silent install: the role question answers «نعم» (/SD IDYES) → reception; config.json from the previous step is kept.
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Fail "installer exited $($p.ExitCode)" }
+          $installed = "$env:ProgramFiles\Sky Towers"
+          if (-not (Test-Path "$installed\server\skytowers-server.exe")) { Fail "server exe not installed under $installed" }
+          if (-not (Test-Path "$installed\server\_internal\static_spa\index.html")) { Fail "the SPA is not inside the installed server folder" }
+          $status = $null
+          foreach ($i in 1..90) {
+            try { $status = Invoke-RestMethod http://127.0.0.1:8471/api/v1/system/status; break } catch { Start-Sleep -Seconds 1 }
+          }
+          if (-not $status) { Fail "the installed service did not answer on 127.0.0.1:8471" }
+          if (-not $status.spa_built) { Fail "the installed service reports spa_built=false" }
+          $page = Invoke-WebRequest http://127.0.0.1:8471/reservations -UseBasicParsing
+          if ($page.Content -notmatch 'id="root"') { Fail "the installed service does not serve the SPA" }
+          "installed app serves the SPA (version $($status.version))"
+          $u = Start-Process -FilePath "$installed\uninstall.exe" -ArgumentList "/S" -Wait -PassThru
+          if ($u.ExitCode -ne 0) { Fail "uninstaller exited $($u.ExitCode)" }
+          Start-Sleep -Seconds 3
+          if ((sc.exe query SkyTowersServer | Out-String) -notmatch "1060|FAILED") { Fail "the service is still registered after uninstall" }
+
       - uses: actions/upload-artifact@v4
         with:
           name: skytowers-installer

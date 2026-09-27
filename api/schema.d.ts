@@ -3417,6 +3417,8 @@ export interface components {
             owner_public_key: string | null;
             version: string;
             schema_version: number;
+            /** @description static_spa/index.html is present next to this server (support). */
+            spa_built: boolean;
         };
         TaskAction: {
             /** Format: uuid */
