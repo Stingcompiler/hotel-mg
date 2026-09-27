@@ -44,8 +44,11 @@ def _star(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float, fill) -> No
     )
 
 
-def _towers(draw: ImageDraw.ImageDraw, s: float, ox: float, oy: float, detailed: bool, window_fill) -> None:
-    """The three towers in a 1024-unit box scaled by s and offset by (ox, oy)."""
+def _towers(draw: ImageDraw.ImageDraw, s: float, ox: float, oy: float, detailed: bool, window_fill, column=False) -> None:
+    """The three towers in a 1024-unit box scaled by s and offset by (ox, oy).
+
+    ``column``: the 32–48 px sizes (Explorer, the taskbar) get one column of windows per tower, pixel-sized, so the
+    silhouette reads as buildings rather than a bar chart."""
 
     def box(x0, y0, x1, y1):
         return (ox + x0 * s, oy + y0 * s, ox + x1 * s, oy + y1 * s)
@@ -58,6 +61,13 @@ def _towers(draw: ImageDraw.ImageDraw, s: float, ox: float, oy: float, detailed:
     # Spire on the tallest tower.
     mid = (towers[1][0] + towers[1][2]) / 2
     draw.polygon([(ox + (mid - 20) * s, oy + 252 * s), (ox + (mid + 20) * s, oy + 252 * s), (ox + mid * s, oy + 150 * s)], fill=WHITE)
+    if column:
+        for x0, top, x1 in towers:
+            cx = (x0 + x1) / 2
+            y = top + 70
+            while y + 60 < base - 40:
+                draw.rectangle(box(cx - 26, y, cx + 26, y + 60), fill=window_fill)
+                y += 120
     if not detailed:
         return
     # Ground line.
@@ -82,7 +92,7 @@ def icon(size: int) -> Image.Image:
     layer = Image.new("RGBA", (big, big), (0, 0, 0, 0))
     draw = ImageDraw.Draw(layer)
     s = big / 1024
-    _towers(draw, s, 0, 0, detailed, window_fill=TEAL)
+    _towers(draw, s, 0, 0, detailed, window_fill=TEAL, column=32 <= size < 64)
     _star(draw, (812 if detailed else 800) * s, 214 * s, (120 if detailed else 170) * s, AMBER)
     bg.alpha_composite(layer)
     out = Image.new("RGBA", (big, big), (0, 0, 0, 0))

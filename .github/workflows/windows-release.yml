@@ -228,12 +228,16 @@ jobs:
           $exe = Get-ChildItem desktop/src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1
           $name = "SkyTowers-Setup-$version.exe"
           Copy-Item $exe.FullName $name
+          # The same file under a fixed name: /releases/latest/download/SkyTowers-Setup.exe is always the newest,
+          # so the guide can give one link that never hands out an old version.
+          $stable = "SkyTowers-Setup.exe"
+          Copy-Item $exe.FullName $stable
           gh release view $tag *> $null
           if ($LASTEXITCODE -ne 0) {
-            gh release create $tag $name --title "Sky Towers $version" --notes-file docs/release-notes.md --target $env:GITHUB_SHA
+            gh release create $tag $name $stable --title "Sky Towers $version" --notes-file docs/release-notes.md --target $env:GITHUB_SHA
           } else {
-            # Same version rebuilt from a newer main: replace the file and the notes.
-            gh release upload $tag $name --clobber
+            # Same version rebuilt from a newer main: replace the files and the notes.
+            gh release upload $tag $name $stable --clobber
             gh release edit $tag --notes-file docs/release-notes.md
           }
           "published $tag"
