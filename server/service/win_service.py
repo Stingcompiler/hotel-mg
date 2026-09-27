@@ -4,12 +4,17 @@ Installed by the NSIS hooks with ``skytowers-server.exe install``; runs as Local
 ``%ProgramData%\\SkyTowers``. Only imported on Windows (pywin32).
 """
 
+import os
+import threading
+
 import servicemanager
 import win32event
 import win32service
 import win32serviceutil
 
 SERVICE_NAME = "SkyTowersServer"
+# A stop must end: upgrades, reset_data and restore_full wait for the database to be free.
+STOP_GRACE_SECONDS = 20
 
 
 class SkyTowersService(win32serviceutil.ServiceFramework):
@@ -25,8 +30,18 @@ class SkyTowersService(win32serviceutil.ServiceFramework):
     def SvcStop(self):  # noqa: N802 (pywin32 API)
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         if self.server is not None:
-            self.server.close()
+            from service import run_waitress
+
+            run_waitress.stop(self.server)  # also closes the app window's keep-alive connections
         win32event.SetEvent(self.stopped)
+        timer = threading.Timer(STOP_GRACE_SECONDS, self._force_exit)
+        timer.daemon = True
+        timer.start()
+
+    def _force_exit(self):
+        """Last resort when the loop did not end in time: SQLite (WAL) keeps committed data across an exit."""
+        self.ReportServiceStatus(win32service.SERVICE_STOPPED)
+        os._exit(0)
 
     def SvcDoRun(self):  # noqa: N802 (pywin32 API)
         servicemanager.LogMsg(
@@ -37,8 +52,9 @@ class SkyTowersService(win32serviceutil.ServiceFramework):
         self.server = run_waitress.create_server()
         try:
             self.server.run()
-        except OSError:  # close() during run() on stop
+        except OSError:  # a socket closed during stop
             pass
+        self.server.task_dispatcher.shutdown(timeout=5)
 
 
 def dispatch() -> None:

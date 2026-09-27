@@ -109,6 +109,25 @@ def create_server():
     return server
 
 
+def stop(server) -> None:
+    """Stop serving, from another thread (the Windows service's stop request).
+
+    Closing only the listener left Waitress's loop running while any keep-alive connection stayed open, and the
+    app window polls every 30 s, so the service hung in STOP_PENDING (upgrades, reset_data and restore_full need
+    it stopped). Every channel is closed inside the loop's own thread through the trigger; the map empties and
+    ``run()`` returns.
+    """
+
+    def close_all() -> None:
+        for channel in list(server._map.values()):
+            try:
+                channel.close()
+            except OSError:
+                pass
+
+    server.trigger.pull_trigger(close_all)
+
+
 def main() -> None:
     create_server().run()
 

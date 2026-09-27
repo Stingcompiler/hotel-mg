@@ -12,7 +12,11 @@
   IfFileExists "${SKYT_EXE}" 0 skyt_fresh
     DetailPrint "Stopping ${SKYT_SERVICE} and taking a pre-upgrade backup…"
     nsExec::ExecToLog 'sc stop ${SKYT_SERVICE}'
-    Sleep 3000
+    ; Builds before 1.0.5 hang in STOP_PENDING while the app window is connected: give the stop time, then end the
+    ; process so its files can be replaced (SQLite keeps committed data). A stopped service makes this a no-op.
+    Sleep 8000
+    nsExec::ExecToLog 'taskkill /F /IM skytowers-server.exe'
+    Sleep 1000
     nsExec::ExecToLog '"${SKYT_EXE}" manage backup_now'
   skyt_fresh:
 !macroend
@@ -47,7 +51,9 @@
 
 !macro NSIS_HOOK_PREUNINSTALL
   nsExec::ExecToLog 'sc stop ${SKYT_SERVICE}'
-  Sleep 3000
+  Sleep 8000
+  nsExec::ExecToLog 'taskkill /F /IM skytowers-server.exe'
+  Sleep 1000
   nsExec::ExecToLog '"${SKYT_EXE}" remove'
 !macroend
 

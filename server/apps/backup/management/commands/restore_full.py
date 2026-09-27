@@ -5,6 +5,7 @@ duration of the restore. The service must be stopped first; the command refuses 
 is in use, keeps the current files under ``backups/pre-restore-<stamp>/`` and runs the migrations afterwards.
 """
 
+import os
 import shutil
 import sqlite3
 from datetime import datetime
@@ -16,6 +17,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import connections
 
 from apps.backup import keys, merge, rules
+
+IN_USE = "قاعدة البيانات مستعملة الآن — أوقف خدمة Sky Towers Server أولًا وانتظر حتى تتوقف تمامًا."
 
 
 class Command(BaseCommand):
@@ -95,6 +98,14 @@ class Command(BaseCommand):
             finally:
                 con.close()
         except sqlite3.OperationalError:
-            raise CommandError("قاعدة البيانات مستعملة الآن — أوقف خدمة Sky Towers Server أولًا.") from None
+            raise CommandError(IN_USE) from None
         except sqlite3.DatabaseError:
             pass  # a corrupt current file is exactly what a restore replaces
+        # On Windows a process that merely has the file open (a service still stopping) blocks moving it even
+        # when no write is in progress: find out before anything is moved.
+        probe = db_path.with_name(db_path.name + ".move-check")
+        try:
+            os.replace(db_path, probe)
+        except PermissionError:
+            raise CommandError(IN_USE) from None
+        os.replace(probe, db_path)
