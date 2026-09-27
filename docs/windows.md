@@ -28,16 +28,24 @@ staff the daily screens. Then, in الإعدادات: أنواع الغرف وا
 and a PIN) → بيانات الفندق. Open a shift in «الصندوق» and start checking guests in.
 
 The demo hotel is for development checkouts only (section B): `seed_demo` refuses the installed program's folder.
-### Owner PC (installed as an owner PC before 1.1)
+### Owner PC, or replacing a reception PC (1.1)
 
-1. Open Sky Towers on the owner PC: it shows **«إعداد جهاز المالك»** with this PC's key (made on first
-   start). Press **نسخ المفتاح** and paste it on the reception PC in الإعدادات › النسخ الاحتياطي › مفتاح المالك العام.
-   (The key is also shown later in «النسخ والاستيراد».)
-2. On the reception PC press **نسخة احتياطية الآن** and copy the `.age` file from
-   `%ProgramData%\SkyTowers\backups` to a USB stick (or link Drive).
-3. On the owner PC press **استيراد أول نسخة** and choose the file. Then sign in with the reception PC's
-   manager account.
+Backups need no key setup: the reception PC makes the **hotel key** on its first start and encrypts every backup to
+it. Each backup also carries that key locked with the password of every active owner and manager (never the
+default `123456`); so on another PC the owner opens it with **his own username and password**, and that PC keeps the
+key for later imports.
 
+1. On the reception PC: change the default owner password (الإعدادات › المستخدمون), then **نسخة احتياطية الآن**;
+   copy the `.age` file from `%ProgramData%\SkyTowers\backups` to a USB stick (or link Drive).
+2. On the new PC: install, sign in with `admin` / `123456`. «لوحة المالك» and the empty room board show **«جهاز
+   جديد»** → **فتح من نسخة احتياطية**: the file, the login as on the reception PC, and one choice:
+   - **للاطلاع فقط** — the owner's PC (read-only); later backups import from «النسخ والاستيراد» with no login;
+   - **للعمل عليه** — this PC replaces a broken reception PC with the backup's data.
+3. The service restarts within seconds (`pending-import/` is applied before the database opens); the empty install
+   is kept in `backups\pre-import-<stamp>\`. Sign in with the hotel's accounts.
+
+PCs installed as owner PCs before 1.1 keep working: a key pasted in الإعدادات › النسخ الاحتياطي («مفتاح جهاز مالك
+قديم») still receives every backup.
 ### Updates
 
 Run a newer installer over the old one. It stops the service, takes a pre-upgrade backup, installs, and the

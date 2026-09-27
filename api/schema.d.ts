@@ -151,6 +151,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/backup/adopt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description 1.1: a new PC opens a hotel from a backup, when the owner chooses to — view only or work on it. */
+        post: operations["backup_adopt_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/backup/drive/auth-url": {
         parameters: {
             query?: never;
@@ -1605,6 +1622,27 @@ export interface components {
             /** @description Parameters for extend / confirm_checkout. */
             stay?: components["schemas"]["StayActionParamsRequest"];
         };
+        AdoptRequestRequest: {
+            /**
+             * Format: binary
+             * @description A backup of the hotel (.age).
+             */
+            file: string;
+            /**
+             * @description view: this PC becomes the owner's read-only copy; work: it replaces a reception PC.
+             *
+             *     * `view` - view
+             *     * `work` - work
+             */
+            mode: components["schemas"]["ModeEnum"];
+            username?: string;
+            password?: string;
+        };
+        AdoptResult: {
+            mode: components["schemas"]["ModeEnum"];
+            /** @description The service restarts within seconds to open the hotel. */
+            restarting: boolean;
+        };
         /**
          * @description * `cleaning` - تحتاج تنظيف
          *     * `maintenance` - صيانة
@@ -2268,6 +2306,9 @@ export interface components {
              * @default false
              */
             allow_older?: boolean;
+            /** @description 1.1: the owner's or a manager's login when this PC has no key yet. */
+            username?: string;
+            password?: string;
         };
         ImportRun: {
             /** Format: uuid */
@@ -2288,7 +2329,7 @@ export interface components {
             checks: components["schemas"]["ImportCheck"][];
             audit_chain_ok: boolean | null;
             error: string;
-            /** @description Failed runs: corrupt / foreign_hotel / upgrade_required / audit_chain_broken / older_backup / error */
+            /** @description Failed runs: corrupt / foreign_hotel / upgrade_required / audit_chain_broken / older_backup / credentials_required / credentials_wrong / error */
             readonly code: string | null;
             by: string;
         };
@@ -2445,6 +2486,12 @@ export interface components {
             transfer: number;
             total: number;
         };
+        /**
+         * @description * `view` - view
+         *     * `work` - work
+         * @enum {string}
+         */
+        ModeEnum: "view" | "work";
         Movement: {
             /** Format: date-time */
             at: string;
@@ -3422,6 +3469,8 @@ export interface components {
             due_tasks: number | null;
             /** @description Owner PC: public key to paste in the reception's backup settings (public). */
             owner_public_key: string | null;
+            /** @description 1.1: a new PC (only the untouched default account): «استيراد نسخة» may open a hotel here. */
+            can_adopt: boolean;
             /** @description The install's default owner account while its password is unchanged (the login page shows it). */
             default_login: components["schemas"]["DefaultLogin"] | null;
             version: string;
@@ -3796,6 +3845,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LoginUser"][];
+                };
+            };
+        };
+    };
+    backup_adopt_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["AdoptRequestRequest"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdoptResult"];
                 };
             };
         };

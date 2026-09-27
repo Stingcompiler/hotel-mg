@@ -90,7 +90,23 @@ def login_with_pin(user_id, pin: str) -> LoginResult:
 @transaction.atomic
 def login_with_password(username: str, password: str) -> LoginResult:
     user = User.objects.filter(username=username).first()
-    return _check_credential(user, lambda u: u.check_password(password), LoginEvent.Kind.PASSWORD)
+    result = _check_credential(user, lambda u: u.check_password(password), LoginEvent.Kind.PASSWORD)
+    if result.ok:
+        # Accounts from before 1.1 get their backup key slot at their first password sign-in.
+        _backup_slot(result.user, password, on_login=True)
+    return result
+
+
+def _backup_slot(user: User, password: str | None, on_login: bool = False) -> None:
+    """Keep this person's backup key slot in step with the password (apps.backup.keyslots)."""
+    from apps.backup import keyslots  # accounts must not import backup at load time
+
+    if password and on_login:
+        keyslots.ensure(user, password)
+    elif password:
+        keyslots.refresh(user, password)
+    else:
+        keyslots.clear_if_ineligible(user)
 
 
 @transaction.atomic
@@ -153,6 +169,7 @@ def create_user(actor: User, *, username, full_name, role, pin, password=None) -
         is_staff=rules.is_manager(role),
         created_by=actor,
     )
+    _backup_slot(user, password)
     audit.record(
         actor=actor, action="user.create", entity="user", entity_id=user.pk, after=audit.snapshot(user, USER_FIELDS)
     )
@@ -224,6 +241,7 @@ def update_user(actor: User, user_id, *, version: int, **changes) -> User:
         user.is_staff = rules.is_manager(user.role)
     user.full_clean(exclude=["password", "hotel_id"])
     user.save()
+    _backup_slot(user, password)
     if changes.get("is_active") is False:
         Token.objects.filter(user=user).delete()
     audit.record(

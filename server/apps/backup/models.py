@@ -92,3 +92,15 @@ class ImportRun(AppendOnlyModel):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class BackupKeySlot(BaseModel):
+    """1.1: the hotel key wrapped with one owner's or manager's password (keyslots.py). Device state: it travels
+    inside each backup's header, never through the owner PC's merge."""
+
+    user = models.OneToOneField("accounts.User", on_delete=models.CASCADE, related_name="backup_key_slot")
+    wrapped = models.TextField(help_text="age passphrase-encrypted hotel identity, base64.")
+    recipient = models.CharField(max_length=100, help_text="The hotel public key this slot opens.")
+
+    def __str__(self):
+        return f"slot {self.user}"

@@ -28,7 +28,9 @@ def test_backup_file_is_encrypted_and_complete(hotel, owner_identity):
     walk_in(hotel, "201", "محمد عثمان الطيب", pay=1_000_000)
     path = backup(hotel)
     raw = path.read_bytes()
-    assert raw.startswith(b"age-encryption.org/v1")
+    header, payload = rules.unpack(raw)  # format 2: a plain header, then the age payload
+    assert header["format"] == 2 and header["seq"] == 1 and header["hotel_id"].startswith("5a7e0000")
+    assert payload.startswith(b"age-encryption.org/v1")
     assert path.name.startswith("skytowers-5a7e0000-000001-")
     manifest, files = merge._open(raw, owner_identity[0])
     assert manifest["seq"] == 1 and manifest["full"] is True
@@ -62,12 +64,15 @@ def test_retention_and_second_folder(hotel, tmp_path):
     assert run.status == "ok" and run.second_error.startswith("المجلد الثاني غير متاح")
 
 
-def test_missing_owner_key_fails_visibly(hotel):
+def test_backups_need_no_owner_key_the_hotel_key_opens_them(hotel):
+    """1.1: nothing to paste; the reception makes its own hotel key and every backup opens with it."""
     cfg = export.backup_settings()
     cfg.owner_recipient = ""
     cfg.save()
     run = export.run_backup(hotel)
-    assert run.status == "failed" and "مفتاح المالك" in run.message
+    assert run.status == "ok"
+    manifest, files = merge._open(Path(run.path).read_bytes(), keys.hotel_identity())
+    assert manifest["seq"] == run.seq and rules.DB_FILE in files
 
 
 def test_three_sequential_imports_reproduce_reception_totals(hotel, owner_identity):

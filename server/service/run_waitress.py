@@ -25,6 +25,11 @@ def setup_django() -> str:
     from config import runtime
 
     cfg = runtime.load()
+    # A hotel adopted from a backup on this PC (1.1) takes its files and role before the database opens.
+    from service import pending_import
+
+    if pending_import.apply(cfg.home):
+        cfg = runtime.load()
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"config.settings.{cfg.role}")
 
     import django
@@ -36,11 +41,18 @@ def setup_django() -> str:
     _log_to_file(cfg.home / "logs")
     # Updates: a newer build migrates the database on its first start (spec §11).
     call_command("migrate", interactive=False, verbosity=0)
+    from apps.backup import adopt
+
+    adopt.finish_pending()
     if cfg.role == "reception":
         # A new install opens on the login page with the default owner account, never a setup form.
         from apps.accounts.services import ensure_default_owner
 
         ensure_default_owner()
+        # The hotel key: backups need no key setup (1.1).
+        from apps.backup import keys as backup_keys
+
+        backup_keys.ensure_hotel_key()
     if cfg.role == "owner":
         # The owner's backup key is made on the first start; the login page shows its public half.
         from apps.backup import keys

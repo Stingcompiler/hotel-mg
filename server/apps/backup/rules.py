@@ -110,3 +110,38 @@ def stale_hours(last_at: datetime | None, now: datetime, limit_hours: int) -> in
     if last_at is None or now - last_at < timedelta(hours=limit_hours):
         return None
     return int((now - last_at).total_seconds() // 3600)
+
+
+# --- File format 2 (1.1): a small plain header before the age payload -------------------------------------------
+# The header carries the key slots (the hotel key, each copy encrypted with an owner's or manager's password) so a
+# backup opens on a new PC with that person's own username and password. Format 1 files are the bare age payload.
+FORMAT2_MAGIC = b"SKYTOWERS-BACKUP-2\n"
+
+
+def pack(header: dict, payload: bytes) -> bytes:
+    """Magic line, one JSON line, then the age-encrypted payload."""
+    line = json.dumps(header, ensure_ascii=True, separators=(",", ":")).encode("ascii")
+    return FORMAT2_MAGIC + line + b"\n" + payload
+
+
+def unpack(raw: bytes) -> tuple[dict | None, bytes]:
+    """(header, payload) for a format 2 file; (None, raw) for a format 1 file or anything unreadable."""
+    if not raw.startswith(FORMAT2_MAGIC):
+        return None, raw
+    rest = raw[len(FORMAT2_MAGIC) :]
+    end = rest.find(b"\n")
+    if end < 0:
+        return None, raw
+    try:
+        header = json.loads(rest[:end].decode("ascii"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return None, raw
+    return (header if isinstance(header, dict) else None), rest[end + 1 :]
+
+
+def slot_for(header: dict | None, username: str) -> str | None:
+    """The wrapped hotel key for this login name, if the file carries one (names compare case-insensitively)."""
+    for slot in (header or {}).get("slots", []):
+        if isinstance(slot, dict) and str(slot.get("username", "")).strip().lower() == username.strip().lower():
+            return slot.get("wrapped")
+    return None

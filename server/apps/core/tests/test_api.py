@@ -33,6 +33,7 @@ def test_system_status_is_public(api):
         "due_tasks": 0,
         "owner_public_key": None,
         "default_login": None,
+        "can_adopt": True,
         "version": settings.APP_VERSION,
         "schema_version": SCHEMA_VERSION,
         "spa_built": body["spa_built"],

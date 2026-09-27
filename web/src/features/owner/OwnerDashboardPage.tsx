@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, TriangleAlert } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import type { components } from "@api/schema";
 
 import { api, data } from "@/api/client";
+import { NewPcCard } from "@/features/backup/AdoptModal";
 import { Segmented } from "@/components/ui/form";
 import { stateColor } from "@/design/state";
 import { days, duration } from "@/i18n/counts";
@@ -25,6 +26,7 @@ const pct = (n: number) => `${digits(String(n))}٪`;
 /** 6.12 Owner dashboard: read only; KPIs, occupancy line, weekly revenue vs collected, attention list, staff response. */
 export function OwnerDashboardPage() {
   const [period, setPeriod] = useState<Period>("month");
+  const navigate = useNavigate();
   const dash = useQuery({
     queryKey: ["reports", "owner-dashboard", period],
     queryFn: () => data(api.GET("/api/v1/reports/owner-dashboard", { params: { query: { period } } })),
@@ -33,6 +35,7 @@ export function OwnerDashboardPage() {
 
   return (
     <div className="flex flex-col gap-4 p-6 max-[1599px]:gap-3">
+      <NewPcCard onSetup={() => navigate("/settings/roomTypes")} />
       <DeviceNotices />
       <div className="flex h-9 items-center gap-3">
         <h1 className="m-0 text-page-title">{t("ownerDash.title")}</h1>

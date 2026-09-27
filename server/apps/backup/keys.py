@@ -50,3 +50,42 @@ def load(path: Path | None = None) -> x25519.Identity:
 
 def recipient(public_key: str) -> x25519.Recipient:
     return x25519.Recipient.from_str(public_key.strip())
+
+
+# --- The hotel key (1.1) ---------------------------------------------------------------------------------------
+# Made by the reception PC on its first start, so backups need no key setup. Every backup is encrypted to it; its
+# identity also travels inside each backup wrapped with the owner's and managers' passwords (keyslots.py), and a PC
+# that imports with one of those logins keeps it here for the next imports.
+
+
+def hotel_identity_path() -> Path:
+    return settings.RUNTIME.home / "keys" / "hotel.age-identity"
+
+
+def ensure_hotel_key() -> str:
+    """The hotel's public key, creating the key pair on first use."""
+    return generate(hotel_identity_path())
+
+
+def hotel_identity() -> x25519.Identity | None:
+    path = hotel_identity_path()
+    return load(path) if path.exists() else None
+
+
+def save_hotel_identity(identity: str) -> None:
+    """Adopt a hotel's key (an import opened with a login). A different key already here is kept beside it."""
+    path = hotel_identity_path()
+    if path.exists():
+        if str(load(path)) == identity:
+            return
+        path.replace(path.with_name(path.name + ".previous"))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(protect(identity.encode("ascii")))
+
+
+def local_identities() -> list[x25519.Identity]:
+    """Every key this PC holds that may open a backup: the hotel key, then a pre-1.1 owner key."""
+    found = [hotel_identity()]
+    if identity_path().exists():
+        found.append(load())
+    return [i for i in found if i is not None]
