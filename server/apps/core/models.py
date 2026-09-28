@@ -120,3 +120,26 @@ class HotelSettings(BaseModel):
     def load(cls) -> "HotelSettings":
         obj, _ = cls.objects.get_or_create(hotel_id=current_hotel_id())
         return obj
+
+
+class AlertSound(BaseModel):
+    """The owner's alert sound (owner request 2026-09-28). No sound saved (or reset): the app's built-in tone.
+
+    A table of its own so ordinary settings reads never load up to 1 MB of audio; merged to the owner PC like the
+    settings. One row per hotel; resetting clears ``data`` (rows are never deleted).
+    """
+
+    name = models.CharField(max_length=120, blank=True)
+    content_type = models.CharField(max_length=40, blank=True)
+    data = models.BinaryField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["hotel_id"], name="one_alert_sound_per_hotel")]
+
+    def __str__(self):
+        return self.name or "الصوت الافتراضي"
+
+    @classmethod
+    def load(cls) -> "AlertSound":
+        obj, _ = cls.objects.get_or_create(hotel_id=current_hotel_id())
+        return obj

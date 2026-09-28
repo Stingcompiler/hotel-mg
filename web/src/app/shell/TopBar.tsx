@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Bell, ChevronDown, LogOut, Search, UserRound } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Search, UserRound, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -7,6 +7,7 @@ import { api, data } from "@/api/client";
 import { useRoomBoard } from "@/features/rooms/RoomBoardPage";
 import { digits, toWestern } from "@/i18n/digits";
 import { t } from "@/i18n/t";
+import { setSoundMuted, soundMuted } from "@/lib/alertSound";
 
 type Props = {
   userName: string;
@@ -48,6 +49,7 @@ export function TopBar({ userName, roleName, shift, backup, alerts, onLogout }: 
         {backupChip.text}
       </span>
 
+      <SoundToggle />
       <Link
         to="/followups"
         aria-label={t("topbar.alerts")}
@@ -260,3 +262,25 @@ function UserMenu({ userName, roleName, onLogout }: { userName: string; roleName
     </div>
   );
 }
+
+/** Alert sound on/off for this PC only (the owner chooses the sound itself in settings). */
+function SoundToggle() {
+  const [on, setOn] = useState(() => !soundMuted());
+  const label = t(on ? "topbar.soundOn" : "topbar.soundOff");
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-pressed={on}
+      onClick={() => {
+        setSoundMuted(on);
+        setOn(!on);
+      }}
+      className="flex h-9 w-9 items-center justify-center rounded-control border-0 bg-transparent text-text-secondary hover:bg-bg-surface-2 hover:text-text-primary"
+    >
+      {on ? <Volume2 className="h-icon w-icon" strokeWidth={1.75} aria-hidden /> : <VolumeX className="h-icon w-icon" strokeWidth={1.75} aria-hidden />}
+    </button>
+  );
+}
+

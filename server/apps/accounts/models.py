@@ -48,6 +48,10 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
         default=False,
         help_text="Still the install's default password (the login page shows it; a reminder after login).",
     )
+    email = models.EmailField(
+        blank=True,
+        help_text="Reference email: «نسيت كلمة المرور؟» on the reception PC asks for it (offline, nothing is sent).",
+    )
     default_pin = models.BooleanField(
         default=False,
         help_text="The quick-login PIN is the well-known default (123456): anyone can pick the account and type it.",

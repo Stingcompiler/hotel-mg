@@ -60,3 +60,46 @@ def running_ledger(entries):
 def as_debit_credit(amount: int) -> tuple[int, int]:
     """A folio line (+ charge / − credit) or a negated payment as ledger columns."""
     return (amount, 0) if amount > 0 else (0, -amount)
+
+
+# --- Foreign currencies (owner decision 2026-09-28) -------------------------------------------------
+
+
+def to_base(foreign_minor: int, rate: int) -> int:
+    """Cents of a foreign currency → base minor units at ``rate`` (base minor per whole unit), rounded half away
+    from zero: 150.00 $ at 2,500 → 37,500,000 minor (375,000 ج.س)."""
+    numerator = foreign_minor * rate
+    sign = -1 if numerator < 0 else 1
+    whole, rest = divmod(abs(numerator), 100)
+    return sign * (whole + (1 if 2 * rest >= 100 else 0))
+
+
+def foreign_text(foreign_minor: int, symbol: str) -> str:
+    """«150 $», «150.50 $», «-20 $»."""
+    whole, cents = divmod(abs(foreign_minor), 100)
+    number = f"{whole:,}" + (f".{cents:02d}" if cents else "")
+    return f"{'-' if foreign_minor < 0 else ''}{number} {symbol}"
+
+
+def rate_text(rate: int) -> str:
+    """Base minor units per unit → «2,500» (or «2,500.50»)."""
+    whole, minor = divmod(rate, 100)
+    return f"{whole:,}" + (f".{minor:02d}" if minor else "")
+
+
+def valid_currency_code(code: str, base: str) -> bool:
+    """Three Latin capitals (ISO 4217) other than the hotel's own currency."""
+    return len(code) == 3 and code.isascii() and code.isalpha() and code.isupper() and code != base
+
+
+def foreign_totals(rows) -> dict[str, dict[str, int]]:
+    """``rows``: (currency, method, foreign_amount, amount) of foreign-currency payments → per currency the cash in its
+    own cents (what is in the drawer), all methods in its cents, and the base equivalent."""
+    out: dict[str, dict[str, int]] = {}
+    for currency, method, foreign_amount, amount in rows:
+        row = out.setdefault(currency, {"cash": 0, "total": 0, "base": 0})
+        row["total"] += foreign_amount
+        row["base"] += amount
+        if method == "cash":
+            row["cash"] += foreign_amount
+    return out

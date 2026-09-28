@@ -6,7 +6,9 @@ import { useNavigate } from "react-router-dom";
 import type { components } from "@api/schema";
 
 import { api, data } from "@/api/client";
+import { useHotelSettings } from "@/api/queries";
 import { t } from "@/i18n/t";
+import { playAlert } from "@/lib/alertSound";
 import { notify } from "@/lib/desktop";
 
 type Toast = components["schemas"]["Toast"];
@@ -22,6 +24,8 @@ export function Toasts() {
   const [shown, setShown] = useState<Toast[]>([]);
   // Hovering the stack pauses the countdown so a toast can be read or clicked in time.
   const [paused, setPaused] = useState(false);
+  // The owner's sound, or the built-in tone when none is chosen (owner request 2026-09-28).
+  const sound = useHotelSettings().data?.alert_sound?.updated_at ?? null;
   const poll = useQuery({
     queryKey: ["followups", "toasts"],
     queryFn: () => data(api.GET("/api/v1/followups/toasts", { params: { query: { after: cursor.current ?? 0 } } })),
@@ -36,6 +40,7 @@ export function Toasts() {
       setShown((s) => [...batch.toasts, ...s].slice(0, 3));
       // Desktop: also a Windows notification, so it reaches staff while the window sits in the tray.
       batch.toasts.forEach((toast) => void notify(toast.title, toast.body));
+      void playAlert(sound); // once per batch, however many alerts arrived together
     }
     cursor.current = batch.cursor;
   }, [poll.data]);

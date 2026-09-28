@@ -1,22 +1,26 @@
 import shutil
 
 from django.conf import settings
+from django.http import HttpResponse
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_field
 from rest_framework import serializers, status
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import User
-from apps.accounts.permissions import IsManager
+from apps.accounts.permissions import IsManager, IsOwner
 from apps.accounts.services import require_confirmation
 
 from . import rules
 from .clock import approve_clock, is_clock_blocked, last_seen_at
+from .errors import ApiError
 from .fields import MoneyMinorField
-from .models import SCHEMA_VERSION, HotelSettings
-from .settings_service import update_settings
+from .models import SCHEMA_VERSION, AlertSound, HotelSettings
+from .settings_service import reset_alert_sound, set_alert_sound, update_settings
 
 
 class DefaultLoginSerializer(serializers.Serializer):
@@ -167,7 +171,23 @@ class ClockApproveView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class AlertSoundInfoSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    updated_at = serializers.DateTimeField()
+
+
 class HotelSettingsSerializer(serializers.ModelSerializer):
+    alert_sound = serializers.SerializerMethodField(
+        help_text="The owner's alert sound {name, updated_at}; null: the app's built-in tone."
+    )
+
+    @extend_schema_field(AlertSoundInfoSerializer(allow_null=True))
+    def get_alert_sound(self, obj):
+        sound = AlertSound.objects.filter(hotel_id=obj.hotel_id).only("name", "updated_at", "content_type").first()
+        if sound is None or not sound.content_type:
+            return None
+        return {"name": sound.name, "updated_at": sound.updated_at}
+
     expense_attachment_threshold = MoneyMinorField(min_value=0)
     debt_attention_threshold = MoneyMinorField(min_value=0, required=False)
 
@@ -189,10 +209,11 @@ class HotelSettingsSerializer(serializers.ModelSerializer):
             "auto_print_receipt",
             "thermal_printer",
             "hotel_id",
+            "alert_sound",
             "version",
             "updated_at",
         ]
-        read_only_fields = ["currency", "hotel_id", "version", "updated_at"]
+        read_only_fields = ["currency", "hotel_id", "alert_sound", "version", "updated_at"]
 
 
 class HotelSettingsUpdateSerializer(HotelSettingsSerializer):
@@ -222,3 +243,36 @@ class HotelSettingsView(APIView):
         data = HotelSettingsUpdateSerializer(HotelSettings.load(), data=request.data, partial=True)
         data.is_valid(raise_exception=True)
         return Response(HotelSettingsSerializer(update_settings(request.user, **data.validated_data)).data)
+
+
+class AlertSoundUploadSerializer(serializers.Serializer):
+    file = serializers.FileField(help_text="MP3, WAV or OGG up to 1 MB.")
+
+
+class AlertSoundView(APIView):
+    """The alert sound: everyone signed in plays it (404: use the built-in tone); only the owner changes it."""
+
+    parser_classes = [MultiPartParser]
+
+    def get_permissions(self):
+        return [IsAuthenticated()] if self.request.method == "GET" else [IsOwner()]
+
+    @extend_schema(responses={(200, "audio/mpeg"): OpenApiResponse(OpenApiTypes.BINARY), 404: None})
+    def get(self, request):
+        sound = AlertSound.objects.filter(hotel_id=HotelSettings.load().hotel_id).first()
+        if sound is None or not sound.data:
+            raise ApiError("not_found", 404, detail="لا يوجد صوت مختار — يُستخدم الصوت الافتراضي.")
+        return HttpResponse(bytes(sound.data), content_type=sound.content_type)
+
+    @extend_schema(request=AlertSoundUploadSerializer, responses={204: None})
+    def post(self, request):
+        data = AlertSoundUploadSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        upload = data.validated_data["file"]
+        set_alert_sound(request.user, name=upload.name, raw=upload.read())
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(responses={204: None})
+    def delete(self, request):
+        reset_alert_sound(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)

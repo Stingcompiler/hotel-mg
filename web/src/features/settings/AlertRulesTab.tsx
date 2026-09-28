@@ -13,6 +13,7 @@ import { digits, toWestern } from "@/i18n/digits";
 import { formatMoney, parseMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 
+import { AlertSoundCard } from "./AlertSoundCard";
 import { Cancelled, useConfirmGate } from "./confirm";
 import { apiErrorText, Card, HeadRow, linkButton, smallButton } from "./shared";
 
@@ -32,7 +33,7 @@ const before = (n: number | null | undefined) =>
 const repeat = (h: number) => (h ? t("settings.alerts.everyHours", { h: digits(String(h)) }) : t("settings.alerts.noRepeat"));
 
 /** 6.11 «قواعد التنبيه»: stay-ending rules edited in their row with a live preview; neglect limits; other alerts. */
-export function AlertRulesTab({ readOnly }: { readOnly: boolean }) {
+export function AlertRulesTab({ readOnly, owner = false }: { readOnly: boolean; owner?: boolean }) {
   const queryClient = useQueryClient();
   const rules = useQuery({ queryKey: RULES, queryFn: () => data(api.GET("/api/v1/followups/rules")) });
   const [error, setError] = useState<string | null>(null);
@@ -64,13 +65,19 @@ export function AlertRulesTab({ readOnly }: { readOnly: boolean }) {
   const save = (rule: Rule, body: Patch) => patch.mutateAsync([{ rule, body }]);
 
   if (rules.isSuccess && all.length === 0) {
-    return <div className="rounded-card border border-border bg-bg-surface p-6 text-center text-body text-text-secondary">{t("settings.alerts.empty")}</div>;
+    return (
+      <div className="flex flex-col gap-4">
+        <AlertSoundCard readOnly={readOnly} owner={owner} />
+        <div className="rounded-card border border-border bg-bg-surface p-6 text-center text-body text-text-secondary">{t("settings.alerts.empty")}</div>
+      </div>
+    );
   }
 
   return (
     <div className="flex flex-col gap-4">
       {modal}
       {error && <ErrorBanner>{error}</ErrorBanner>}
+      <AlertSoundCard readOnly={readOnly} owner={owner} />
       <Card title={t("settings.alerts.title")} note={t("settings.alerts.note")}>
         <HeadRow grid={GRID} labels={["type", "first", "second", "time", "repeat", "windows", "active", ""].map((k) => (k ? t(`settings.alerts.col_${k}`) : ""))} />
         {ending.map((rule) => (

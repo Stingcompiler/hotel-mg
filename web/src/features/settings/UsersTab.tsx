@@ -136,6 +136,7 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
     pin: "",
     password: "",
     confirm: "",
+    email: user?.email ?? "",
   });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -164,6 +165,7 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
                 full_name: form.full_name.trim(),
                 role: form.role,
                 pin: form.pin,
+                email: form.email.trim(),
                 ...(form.password ? { password: form.password } : {}),
               },
             }),
@@ -175,6 +177,7 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
         if (form.username.trim() && form.username.trim() !== user.username) body.username = form.username.trim();
         if (!owner && form.role !== user.role) body.role = form.role;
         if (form.password) body.password = form.password;
+        if (form.email.trim() !== (user.email ?? "")) body.email = form.email.trim();
         if (Object.keys(body).length > 1) await data(api.PATCH("/api/v1/users/{id}", { params: { path: { id: user.id } }, headers, body }));
         if (form.pin) await data(api.POST("/api/v1/users/{id}/reset-pin", { params: { path: { id: user.id } }, headers, body: { pin: form.pin } }));
       });
@@ -217,6 +220,9 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
           <TextInput dir="ltr" value={form.username} onChange={(e) => set({ username: e.target.value })} />
         </Field>
       </div>
+      <Field label={t("settings.users.email")} hint={t("settings.users.emailHint")}>
+        <TextInput dir="ltr" type="email" autoComplete="off" value={form.email} onChange={(e) => set({ email: e.target.value })} />
+      </Field>
       {!owner && (
         <Field label={t("settings.users.col_role")}>
           <Segmented<Role>

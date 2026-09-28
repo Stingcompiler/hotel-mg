@@ -38,6 +38,7 @@ def board() -> dict:
             "floor": room.floor,
             "room_type": room.room_type_id,
             "room_type_name": room.room_type.name,
+            "name": room.name,
             "status": room.status,
             "display_status": "overdue" if overdue else room.status,
             "status_changed_at": room.status_changed_at,

@@ -70,6 +70,7 @@ export function LoginPage() {
   const now = useNow(1000);
 
   const [mode, setModeState] = useState<Mode>(rememberedMode);
+  const [recovering, setRecovering] = useState(false);
   const owner = status.data?.role === "owner";
   const list = users.data ?? [];
 
@@ -102,7 +103,16 @@ export function LoginPage() {
           {/* Always the login fields (owner, 2026-09-27): no setup screens. A PC without a hotel starts with the
               default owner account; the owner opens a hotel from a backup inside the app when he wants. */}
           {mode === "password" ? (
-            <PasswordForm defaultLogin={status.data?.default_login ?? null} onDone={signedIn} onPin={() => setMode("pin")} />
+            recovering ? (
+              <RecoverForm onBack={() => setRecovering(false)} />
+            ) : (
+              <PasswordForm
+                defaultLogin={status.data?.default_login ?? null}
+                onDone={signedIn}
+                onPin={() => setMode("pin")}
+                onForgot={status.data?.role === "owner" ? undefined : () => setRecovering(true)}
+              />
+            )
           ) : (
             <PinLogin users={list} loaded={users.isSuccess} onDone={signedIn} onPassword={() => setMode("password")} />
           )}
@@ -226,10 +236,12 @@ function PasswordForm({
   defaultLogin,
   onDone,
   onPin,
+  onForgot,
 }: {
   defaultLogin: { username: string; password: string; pin: string } | null;
   onDone: (token: string, user: SignedInUser) => void;
   onPin: () => void;
+  onForgot?: () => void;
 }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -318,6 +330,95 @@ function PasswordForm({
       </button>
       <button type="button" onClick={onPin} className="border-0 bg-transparent font-sans text-body font-medium text-primary hover:text-primary-hover">
         {t("login.quickPin")}
+      </button>
+      {onForgot && (
+        <button type="button" onClick={onForgot} className="border-0 bg-transparent font-sans text-body font-medium text-text-secondary hover:text-primary">
+          {t("login.forgot")}
+        </button>
+      )}
+    </form>
+  );
+}
+
+/** «نسيت كلمة المرور؟» (owner decision 2026-09-28): offline, the email saved on the account confirms who asks.
+ *  Wrong emails count like wrong passwords (locked after 5); nothing is sent anywhere. */
+function RecoverForm({ onBack }: { onBack: () => void }) {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const mismatch = !!confirm && confirm !== password;
+  const ready = !!username.trim() && !!email.trim() && password.length >= 6 && password === confirm && !busy;
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!ready) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await data(api.POST("/api/v1/auth/recover", { body: { username: username.trim(), email: email.trim(), password } }));
+      setDone(true);
+    } catch (err) {
+      setError(passwordError(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const field =
+    "h-12 w-full rounded-control border border-border-strong bg-bg-surface px-3 font-sans text-body text-text-primary focus:border-primary";
+  if (done) {
+    return (
+      <div className="flex w-full flex-col gap-4">
+        <h2 className="m-0 text-page-title">{t("login.recoverDoneTitle")}</h2>
+        <div className="text-body text-text-secondary">{t("login.recoverDone")}</div>
+        <button type="button" onClick={onBack} className="h-12 rounded-control border-0 bg-primary font-sans text-body font-semibold text-primary-text-on hover:bg-primary-hover">
+          {t("login.backToSignIn")}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <form onSubmit={submit} className="flex w-full flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="m-0 text-page-title">{t("login.recoverTitle")}</h2>
+        <div className="text-body text-text-secondary">{t("login.recoverHint")}</div>
+      </div>
+      <label className="flex flex-col gap-1.5 text-label text-text-secondary">
+        {t("login.username")}
+        <input dir="ltr" autoFocus autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} className={field} />
+      </label>
+      <label className="flex flex-col gap-1.5 text-label text-text-secondary">
+        {t("login.email")}
+        <input dir="ltr" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={field} />
+      </label>
+      <label className="flex flex-col gap-1.5 text-label text-text-secondary">
+        {t("login.newPassword")}
+        <input dir="ltr" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={field} />
+      </label>
+      <label className="flex flex-col gap-1.5 text-label text-text-secondary">
+        {t("login.confirmPassword")}
+        <input dir="ltr" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className={field} />
+        {mismatch && <span className="text-label font-normal text-danger">{t("settings.users.passwordMismatch")}</span>}
+      </label>
+      {error && (
+        <div role="alert" className="flex items-center gap-2 rounded-control bg-danger-soft px-3 py-2.5 text-body font-medium text-danger-text">
+          <CircleAlert className="h-icon w-icon flex-none" strokeWidth={1.75} aria-hidden />
+          {error}
+        </div>
+      )}
+      <button
+        type="submit"
+        disabled={!ready}
+        className="h-12 rounded-control border-0 bg-primary font-sans text-body font-semibold text-primary-text-on hover:bg-primary-hover disabled:opacity-50"
+      >
+        {t("login.recoverSubmit")}
+      </button>
+      <button type="button" onClick={onBack} className="border-0 bg-transparent font-sans text-body font-medium text-primary hover:text-primary-hover">
+        {t("login.backToSignIn")}
       </button>
     </form>
   );

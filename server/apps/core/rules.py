@@ -18,3 +18,17 @@ DISK_LOW_BYTES = 2 * 1024**3
 
 def disk_low(free_bytes: int | None) -> bool:
     return free_bytes is not None and free_bytes < DISK_LOW_BYTES
+
+
+ALERT_SOUND_MAX_BYTES = 1024 * 1024
+
+
+def sound_type(raw: bytes) -> str | None:
+    """Content type of an uploaded alert sound from its first bytes (MP3, WAV or OGG), None for anything else."""
+    if raw.startswith(b"ID3") or (len(raw) > 1 and raw[0] == 0xFF and raw[1] & 0xE0 == 0xE0):
+        return "audio/mpeg"
+    if raw[:4] == b"RIFF" and raw[8:12] == b"WAVE":
+        return "audio/wav"
+    if raw.startswith(b"OggS"):
+        return "audio/ogg"
+    return None

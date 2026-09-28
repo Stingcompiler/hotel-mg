@@ -16,7 +16,7 @@ import { ROOM_TYPES } from "./RoomTypesTab";
 import { apiErrorText, Card, Footnote, HeadRow, linkButton, smallButton } from "./shared";
 
 type Room = components["schemas"]["Room"];
-type Draft = { number: string; floor: string; room_type: string; note: string; in_service: boolean };
+type Draft = { number: string; name: string; floor: string; room_type: string; note: string; in_service: boolean };
 const GRID = "grid grid-cols-[72px_minmax(90px,1.2fr)_64px_130px_minmax(120px,2fr)_80px_90px] items-center gap-3 px-4";
 const ROOMS = ["rooms", "settings"] as const;
 
@@ -27,7 +27,7 @@ export function RoomsTab({ readOnly }: { readOnly: boolean }) {
   const types = useQuery({ queryKey: ROOM_TYPES, queryFn: () => data(api.GET("/api/v1/room-types/")) });
   const [floor, setFloor] = useState<string>("");
   const [editing, setEditing] = useState<string | "new" | null>(null);
-  const [draft, setDraft] = useState<Draft>({ number: "", floor: "", room_type: "", note: "", in_service: true });
+  const [draft, setDraft] = useState<Draft>({ number: "", name: "", floor: "", room_type: "", note: "", in_service: true });
   const [error, setError] = useState<string | null>(null);
 
   const all = rooms.data ?? [];
@@ -38,15 +38,15 @@ export function RoomsTab({ readOnly }: { readOnly: boolean }) {
     setError(null);
     setDraft(
       r
-        ? { number: r.number, floor: String(r.floor), room_type: r.room_type, note: r.note, in_service: r.in_service }
-        : { number: "", floor: floor || String(floors[0] ?? 1), room_type: types.data?.[0]?.id ?? "", note: "", in_service: true },
+        ? { number: r.number, name: r.name, floor: String(r.floor), room_type: r.room_type, note: r.note, in_service: r.in_service }
+        : { number: "", name: "", floor: floor || String(floors[0] ?? 1), room_type: types.data?.[0]?.id ?? "", note: "", in_service: true },
     );
     setEditing(r ? r.id : "new");
   };
 
   const save = useMutation({
     mutationFn: () => {
-      const body = { number: draft.number.trim(), floor: Number(draft.floor), room_type: draft.room_type, note: draft.note.trim() };
+      const body = { number: draft.number.trim(), name: draft.name.trim(), floor: Number(draft.floor), room_type: draft.room_type, note: draft.note.trim() };
       if (editing === "new") return data(api.POST("/api/v1/rooms/", { body }));
       const current = all.find((r) => r.id === editing)!;
       return data(
@@ -108,13 +108,22 @@ export function RoomsTab({ readOnly }: { readOnly: boolean }) {
             return (
               <div key={r?.id ?? "new"} className={`${GRID} min-h-[60px] border-b border-border bg-primary-soft py-2 text-table-cell`}>
                 <TextInput aria-label={t("settings.rooms.col_number")} value={draft.number} onChange={(e) => setDraft({ ...draft, number: toWestern(e.target.value) })} />
-                <Select aria-label={t("settings.rooms.col_type")} value={draft.room_type} onChange={(e) => setDraft({ ...draft, room_type: e.target.value })}>
-                  {(types.data ?? []).map((ty) => (
-                    <option key={ty.id} value={ty.id}>
-                      {ty.name}
-                    </option>
-                  ))}
-                </Select>
+                <div className="flex flex-col gap-1.5">
+                  <Select aria-label={t("settings.rooms.col_type")} value={draft.room_type} onChange={(e) => setDraft({ ...draft, room_type: e.target.value })}>
+                    {(types.data ?? []).map((ty) => (
+                      <option key={ty.id} value={ty.id}>
+                        {ty.name}
+                      </option>
+                    ))}
+                  </Select>
+                  <TextInput
+                    aria-label={t("settings.rooms.name")}
+                    placeholder={t("settings.rooms.name")}
+                    maxLength={60}
+                    value={draft.name}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                  />
+                </div>
                 <TextInput
                   aria-label={t("settings.rooms.col_floor")}
                   inputMode="numeric"
@@ -144,7 +153,10 @@ export function RoomsTab({ readOnly }: { readOnly: boolean }) {
           return (
             <div key={r!.id} className={`${GRID} h-11 border-b border-border text-table-cell ${r!.in_service ? "" : "text-text-disabled"}`}>
               <div className="font-semibold">{digits(r!.number)}</div>
-              <div>{r!.room_type_name}</div>
+              <div className="min-w-0">
+                <div className="truncate">{r!.room_type_name}</div>
+                {r!.name && <div className="truncate text-label font-normal text-text-secondary">{r!.name}</div>}
+              </div>
               <div>{digits(String(r!.floor))}</div>
               <div>{chip}</div>
               <div className="truncate text-text-secondary">{note || "—"}</div>

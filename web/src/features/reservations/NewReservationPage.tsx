@@ -7,6 +7,7 @@ import { api, ApiError, data } from "@/api/client";
 import { keys, useSystemStatus } from "@/api/queries";
 import { ErrorBanner, Section } from "@/components/ui/form";
 import { useRoomBoard } from "@/features/rooms/RoomBoardPage";
+import { useCurrencies } from "@/features/settings/CurrenciesTab";
 import { formatRange } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
 import { formatMoney } from "@/i18n/money";
@@ -101,7 +102,11 @@ export function NewReservationPage() {
   const planPrice = option?.total ?? 0;
   const price = form.price !== null ? amount(form.price) ?? planPrice : planPrice;
   const discount = amount(form.discount) ?? 0;
-  const deposit = amount(form.deposit) ?? 0;
+  const typedDeposit = amount(form.deposit) ?? 0;
+  const currencies = (useCurrencies().data ?? []).filter((c) => c.is_active);
+  const depositCurrency = currencies.find((c) => c.code === form.deposit_currency);
+  // A deposit in dollars counts at the owner's rate (the server applies it and has the final word).
+  const deposit = depositCurrency ? Math.round((typedDeposit * depositCurrency.rate) / 100) : typedDeposit;
   const total = price - discount;
   const roomNumber = board?.rooms.find((r) => r.id === form.room)?.number;
   const isToday = form.check_in_date === (board?.date ?? todayIso());
@@ -175,7 +180,9 @@ export function NewReservationPage() {
             check_in_now: checkInNow,
             discount,
             discount_reason: form.discount_reason.trim(),
-            deposit,
+            ...(depositCurrency && typedDeposit > 0
+              ? { deposit: 0, deposit_currency: depositCurrency.code, deposit_foreign_amount: typedDeposit }
+              : { deposit }),
             deposit_method: form.deposit_method,
             deposit_reference: form.deposit_reference.trim(),
             manager_password: form.manager_password,
@@ -237,6 +244,8 @@ export function NewReservationPage() {
               planPrice={planPrice}
               planLabel={t("newRes.fromPlan", { type: type?.name ?? "", kind: option!.label })}
               total={total}
+              currencies={currencies}
+              depositBase={deposit}
             />
           ) : (
             <Section step={3} title={t("newRes.money")} note={t("newRes.moneyClosed")} />

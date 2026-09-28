@@ -9,15 +9,30 @@ from django.utils import timezone
 from apps.accounts import rules as account_rules
 from apps.audit import services as audit
 from apps.cash.services import require_open_shift
+from apps.core.concurrency import get_for_update
 from apps.core.errors import ApiError
 from apps.core.hotel import current_hotel_id
 from apps.core.models import HotelSettings
 
 from . import rules
-from .models import Folio, FolioLine, Payment, Sequence
+from .models import Currency, Folio, FolioLine, Payment, Sequence
 
 LINE_FIELDS = ["folio", "kind", "description", "amount", "reverses", "reason", "posted_at"]
-PAYMENT_FIELDS = ["folio", "shift", "kind", "method", "amount", "reference", "receipt_no", "reverses", "reason"]
+PAYMENT_FIELDS = [
+    "folio",
+    "shift",
+    "kind",
+    "method",
+    "amount",
+    "reference",
+    "receipt_no",
+    "reverses",
+    "reason",
+    "currency",
+    "foreign_amount",
+    "rate",
+]
+CURRENCY_FIELDS = ["code", "name", "symbol", "rate", "is_active"]
 
 
 def next_number(name: str) -> int:
@@ -168,14 +183,40 @@ def _checked_in_or_later(folio: Folio) -> bool:
     return folio.reservation.status in ("checked_in", "checked_out", "cancelled")
 
 
+def in_currency(currency: str, foreign_amount: int | None) -> tuple[int, int]:
+    """(base amount, rate) of an amount handed over in an accepted foreign currency, at the owner's current rate."""
+    row = Currency.objects.filter(code=currency, is_active=True).first()
+    if row is None:
+        raise ApiError("validation_error", 400, detail="هذه العملة غير مقبولة — يضيفها المالك من الإعدادات › العملات.")
+    if not foreign_amount or foreign_amount <= 0:
+        raise ApiError("validation_error", 400, detail="المبلغ يجب أن يكون أكبر من صفر.")
+    return rules.to_base(foreign_amount, row.rate), row.rate
+
+
 def take_payment(
-    actor, folio: Folio, *, amount: int, method: str, reference: str = "", kind: str | None = None, reason: str = ""
+    actor,
+    folio: Folio,
+    *,
+    amount: int,
+    method: str,
+    reference: str = "",
+    kind: str | None = None,
+    reason: str = "",
+    currency: str = "",
+    foreign_amount: int | None = None,
+    rate: int | None = None,
 ) -> Payment:
-    """Record money in (or out when negative) in this device's open shift. Caller owns the transaction."""
+    """Record money in (or out when negative) in this device's open shift. Caller owns the transaction.
+
+    ``currency`` / ``foreign_amount`` / ``rate``: paid in a foreign currency; ``amount`` is then its base equivalent.
+    """
     if rules.reference_required(method) and not reference.strip():
         raise ApiError("reference_required", 400)
     shift = require_open_shift()
     payment = Payment.objects.create(
+        currency=currency,
+        foreign_amount=foreign_amount if currency else None,
+        rate=rate if currency else None,
         folio=folio,
         shift=shift,
         kind=kind or rules.payment_kind(_checked_in_or_later(folio), amount),
@@ -198,11 +239,32 @@ def take_payment(
 
 
 @transaction.atomic
-def record_payment(actor, folio_id, *, amount: int, method: str, reference: str = "") -> Payment:
-    if amount <= 0:
+def record_payment(
+    actor,
+    folio_id,
+    *,
+    method: str,
+    amount: int | None = None,
+    reference: str = "",
+    currency: str = "",
+    foreign_amount: int | None = None,
+) -> Payment:
+    rate = None
+    if currency:
+        amount, rate = in_currency(currency, foreign_amount)
+    if not amount or amount <= 0:
         raise ApiError("validation_error", 400, detail="المبلغ يجب أن يكون أكبر من صفر.")
     folio = Folio.objects.select_for_update().select_related("reservation").get(pk=folio_id)
-    return take_payment(actor, folio, amount=amount, method=method, reference=reference)
+    return take_payment(
+        actor,
+        folio,
+        amount=amount,
+        method=method,
+        reference=reference,
+        currency=currency,
+        foreign_amount=foreign_amount,
+        rate=rate,
+    )
 
 
 @transaction.atomic
@@ -239,6 +301,9 @@ def reverse_payment(actor, payment_id, *, reason: str, approver=None) -> Payment
         reverses=original,
         reason=reason.strip(),
         received_at=timezone.now(),
+        currency=original.currency,
+        foreign_amount=-original.foreign_amount if original.foreign_amount is not None else None,
+        rate=original.rate,
         created_by=actor,
     )
     after = audit.snapshot(reversal, PAYMENT_FIELDS)
@@ -274,6 +339,8 @@ def ledger(folio: Folio) -> list[dict]:
     for p in folio.payments.select_related("created_by"):
         debit, credit = rules.as_debit_credit(-p.amount)
         text = f"{p.get_kind_display()} — {p.get_method_display()}"
+        if p.currency:
+            text = f"{text} ({p.foreign_text()})"
         entries.append(
             {
                 "at": p.received_at,
@@ -291,3 +358,46 @@ def ledger(folio: Folio) -> list[dict]:
         )
     entries.sort(key=lambda e: e["at"])
     return rules.running_ledger(entries)
+
+
+# --- Currencies (owner decision 2026-09-28) --------------------------------------------------------
+
+
+@transaction.atomic
+def create_currency(actor, *, code: str, name: str, symbol: str = "", rate: int) -> Currency:
+    code = code.strip().upper()
+    if not rules.valid_currency_code(code, HotelSettings.load().currency):
+        raise ApiError("validation_error", 400, detail="رمز العملة ثلاثة أحرف لاتينية (مثل USD) غير عملة الفندق.")
+    if Currency.objects.filter(code=code).exists():
+        raise ApiError("validation_error", 400, detail=f"العملة {code} موجودة — عدّل سعرها بدل إضافتها مرة أخرى.")
+    if rate <= 0:
+        raise ApiError("validation_error", 400, detail="السعر يجب أن يكون أكبر من صفر.")
+    row = Currency.objects.create(code=code, name=name.strip(), symbol=symbol.strip(), rate=rate, created_by=actor)
+    audit.record(
+        actor=actor,
+        action="currency.create",
+        entity="currency",
+        entity_id=row.pk,
+        after=audit.snapshot(row, CURRENCY_FIELDS),
+    )
+    return row
+
+
+@transaction.atomic
+def update_currency(actor, currency_id, *, version: int, **changes) -> Currency:
+    row = get_for_update(Currency.objects, currency_id, version)
+    if "rate" in changes and changes["rate"] <= 0:
+        raise ApiError("validation_error", 400, detail="السعر يجب أن يكون أكبر من صفر.")
+    before = audit.snapshot(row, CURRENCY_FIELDS)
+    for field, value in changes.items():
+        setattr(row, field, value.strip() if isinstance(value, str) else value)
+    row.save()
+    audit.record(
+        actor=actor,
+        action="currency.update",
+        entity="currency",
+        entity_id=row.pk,
+        before=before,
+        after=audit.snapshot(row, CURRENCY_FIELDS),
+    )
+    return row

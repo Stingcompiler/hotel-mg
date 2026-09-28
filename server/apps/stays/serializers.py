@@ -43,7 +43,7 @@ class AvailableRoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ["id", "number", "floor", "room_type", "room_type_name", "status"]
+        fields = ["id", "number", "name", "floor", "room_type", "room_type_name", "status"]
 
 
 class ReservationSerializer(serializers.ModelSerializer):
@@ -134,6 +134,12 @@ class ReservationCreateSerializer(serializers.Serializer):
     deposit = MoneyMinorField(required=False, min_value=0, default=0, help_text="Taken in the open shift.")
     deposit_method = serializers.ChoiceField(choices=PaymentMethod.choices, default="cash")
     deposit_reference = serializers.CharField(max_length=60, required=False, allow_blank=True, default="")
+    deposit_currency = serializers.CharField(
+        max_length=3, required=False, allow_blank=True, default="", help_text="Deposit in another currency (USD…)."
+    )
+    deposit_foreign_amount = serializers.IntegerField(
+        min_value=1, required=False, allow_null=True, help_text="Minor units (cents) of `deposit_currency`."
+    )
     manager_password = serializers.CharField(
         max_length=128,
         required=False,
@@ -304,6 +310,7 @@ class RoomBoardNextSerializer(serializers.Serializer):
 class RoomBoardRoomSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     number = serializers.CharField()
+    name = serializers.CharField(help_text="Optional room name; empty when not set.")
     floor = serializers.IntegerField()
     room_type = serializers.UUIDField()
     room_type_name = serializers.CharField()

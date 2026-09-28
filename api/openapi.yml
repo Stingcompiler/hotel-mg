@@ -191,6 +191,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/Session'
           description: ''
+  /api/v1/auth/recover:
+    post:
+      operationId: auth_recover_create
+      description: '«نسيت كلمة المرور؟»: username + the account''s reference email
+        + a new password (reception PC, offline).'
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecoverPasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RecoverPasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RecoverPasswordRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/v1/auth/setup:
     post:
       operationId: auth_setup_create
@@ -409,6 +433,86 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BackupSettings'
+          description: ''
+  /api/v1/currencies/:
+    get:
+      operationId: currencies_list
+      description: Everyone signed in reads the accepted currencies (payment dialogs);
+        only the owner adds one.
+      tags:
+      - currencies
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Currency'
+          description: ''
+    post:
+      operationId: currencies_create
+      description: Everyone signed in reads the accepted currencies (payment dialogs);
+        only the owner adds one.
+      tags:
+      - currencies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CurrencyCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CurrencyCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CurrencyCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Currency'
+          description: ''
+  /api/v1/currencies/{id}:
+    patch:
+      operationId: currencies_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - currencies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCurrencyUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCurrencyUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCurrencyUpdateRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Currency'
           description: ''
   /api/v1/expenses/:
     get:
@@ -2856,6 +2960,56 @@ paths:
               schema:
                 $ref: '#/components/schemas/Stay'
           description: ''
+  /api/v1/system/alert-sound:
+    get:
+      operationId: system_alert_sound_retrieve
+      description: 'The alert sound: everyone signed in plays it (404: use the built-in
+        tone); only the owner changes it.'
+      tags:
+      - system
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '404':
+          description: No response body
+    post:
+      operationId: system_alert_sound_create
+      description: 'The alert sound: everyone signed in plays it (404: use the built-in
+        tone); only the owner changes it.'
+      tags:
+      - system
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertSoundUploadRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+    delete:
+      operationId: system_alert_sound_destroy
+      description: 'The alert sound: everyone signed in plays it (404: use the built-in
+        tone); only the owner changes it.'
+      tags:
+      - system
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/system/clock/approve:
     post:
       operationId: system_clock_approve_create
@@ -3308,6 +3462,26 @@ components:
       required:
       - name
       - trigger_kind
+    AlertSoundInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - name
+      - updated_at
+    AlertSoundUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+          description: MP3, WAV or OGG up to 1 MB.
+      required:
+      - file
     AssignRoomRequest:
       type: object
       properties:
@@ -3470,6 +3644,9 @@ components:
         number:
           type: string
           maxLength: 10
+        name:
+          type: string
+          maxLength: 60
         floor:
           type: integer
           maximum: 9223372036854775807
@@ -3485,6 +3662,7 @@ components:
       required:
       - id
       - number
+      - name
       - floor
       - room_type
       - room_type_name
@@ -3916,6 +4094,68 @@ components:
       - today
       - upcoming
       - system
+    Currency:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+          description: ISO 4217, e.g. USD.
+        name:
+          type: string
+          readOnly: true
+        symbol:
+          type: string
+          readOnly: true
+        rate:
+          type: integer
+          description: Base-currency minor units for one whole unit.
+        is_active:
+          type: boolean
+          readOnly: true
+        version:
+          type: integer
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - code
+      - name
+      - symbol
+      - rate
+      - is_active
+      - version
+      - updated_at
+    CurrencyCreateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          description: ISO 4217, e.g. USD.
+          maxLength: 3
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+        symbol:
+          type: string
+          default: ''
+          maxLength: 6
+        rate:
+          type: integer
+          minimum: 1
+      required:
+      - code
+      - name
+      - rate
     CurrentShift:
       type: object
       properties:
@@ -4358,6 +4598,29 @@ components:
       - total
       - paid
       - balance
+    ForeignTotal:
+      type: object
+      properties:
+        currency:
+          type: string
+          description: ISO code, e.g. USD.
+        symbol:
+          type: string
+        cash:
+          type: integer
+          description: Cash of this currency in the drawer, in its minor units (cents).
+        total:
+          type: integer
+          description: Every method, in its minor units.
+        base:
+          type: integer
+          description: Base-currency equivalent at the rates used.
+      required:
+      - currency
+      - symbol
+      - cash
+      - total
+      - base
     Guest:
       type: object
       properties:
@@ -4680,6 +4943,13 @@ components:
           type: string
           format: uuid
           readOnly: true
+        alert_sound:
+          allOf:
+          - $ref: '#/components/schemas/AlertSoundInfo'
+          nullable: true
+          readOnly: true
+          description: 'The owner''s alert sound {name, updated_at}; null: the app''s
+            built-in tone.'
         version:
           type: integer
           readOnly: true
@@ -4703,6 +4973,7 @@ components:
       - auto_print_receipt
       - thermal_printer
       - hotel_id
+      - alert_sound
       - version
       - updated_at
     IdTypeEnum:
@@ -5632,6 +5903,27 @@ components:
         version:
           type: integer
           minimum: 1
+    PatchedCurrencyUpdateRequest:
+      type: object
+      description: |-
+        PATCH with partial=True skips required fields: refuse a missing ``version`` as 400, never a 500
+        (review 2026-09-28, BIZ-13).
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+        symbol:
+          type: string
+          maxLength: 6
+        rate:
+          type: integer
+          minimum: 1
+        is_active:
+          type: boolean
     PatchedGuestUpdateRequest:
       type: object
       properties:
@@ -5754,6 +6046,9 @@ components:
           type: string
           minLength: 1
           maxLength: 10
+        name:
+          type: string
+          maxLength: 60
         floor:
           type: integer
           maximum: 9223372036854775807
@@ -5793,6 +6088,13 @@ components:
           type: string
           minLength: 1
           maxLength: 128
+        email:
+          description: Empty removes it.
+          oneOf:
+          - type: string
+            format: email
+          - type: string
+            maxLength: 0
     Payment:
       type: object
       properties:
@@ -5838,6 +6140,24 @@ components:
         by:
           type: string
           readOnly: true
+        currency:
+          type: string
+          description: 'Empty: the base currency; else ISO code (USD).'
+          maxLength: 3
+        foreign_amount:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+          description: Signed minor units (cents) of currency.
+        rate:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+          description: Base minor units per whole unit, at the time.
       required:
       - id
       - receipt
@@ -5852,20 +6172,33 @@ components:
       - reason
       - received_at
       - by
+      - currency
+      - foreign_amount
+      - rate
     PaymentCreateRequest:
       type: object
       properties:
         amount:
           type: integer
           minimum: 1
+          description: Base currency; omit when paying in `currency`.
         method:
           $ref: '#/components/schemas/PaymentMethodEnum'
         reference:
           type: string
           default: ''
           maxLength: 60
+        currency:
+          type: string
+          default: ''
+          description: e.g. USD.
+          maxLength: 3
+        foreign_amount:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Minor units (cents) of `currency`.
       required:
-      - amount
       - method
     PaymentKindEnum:
       enum:
@@ -5920,6 +6253,10 @@ components:
           type: integer
         amount_in_words:
           type: string
+        paid_in:
+          type: string
+          nullable: true
+          description: «150 $ بسعر 2,500» when paid in another currency.
         method:
           type: string
         reference:
@@ -5947,6 +6284,7 @@ components:
       - nights
       - amount
       - amount_in_words
+      - paid_in
       - method
       - reference
       - stay_total
@@ -6150,6 +6488,26 @@ components:
           maxLength: 300
       required:
       - reason
+    RecoverPasswordRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 64
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+          description: The new password.
+          maxLength: 128
+      required:
+      - email
+      - password
+      - username
     RefundRequest:
       type: object
       properties:
@@ -6421,6 +6779,16 @@ components:
           type: string
           default: ''
           maxLength: 60
+        deposit_currency:
+          type: string
+          default: ''
+          description: Deposit in another currency (USD…).
+          maxLength: 3
+        deposit_foreign_amount:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Minor units (cents) of `deposit_currency`.
         manager_password:
           type: string
           default: ''
@@ -6497,6 +6865,9 @@ components:
         number:
           type: string
           maxLength: 10
+        name:
+          type: string
+          maxLength: 60
         floor:
           type: integer
           maximum: 9223372036854775807
@@ -6531,6 +6902,7 @@ components:
       required:
       - id
       - number
+      - name
       - floor
       - room_type
       - room_type_name
@@ -6585,6 +6957,9 @@ components:
           format: uuid
         number:
           type: string
+        name:
+          type: string
+          description: Optional room name; empty when not set.
         floor:
           type: integer
         room_type:
@@ -6632,6 +7007,7 @@ components:
       required:
       - id
       - number
+      - name
       - floor
       - room_type
       - room_type_name
@@ -6726,6 +7102,9 @@ components:
           type: string
           minLength: 1
           maxLength: 10
+        name:
+          type: string
+          maxLength: 60
         floor:
           type: integer
           maximum: 9223372036854775807
@@ -7118,17 +7497,25 @@ components:
         opening:
           type: integer
         receipts:
-          $ref: '#/components/schemas/MethodTotals'
+          allOf:
+          - $ref: '#/components/schemas/MethodTotals'
+          description: Base-currency payments only.
         expenses:
           $ref: '#/components/schemas/MethodTotals'
         expected:
           type: integer
-          description: Opening + cash receipts − cash expenses.
+          description: Opening + cash receipts − cash expenses (pounds in the drawer).
+        foreign:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForeignTotal'
+          description: Received in other currencies; not part of «expected».
       required:
       - opening
       - receipts
       - expenses
       - expected
+      - foreign
     SourceEnum:
       enum:
       - drive
@@ -7866,6 +8253,12 @@ components:
           readOnly: true
           description: 'The quick-login PIN is the well-known default (123456): anyone
             can pick the account and type it.'
+        email:
+          type: string
+          format: email
+          readOnly: true
+          description: 'Reference email: «نسيت كلمة المرور؟» on the reception PC asks
+            for it (offline, nothing is sent).'
         version:
           type: integer
           readOnly: true
@@ -7887,6 +8280,7 @@ components:
       - locked_until
       - default_password
       - default_pin
+      - email
       - version
       - created_at
       - updated_at
@@ -7911,6 +8305,14 @@ components:
           type: string
           minLength: 1
           maxLength: 128
+        email:
+          description: For «نسيت كلمة المرور؟».
+          oneOf:
+          - type: string
+            format: email
+            default: ''
+          - type: string
+            maxLength: 0
       required:
       - full_name
       - pin

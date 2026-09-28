@@ -179,6 +179,8 @@ def create_reservation(
     deposit: int = 0,
     deposit_method: str = "cash",
     deposit_reference: str = "",
+    deposit_currency: str = "",
+    deposit_foreign_amount: int | None = None,
     manager_password: str = "",
     manager_reason: str = "",
     allow_past: bool = False,
@@ -246,9 +248,20 @@ def create_reservation(
         entity_id=reservation.pk,
         after=snapshot(reservation),
     )
+    rate = None
+    if deposit_currency:  # a deposit handed over in dollars etc.: its base equivalent at the owner's rate
+        deposit, rate = billing.in_currency(deposit_currency, deposit_foreign_amount)
     if deposit:
         billing.take_payment(
-            actor, folio, amount=deposit, method=deposit_method, reference=deposit_reference, kind="deposit"
+            actor,
+            folio,
+            amount=deposit,
+            method=deposit_method,
+            reference=deposit_reference,
+            kind="deposit",
+            currency=deposit_currency,
+            foreign_amount=deposit_foreign_amount,
+            rate=rate,
         )
     return reservation
 

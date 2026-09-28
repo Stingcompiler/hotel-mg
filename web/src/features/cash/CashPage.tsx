@@ -132,6 +132,15 @@ function OpenShift({ current }: { current: Current }) {
                 <span>{money(totals.receipts[m])}</span>
               </div>
             ))}
+            {totals.foreign.map((f) => (
+              <div key={f.currency} className={line}>
+                <span>{t("cash.foreignCash", { currency: f.symbol })}</span>
+                <span className="font-semibold">
+                  {formatMoney(f.cash)} {f.symbol}
+                  <span className="ms-2 text-label font-normal text-text-secondary">{t("cash.foreignWorth", { amount: money(f.base) })}</span>
+                </span>
+              </div>
+            ))}
             <div className={line}>
               <span>{t("cash.cashExpenses")}</span>
               <span className="font-semibold text-danger"><span dir="ltr">{signed(-totals.expenses.cash)}</span></span>

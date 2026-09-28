@@ -39,11 +39,20 @@ class ShiftSerializer(serializers.ModelSerializer):
         ]
 
 
+class ForeignTotalSerializer(serializers.Serializer):
+    currency = serializers.CharField(help_text="ISO code, e.g. USD.")
+    symbol = serializers.CharField()
+    cash = serializers.IntegerField(help_text="Cash of this currency in the drawer, in its minor units (cents).")
+    total = serializers.IntegerField(help_text="Every method, in its minor units.")
+    base = MoneyMinorField(help_text="Base-currency equivalent at the rates used.")
+
+
 class ShiftTotalsSerializer(serializers.Serializer):
     opening = MoneyMinorField()
-    receipts = MethodTotalsSerializer()
+    receipts = MethodTotalsSerializer(help_text="Base-currency payments only.")
     expenses = MethodTotalsSerializer()
-    expected = MoneyMinorField(help_text="Opening + cash receipts − cash expenses.")
+    expected = MoneyMinorField(help_text="Opening + cash receipts − cash expenses (pounds in the drawer).")
+    foreign = ForeignTotalSerializer(many=True, help_text="Received in other currencies; not part of «expected».")
 
 
 class MovementSerializer(serializers.Serializer):

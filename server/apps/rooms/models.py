@@ -39,6 +39,8 @@ class RoomType(BaseModel):
 
 class Room(BaseModel):
     number = models.CharField(max_length=10)
+    # Optional name next to the number («الشقة العائلية», «الجناح الملكي») — owner request 2026-09-28.
+    name = models.CharField(max_length=60, blank=True)
     floor = models.SmallIntegerField()
     room_type = models.ForeignKey(RoomType, on_delete=models.PROTECT, related_name="rooms")
     status = models.CharField(max_length=16, choices=RoomStatus.choices, default=RoomStatus.READY)

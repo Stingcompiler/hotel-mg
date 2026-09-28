@@ -51,25 +51,53 @@ def require_open_shift() -> Shift:
 
 
 def payment_rows(shift: Shift) -> list[tuple[str, int]]:
-    """(method, amount) of payments recorded in the shift; refunds and reversals are negative."""
+    """(method, amount) of base-currency payments recorded in the shift; refunds and reversals are negative.
+
+    Foreign-currency payments are not in the pounds drawer: ``foreign_rows`` lists them per currency.
+    """
     from apps.billing.models import Payment  # billing depends on cash, not the reverse
 
-    return list(Payment.objects.filter(shift=shift).values_list("method", "amount"))
+    return list(Payment.objects.filter(shift=shift, currency="").values_list("method", "amount"))
+
+
+def foreign_rows(shift: Shift) -> list[tuple[str, str, int, int]]:
+    from apps.billing.models import Payment
+
+    return list(
+        Payment.objects.filter(shift=shift)
+        .exclude(currency="")
+        .values_list("currency", "method", "foreign_amount", "amount")
+    )
+
+
+def foreign_summary(shift: Shift) -> list[dict]:
+    """Per foreign currency received in the shift: cash in the drawer (its cents), all methods, base equivalent."""
+    from apps.billing import rules as billing_rules
+    from apps.billing.models import Currency
+
+    totals = billing_rules.foreign_totals(foreign_rows(shift))
+    symbols = dict(Currency.objects.filter(code__in=totals).values_list("code", "symbol"))
+    return [{"currency": code, "symbol": symbols.get(code) or code, **row} for code, row in sorted(totals.items())]
 
 
 @dataclass(frozen=True)
 class ShiftTotals:
     opening: int
-    receipts: dict  # {cash, bankak, transfer, total}
+    receipts: dict  # {cash, bankak, transfer, total} in the base currency
     expenses: dict  # {cash, bankak, transfer, total}
-    expected: int
+    expected: int  # pounds in the drawer
+    foreign: list  # [{currency, symbol, cash, total, base}] received in other currencies
 
     @classmethod
     def of(cls, shift: Shift) -> "ShiftTotals":
         receipts = rules.totals_by_method(payment_rows(shift))
         expenses = rules.totals_by_method(shift.expenses.values_list("method", "amount"))
         return cls(
-            shift.opening, receipts, expenses, rules.expected_cash(shift.opening, receipts["cash"], expenses["cash"])
+            shift.opening,
+            receipts,
+            expenses,
+            rules.expected_cash(shift.opening, receipts["cash"], expenses["cash"]),
+            foreign_summary(shift),
         )
 
 

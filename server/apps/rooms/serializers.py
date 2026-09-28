@@ -57,6 +57,7 @@ class RoomSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "number",
+            "name",
             "floor",
             "room_type",
             "room_type_name",
@@ -80,7 +81,7 @@ class RoomSerializer(serializers.ModelSerializer):
 
 class RoomCreateSerializer(RoomSerializer):
     class Meta(RoomSerializer.Meta):
-        fields = ["number", "floor", "room_type", "note"]
+        fields = ["number", "name", "floor", "room_type", "note"]
         read_only_fields = []
 
 
@@ -88,9 +89,9 @@ class RoomUpdateSerializer(VersionRequiredMixin, RoomSerializer):
     version = serializers.IntegerField(min_value=1)
 
     class Meta(RoomSerializer.Meta):
-        fields = ["number", "floor", "room_type", "note", "in_service", "version"]
+        fields = ["number", "name", "floor", "room_type", "note", "in_service", "version"]
         read_only_fields = []
-        extra_kwargs = {f: {"required": False} for f in ["number", "floor", "room_type", "note", "in_service"]}
+        extra_kwargs = {f: {"required": False} for f in ["number", "name", "floor", "room_type", "note", "in_service"]}
 
 
 class SetStatusSerializer(serializers.Serializer):

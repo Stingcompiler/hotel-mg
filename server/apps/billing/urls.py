@@ -10,6 +10,11 @@ folio_urls = [
     path("<uuid:pk>/refunds", views.RefundView.as_view(), name="folio-refunds"),
 ]
 
+currency_urls = [
+    path("", views.CurrencyListView.as_view(), name="currency-list"),
+    path("<uuid:pk>", views.CurrencyDetailView.as_view(), name="currency-detail"),
+]
+
 payment_urls = [
     path("<uuid:pk>", views.PaymentDetailView.as_view(), name="payment-detail"),
     path("<uuid:pk>/reverse", views.ReversePaymentView.as_view(), name="payment-reverse"),

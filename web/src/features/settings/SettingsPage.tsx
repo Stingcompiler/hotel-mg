@@ -7,12 +7,13 @@ import { t } from "@/i18n/t";
 import { AlertRulesTab } from "./AlertRulesTab";
 import { AuditTab } from "./AuditTab";
 import { BackupTab } from "./BackupTab";
+import { CurrenciesTab } from "./CurrenciesTab";
 import { HotelTab } from "./HotelTab";
 import { RoomsTab } from "./RoomsTab";
 import { RoomTypesTab } from "./RoomTypesTab";
 import { UsersTab } from "./UsersTab";
 
-const TABS = ["users", "roomTypes", "rooms", "alerts", "backup", "hotel", "audit"] as const;
+const TABS = ["users", "roomTypes", "rooms", "currencies", "alerts", "backup", "hotel", "audit"] as const;
 type Tab = (typeof TABS)[number];
 // Manager-only reads on the server; reception staff see the rest read-only.
 const MANAGER_ONLY: Tab[] = ["users", "audit"];
@@ -56,7 +57,8 @@ export function SettingsPage() {
         {active === "users" && <UsersTab readOnly={readOnly} />}
         {active === "roomTypes" && <RoomTypesTab readOnly={readOnly} />}
         {active === "rooms" && <RoomsTab readOnly={readOnly} />}
-        {active === "alerts" && <AlertRulesTab readOnly={readOnly} />}
+        {active === "currencies" && <CurrenciesTab readOnly={readOnly} owner={me.role === "owner"} />}
+        {active === "alerts" && <AlertRulesTab readOnly={readOnly} owner={me.role === "owner"} />}
         {active === "backup" && <BackupTab readOnly={readOnly} />}
         {active === "hotel" && <HotelTab readOnly={readOnly} />}
         {active === "audit" && <AuditTab />}

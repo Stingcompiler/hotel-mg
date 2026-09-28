@@ -4,7 +4,7 @@ from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.backup.urls import backup_urls, owner_urls
-from apps.billing.urls import folio_urls, payment_urls
+from apps.billing.urls import currency_urls, folio_urls, payment_urls
 from apps.cash.urls import expense_urls, shift_urls
 from apps.core import spa
 from apps.reports.urls import document_urls, report_urls
@@ -26,6 +26,7 @@ api_v1 = [
     path("stays/", include(stay_urls)),
     path("folios/", include(folio_urls)),
     path("payments/", include(payment_urls)),
+    path("currencies/", include(currency_urls)),
     path("shifts/", include(shift_urls)),
     path("expenses/", include(expense_urls)),
     path("reports/", include(report_urls)),

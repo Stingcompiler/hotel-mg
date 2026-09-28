@@ -17,6 +17,7 @@ from .serializers import (
     LoginUserSerializer,
     PasswordLoginSerializer,
     PinLoginSerializer,
+    RecoverPasswordSerializer,
     ResetPinSerializer,
     SessionSerializer,
     SetupSerializer,
@@ -63,6 +64,22 @@ class PasswordLoginView(APIView):
         data = PasswordLoginSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         return _session_response(services.login_with_password(**data.validated_data))
+
+
+class RecoverPasswordView(APIView):
+    """«نسيت كلمة المرور؟»: username + the account's reference email + a new password (reception PC, offline)."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @extend_schema(request=RecoverPasswordSerializer, responses={204: None})
+    def post(self, request):
+        if settings.SKYTOWERS_ROLE != "reception":
+            raise ApiError("owner_read_only", 403)  # accounts live on the reception PC; the owner PC imports them
+        data = RecoverPasswordSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        services.raise_for_login(services.recover_password(**data.validated_data))
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class SetupView(APIView):

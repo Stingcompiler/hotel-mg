@@ -146,3 +146,40 @@ test("«ردّ مبلغ» appears only when the guest has credit", async () => {
   fireEvent.change(within(dialog).getByLabelText(/سبب الردّ/), { target: { value: "مغادرة مبكرة" } });
   expect(save).toBeEnabled();
 });
+
+test("a payment in dollars is typed in dollars and shows its pounds before saving", async () => {
+  const bodies: unknown[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: Request) => {
+      const path = new URL(input.url).pathname;
+      if (path === "/api/v1/currencies/") {
+        const usd = { id: "c1", code: "USD", name: "دولار", symbol: "$", rate: 250_000, is_active: true, version: 1, updated_at: "" };
+        return new Response(JSON.stringify([usd]), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      if (path === "/api/v1/folios/f1/payments") {
+        bodies.push(await input.clone().json());
+        return new Response(JSON.stringify({ id: "p9" }), { status: 201, headers: { "Content-Type": "application/json" } });
+      }
+      const body = path === "/api/v1/stays/s1" ? STAY : path === "/api/v1/folios/f1" ? FOLIO : { role: "reception" };
+      return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+    }),
+  );
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter initialEntries={["/stays/s1"]}>
+        <Routes>
+          <Route path="/stays/:id" element={<StayDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+  await screen.findByText("INV-000318");
+  fireEvent.click(screen.getByRole("button", { name: "إضافة دفعة" }));
+  const dialog = screen.getByRole("dialog");
+  fireEvent.click(await within(dialog).findByRole("radio", { name: "$" }));
+  fireEvent.change(within(dialog).getByLabelText(/المبلغ/), { target: { value: "150" } });
+  expect(within(dialog).getByText("يعادل 375,000 ج.س (بسعر 1 $ = 2,500)")).toBeInTheDocument();
+  fireEvent.click(within(dialog).getByRole("button", { name: "تسجيل الدفعة" }));
+  await vi.waitFor(() => expect(bodies).toEqual([{ method: "cash", reference: "", currency: "USD", foreign_amount: 15_000 }]));
+});
