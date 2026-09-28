@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>نظام سكاي تاورز — المزايا وطريقة العمل</title>
+<!-- Source of docs/SkyTowers-Overview-ar.pdf. Regenerate: python docs/overview/build_pdf.py -->
+<style>
+  @font-face { font-family: "Plex Arabic"; font-weight: 400; src: url(fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2) format("woff2"); unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F, U+060C, U+061B, U+061F, U+0640; }
+  @font-face { font-family: "Plex Arabic"; font-weight: 500; src: url(fonts/ibm-plex-sans-arabic-arabic-500-normal.woff2) format("woff2"); unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F, U+060C, U+061B, U+061F, U+0640; }
+  @font-face { font-family: "Plex Arabic"; font-weight: 600; src: url(fonts/ibm-plex-sans-arabic-arabic-600-normal.woff2) format("woff2"); unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F, U+060C, U+061B, U+061F, U+0640; }
+  @font-face { font-family: "Plex Arabic"; font-weight: 700; src: url(fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2) format("woff2"); unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F, U+060C, U+061B, U+061F, U+0640; }
+  @font-face { font-family: "Plex Arabic"; font-weight: 400; src: url(fonts/ibm-plex-sans-arabic-latin-400-normal.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F, U+2190-21FF; }
+  @font-face { font-family: "Plex Arabic"; font-weight: 500; src: url(fonts/ibm-plex-sans-arabic-latin-500-normal.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F, U+2190-21FF; }
+  @font-face { font-family: "Plex Arabic"; font-weight: 600; src: url(fonts/ibm-plex-sans-arabic-latin-600-normal.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F, U+2190-21FF; }
+  @font-face { font-family: "Plex Arabic"; font-weight: 700; src: url(fonts/ibm-plex-sans-arabic-latin-700-normal.woff2) format("woff2"); unicode-range: U+0000-00FF, U+2000-206F, U+2190-21FF; }
+
+  :root {
+    --teal: #0F766E; --teal-dark: #115E59; --teal-soft: #CCFBF1; --teal-line: #99E3D6;
+    --ink: #1B2430; --muted: #5B6674; --line: #E3E6EB; --page: #F6F7F9;
+    --amber: #D97706; --amber-soft: #FEF3C7; --red: #B91C1C; --red-soft: #FEE2E2; --blue-soft: #DBEAFE;
+  }
+  @page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+  @page cover { margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: "Plex Arabic", "Segoe UI", Tahoma, sans-serif; color: var(--ink); font-size: 10.6pt; line-height: 1.75;
+         -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .ltr { direction: ltr; unicode-bidi: isolate; font-family: "Plex Arabic", Consolas, monospace; }
+  h1, h2, h3 { margin: 0; line-height: 1.35; }
+  h2 { font-size: 19pt; color: var(--teal-dark); margin-bottom: 4mm; display: flex; align-items: center; gap: 3mm; }
+  h2 .num { display: inline-flex; width: 10mm; height: 10mm; border-radius: 3mm; background: var(--teal); color: #fff; font-size: 12pt;
+            align-items: center; justify-content: center; flex: none; }
+  h3 { font-size: 12.5pt; color: var(--ink); margin: 5mm 0 1.5mm; break-after: avoid; }
+  p { margin: 0 0 2.5mm; }
+  .lead { font-size: 11.5pt; color: var(--muted); margin-bottom: 5mm; }
+  section { break-before: page; }
+  .avoid { break-inside: avoid; }
+  ul { margin: 0 0 3mm; padding-inline-start: 6mm; }
+  li { margin-bottom: 1mm; }
+  b { font-weight: 600; }
+
+  /* Cover */
+  .cover { page: cover; height: 297mm; width: 210mm; position: relative; overflow: hidden; color: #fff;
+           background: linear-gradient(160deg, #14857C 0%, var(--teal) 45%, var(--teal-dark) 100%); display: flex; flex-direction: column;
+           justify-content: space-between; padding: 22mm 20mm; }
+  .cover .brand { display: flex; align-items: center; gap: 4mm; }
+  .cover .brand img { width: 18mm; height: 18mm; border-radius: 4mm; }
+  .cover .brand b { font-size: 16pt; display: block; }
+  .cover .brand span { font-size: 10pt; opacity: .9; }
+  .cover h1 { font-size: 34pt; font-weight: 700; margin-bottom: 4mm; }
+  .cover .sub { font-size: 14pt; opacity: .95; max-width: 150mm; }
+  .cover .chips { display: flex; gap: 3mm; flex-wrap: wrap; margin-top: 8mm; }
+  .cover .chip { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.35); border-radius: 20mm; padding: 1.5mm 5mm; font-size: 10pt; }
+  .cover .meta { font-size: 10pt; opacity: .9; display: flex; justify-content: space-between; }
+  .cover .sky { position: absolute; inset-inline-end: 8mm; bottom: 24mm; width: 70mm; opacity: .14; }
+
+  /* Boxes */
+  .tech { border: 1px solid #C7D2FE; background: #EEF2FF; border-radius: 3mm; padding: 3.5mm 4.5mm; margin: 4mm 0; break-inside: avoid; font-size: 9.8pt; }
+  .tech .tag { display: inline-block; background: #4338CA; color: #fff; border-radius: 1.5mm; padding: 0 2.5mm; font-size: 8.8pt; font-weight: 600; margin-bottom: 1.5mm; }
+  .plain { border: 1px solid var(--teal-line); background: #F0FDFA; border-radius: 3mm; padding: 3.5mm 4.5mm; margin: 4mm 0; break-inside: avoid; }
+  .plain .tag { display: inline-block; background: var(--teal); color: #fff; border-radius: 1.5mm; padding: 0 2.5mm; font-size: 8.8pt; font-weight: 600; margin-bottom: 1.5mm; }
+  .note { border-inline-start: 1.2mm solid var(--amber); background: var(--amber-soft); padding: 2.5mm 4mm; border-radius: 2mm; margin: 3mm 0; break-inside: avoid; }
+
+  /* Grids */
+  .facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 5mm 0; }
+  .fact { border: 1px solid var(--line); border-radius: 3mm; padding: 3.5mm; background: #fff; break-inside: avoid; }
+  .fact b { display: block; font-size: 15pt; color: var(--teal); line-height: 1.3; }
+  .fact span { font-size: 9.3pt; color: var(--muted); }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm; margin: 4mm 0; }
+  .card { border: 1px solid var(--line); border-radius: 3mm; padding: 3.5mm 4mm; background: #fff; break-inside: avoid; }
+  .card h4 { margin: 0 0 1mm; font-size: 11pt; color: var(--teal-dark); }
+  .card p { margin: 0; font-size: 9.8pt; color: #334155; }
+
+  figure { margin: 3mm 0 4mm; break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid var(--line); border-radius: 2.5mm; display: block; }
+  figcaption { font-size: 9pt; color: var(--muted); margin-top: 1.5mm; text-align: center; }
+
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0 4mm; font-size: 9.8pt; break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 2mm 2.5mm; text-align: start; vertical-align: top; }
+  th { background: #F1F5F9; font-weight: 600; }
+  td.y { color: #15803D; font-weight: 600; text-align: center; }
+  td.n { color: #94A3B8; text-align: center; }
+
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 4mm 0; }
+  .steps li { counter-increment: s; position: relative; padding: 2.5mm 12mm 2.5mm 0; border-bottom: 1px dashed var(--line); break-inside: avoid; }
+  .steps li::before { content: counter(s); position: absolute; inset-inline-start: 0; top: 2.5mm; width: 8mm; height: 8mm; border-radius: 50%;
+                      background: var(--teal-soft); color: var(--teal-dark); font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .steps li b { color: var(--teal-dark); }
+
+  .toc { columns: 2; column-gap: 10mm; padding: 0; list-style: none; margin: 3mm 0 6mm; }
+  .toc li { padding: 1.2mm 0; border-bottom: 1px dotted var(--line); break-inside: avoid; }
+  .toc span { color: var(--teal); font-weight: 700; margin-inline-end: 2mm; }
+
+  .diagram { width: 100%; margin: 3mm 0; }
+  .muted { color: var(--muted); }
+  code { font-family: Consolas, monospace; font-size: 9pt; background: #F1F5F9; padding: 0 1mm; border-radius: 1mm; direction: ltr; unicode-bidi: isolate; }
+</style>
+</head>
+<body>
+
+<!-- ============================ Cover ============================ -->
+<div class="cover">
+  <div class="brand">
+    <img src="img/icon.png" alt="" />
+    <div><b class="ltr">Sky Towers</b><span>نظام إدارة الفندق</span></div>
+  </div>
+  <div>
+    <h1>نظام سكاي تاورز<br />لإدارة الفندق</h1>
+    <div class="sub">ما يقدّمه النظام، وكيف يعمل يومًا بيوم — شرح واضح لصاحب الفندق والموظفين، ومعه تفاصيل للتقنيين.</div>
+    <div class="chips">
+      <span class="chip">يعمل بلا إنترنت</span><span class="chip">عربي بالكامل</span><span class="chip">تثبيت بلا إعداد</span>
+      <span class="chip">نسخ احتياطي مشفّر تلقائي</span><span class="chip">لوحة للمالك</span>
+    </div>
+  </div>
+  <div class="meta"><span>الإصدار <span class="ltr">1.1.1</span></span><span>27 سبتمبر 2026</span></div>
+  <svg class="sky" viewBox="150 120 760 760" aria-hidden="true">
+    <rect x="230" y="470" width="180" height="330" rx="14" fill="#fff"/><rect x="430" y="250" width="164" height="550" rx="14" fill="#fff"/>
+    <rect x="614" y="370" width="180" height="430" rx="14" fill="#fff"/><polygon points="492,252 532,252 512,150" fill="#fff"/>
+    <rect x="190" y="816" width="644" height="34" rx="17" fill="#fff"/>
+  </svg>
+</div>
+
+<!-- ============================ 1. Summary ============================ -->
+<section style="break-before: auto">
+  <h2><span class="num">1</span>النظام في سطور</h2>
+  <p class="lead">سكاي تاورز برنامج يُثبَّت على جهاز الاستقبال في الفندق، ويدير كل ما يحدث فيه: الغرف، الحجوزات، النزلاء، الدفعات،
+    الصندوق، المصروفات، التنبيهات والتقارير. كل شاشاته بالعربية، ويعمل دون اتصال بالإنترنت، ويحفظ نسخة احتياطية مشفّرة من البيانات تلقائيًا.</p>
+
+  <div class="facts">
+    <div class="fact"><b>بلا إنترنت</b><span>كل شيء على جهاز الفندق نفسه؛ انقطاع الشبكة لا يوقف العمل.</span></div>
+    <div class="fact"><b>دقائق</b><span>للتثبيت: ملف واحد، بلا أسئلة ولا إعدادات تقنية.</span></div>
+    <div class="fact"><b>دخول واحد</b><span>لكل الأدوار؛ الحساب يحدد ما يراه كل شخص.</span></div>
+    <div class="fact"><b>لا شيء يُحذف</b><span>كل عملية تُسجَّل باسم من نفّذها ووقتها.</span></div>
+  </div>
+
+  <h3>لمن هذا الدليل؟</h3>
+  <p>كُتب لقارئين معًا: <b>صاحب الفندق والموظفين</b> الذين يريدون فهم ما يفعله النظام دون مصطلحات تقنية،
+    و<b>الفني أو المطوّر</b> الذي يثبّته أو يصونه. في كل فصل شرح عام أولًا، ثم مربع أزرق بعنوان «للتقنيين» لمن يريد التفاصيل
+    (يمكن لغير التقني تخطّيه بأمان). الفصل الأخير تقني بالكامل.</p>
+
+  <h3>المحتويات</h3>
+  <ol class="toc">
+    <li><span>1</span>النظام في سطور</li>
+    <li><span>2</span>كيف يعمل النظام</li>
+    <li><span>3</span>المزايا: العمل اليومي في الاستقبال</li>
+    <li><span>4</span>المزايا: المال والصندوق</li>
+    <li><span>5</span>المزايا: المتابعة والتقارير ولوحة المالك</li>
+    <li><span>6</span>يوم كامل في الفندق</li>
+    <li><span>7</span>الأدوار والصلاحيات</li>
+    <li><span>8</span>الأمان وحماية البيانات</li>
+    <li><span>9</span>النسخ الاحتياطي وجهاز المالك</li>
+    <li><span>10</span>التثبيت والبدء</li>
+    <li><span>11</span>للتقنيين: البنية التقنية</li>
+    <li><span>12</span>أسئلة شائعة</li>
+  </ol>
+</section>
+
+<!-- ============================ 2. How it works ============================ -->
+<section>
+  <h2><span class="num">2</span>كيف يعمل النظام</h2>
+  <p class="lead">فكّر في النظام كدفتر الفندق، لكنه دفتر لا يضيع، لا تُمزّق صفحاته، ويحسب وحده ويذكّرك بما يجب فعله.</p>
+
+  <svg class="diagram" viewBox="0 0 900 330" role="img" aria-label="جهاز الاستقبال ينتج نسخة احتياطية تنتقل إلى جهاز المالك">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0F766E"/></marker></defs>
+    <!-- reception PC -->
+    <rect x="560" y="20" width="320" height="250" rx="16" fill="#F0FDFA" stroke="#0F766E" stroke-width="2"/>
+    <text x="720" y="52" text-anchor="middle" font-size="20" font-weight="700" fill="#115E59">جهاز الاستقبال</text>
+    <rect x="585" y="70" width="270" height="44" rx="10" fill="#fff" stroke="#99E3D6"/><text x="720" y="98" text-anchor="middle" font-size="15" fill="#1B2430">نافذة البرنامج (الشاشات)</text>
+    <rect x="585" y="124" width="270" height="44" rx="10" fill="#fff" stroke="#99E3D6"/><text x="720" y="152" text-anchor="middle" font-size="15" fill="#1B2430">المحرّك: الحسابات والقواعد</text>
+    <rect x="585" y="178" width="270" height="44" rx="10" fill="#fff" stroke="#99E3D6"/><text x="720" y="206" text-anchor="middle" font-size="15" fill="#1B2430">قاعدة البيانات على الجهاز</text>
+    <text x="720" y="252" text-anchor="middle" font-size="13" fill="#5B6674">كل العمليات تُسجَّل هنا</text>
+    <!-- backup file -->
+    <rect x="345" y="110" width="170" height="92" rx="12" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+    <text x="430" y="143" text-anchor="middle" font-size="15" font-weight="700" fill="#78350F">نسخة احتياطية</text>
+    <text x="430" y="165" text-anchor="middle" font-size="13" fill="#78350F">ملف مشفّر</text>
+    <text x="430" y="186" text-anchor="middle" font-size="12" fill="#78350F">فلاشة USB أو Google Drive</text>
+    <!-- owner PC -->
+    <rect x="20" y="60" width="280" height="170" rx="16" fill="#fff" stroke="#94A3B8" stroke-width="2" stroke-dasharray="6 5"/>
+    <text x="160" y="95" text-anchor="middle" font-size="20" font-weight="700" fill="#334155">جهاز المالك</text>
+    <text x="160" y="122" text-anchor="middle" font-size="14" fill="#5B6674">(اختياري، في البيت مثلًا)</text>
+    <text x="160" y="155" text-anchor="middle" font-size="15" fill="#1B2430">لوحة المالك والتقارير</text>
+    <text x="160" y="180" text-anchor="middle" font-size="15" fill="#1B2430">للاطلاع فقط</text>
+    <path d="M555 156 L520 156" stroke="#0F766E" stroke-width="3" marker-end="url(#ar)"/>
+    <path d="M340 156 L305 156" stroke="#0F766E" stroke-width="3" marker-end="url(#ar)"/>
+    <text x="450" y="300" text-anchor="middle" font-size="14" fill="#5B6674">يستطيع المالك أيضًا الدخول بحسابه على جهاز الاستقبال نفسه؛ الجهاز الثاني ليس ضروريًا.</text>
+  </svg>
+
+  <div class="plain"><span class="tag">ببساطة</span>
+    <ul>
+      <li><b>جهاز واحد يكفي:</b> جهاز الاستقبال يحمل البرنامج والبيانات. الموظفون والمدير والمالك يدخلون عليه، كلٌّ بحسابه.</li>
+      <li><b>البرنامج يعمل في الخلفية</b> من لحظة تشغيل الجهاز، حتى قبل تسجيل الدخول، فيبقى جاهزًا دائمًا.</li>
+      <li><b>كل عدة ساعات، وعند إغلاق كل وردية،</b> يحفظ البرنامج نسخة احتياطية مشفّرة من البيانات.</li>
+      <li><b>المالك يستطيع متابعة الفندق من جهاز آخر</b> بفتح النسخة الاحتياطية عليه، <b>متى شاء فقط</b>. ذلك الجهاز للاطلاع ولا تُسجَّل عليه عمليات.</li>
+    </ul>
+  </div>
+
+  <div class="tech"><span class="tag">للتقنيين</span>
+    <p>خدمة ويندوز (<code>SkyTowersServer</code>) تشغّل خادم Django 5 + Django REST Framework عبر Waitress على
+      <code>127.0.0.1:8471</code> فقط (لا يُعرض على الشبكة)، وقاعدة SQLite بوضع WAL في <code>%ProgramData%\SkyTowers</code>.
+      الواجهة تطبيق React أحادي الصفحة (RTL) يخدمه الخادم نفسه، داخل نافذة سطح مكتب مبنية بـ Tauri 2 (WebView2)، مع أيقونة في شريط المهام وإشعارات ويندوز.
+      دور الجهاز («استقبال» أو «مالك») في <code>config.json</code>؛ جهاز المالك يرفض كل كتابة عبر Middleware ويستقبل البيانات بدمج إضافي من النسخ.</p>
+  </div>
+</section>
+
+<!-- ============================ 3. Daily work ============================ -->
+<section>
+  <h2><span class="num">3</span>المزايا: العمل اليومي في الاستقبال</h2>
+
+  <h3>لوحة الغرف: الفندق كله في شاشة واحدة</h3>
+  <p>كل غرفة بطاقة بلونها: <b>جاهزة</b>، <b>مشغولة</b>، <b>تحتاج تنظيف</b>، <b>صيانة</b>، أو <b>متجاوزة</b> (انتهت إقامتها ولم يُسجَّل خروج).
+    تظهر على البطاقة اسم النزيل ومتى تنتهي إقامته. في الأعلى: عدد الغرف المشغولة ونسبة الإشغال، وصول اليوم، مغادرات اليوم، والمتجاوزة.
+    الضغط على غرفة يفتح إقامتها أو يعرض إجراءاتها. البحث العلوي يجد الغرفة أو النزيل بالرقم أو الاسم أو الهاتف.</p>
+  <figure><img src="../screens/02-room-board.png" alt="لوحة الغرف" /><figcaption>لوحة الغرف ببيانات تجريبية: الألوان تعرض حالة كل غرفة لحظيًا.</figcaption></figure>
+
+  <h3>الحجز والتسكين</h3>
+  <div class="cards">
+    <div class="card"><h4>حجز جديد أو نزول مباشر</h4><p>اختيار النزيل (أو إضافته)، نوع الغرفة والغرفة، والمدة: يومي أو أسبوعي أو شهري بأسعارها. السعر والإجمالي يُحسبان وحدهما.</p></div>
+    <div class="card"><h4>الخط الزمني للحجوزات</h4><p>كل الغرف على محور الأيام: ترى الفراغات وتحجز بالضغط على اليوم الفارغ مباشرة.</p></div>
+    <div class="card"><h4>منع التعارض</h4><p>لا يسمح النظام بحجزين للغرفة نفسها في الليلة نفسها، ولا بتسكين غرفة في الصيانة.</p></div>
+    <div class="card"><h4>ملف النزيل</h4><p>بيانات الهوية والهاتف، سجل إقاماته السابقة، ديونه، وملاحظة تحذيرية تظهر للموظف عند التسكين.</p></div>
+  </div>
+  <figure><img src="../screens/04-new-reservation.png" alt="حجز جديد" /><figcaption>شاشة الحجز الجديد: النزيل، الإقامة، والمبالغ في صفحة واحدة.</figcaption></figure>
+</section>
+
+<section>
+  <h3 style="margin-top:0">تفاصيل الإقامة</h3>
+  <p>لكل إقامة صفحة تجمع: الغرفة والنزيل والمدة، <b>الفاتورة</b> بكل بنودها ودفعاتها، المتبقي على النزيل، المرافقين، الملاحظات، وسجل ما حدث فيها.
+    ومنها تُنفَّذ الإجراءات: <b>إضافة دفعة</b>، <b>تمديد</b>، <b>تغيير الغرفة</b>، <b>تسجيل الخروج</b>، أو <b>إلغاء الإقامة</b>، وطباعة الفاتورة.</p>
+  <figure><img src="../screens/05-stay.png" alt="تفاصيل الإقامة" /><figcaption>تفاصيل الإقامة: الفاتورة كسجل مدين/دائن، والمتبقي يُحسب تلقائيًا.</figcaption></figure>
+  <div class="tech"><span class="tag">للتقنيين</span>
+    <p>فترات الإقامة بالتاريخ فقط بتوقيت الخرطوم (<code>Africa/Khartoum</code>) وتاريخ الخروج حصري؛ الطوابع الزمنية بـ UTC.
+      الفاتورة سجل إضافي فقط (<code>FolioLine</code>): التصحيح قيد عكسي جديد لا تعديل. تغيير الغرفة يقسم الإقامة إلى مقاطع (<code>StaySegment</code>)
+      حتى تبقى تقارير الإشغال صحيحة لكل ليلة. كل تعديل يرسل <code>version</code>، والنسخة القديمة تُرفض بـ HTTP 409 منعًا لتضارب موظفَين.</p>
+  </div>
+</section>
+
+<!-- ============================ 4. Money ============================ -->
+<section>
+  <h2><span class="num">4</span>المزايا: المال والصندوق</h2>
+  <div class="cards">
+    <div class="card"><h4>الدفعات</h4><p>نقدًا أو بنكك أو تحويل، مع رقم المرجع لغير النقدي. إيصال حراري 80 مم يطبع المبلغ بالأرقام والحروف وفترة الإقامة.</p></div>
+    <div class="card"><h4>الخصومات</h4><p>للموظف خصم ضمن حدّ يضبطه المالك وبسبب مكتوب؛ ما فوق الحد يحتاج كلمة مرور المدير.</p></div>
+    <div class="card"><h4>الورديات والصندوق</h4><p>يفتح الموظف ورديته بمبلغ الدرج، ويغلقها بعدّ النقد. النظام يحسب المتوقع ويُظهر الفرق، والفرق يحتاج سببًا.</p></div>
+    <div class="card"><h4>المصروفات</h4><p>مصروف سريع في سطر واحد للمصروفات اليومية الصغيرة، ونموذج كامل بالفئة والإيصال للكبيرة. النقدي منها يُخصم من الدرج.</p></div>
+    <div class="card"><h4>الديون</h4><p>ما على كل نزيل يظهر في إقامته وملفه وتقرير الديون، ولا يُسجَّل خروج نزيل عليه دين إلا بموافقة المدير.</p></div>
+    <div class="card"><h4>الفواتير</h4><p>فاتورة A4 ببنودها ودفعاتها وخصمها، رقم تسلسلي لا يتكرر، وطباعة مباشرة من النافذة.</p></div>
+  </div>
+  <figure><img src="../screens/07-cash.png" alt="الصندوق" /><figcaption>الصندوق والوردية: الافتتاحي + المقبوضات النقدية − المصروفات النقدية = المتوقع في الدرج.</figcaption></figure>
+  <div class="tech"><span class="tag">للتقنيين</span>
+    <p>المبالغ أعداد صحيحة بالقروش (×100) في كل الطبقات (<code>MoneyField</code>)؛ لا <code>float</code> ولا <code>Decimal</code> في التخزين، والتنسيق عمل الواجهة.
+      المدفوعات والمصروفات والقيود إضافية فقط؛ الإلغاء قيد عكسي بسبب. كلمة مرور المدير للتجاوزات تُحسب محاولةً فاشلة عند الخطأ وتقفل بعد خمس.</p>
+  </div>
+</section>
+
+<!-- ============================ 5. Follow-ups, reports, owner ============================ -->
+<section>
+  <h2><span class="num">5</span>المزايا: المتابعة والتقارير ولوحة المالك</h2>
+  <h3>المتابعة والتنبيهات: النظام يذكّرك</h3>
+  <p>قواعد تنبيه يضبطها المالك: إقامة تنتهي غدًا، إقامة متجاوزة، وردية مفتوحة طويلًا، غرفة في الصيانة منذ أيام، نسخة احتياطية تأخرت…
+    يظهر التنبيه للموظف فورًا (وإشعارًا في ويندوز)، فيتصرف: <b>تمديد</b>، <b>تأكيد المغادرة</b>، <b>بانتظار الرد</b>، أو <b>تأجيل</b>.
+    التنبيه الذي يُهمل تتجاوز مدته يصير «مُهمَلًا» ويُنسب إلى الوردية المسؤولة، ويراه المالك.</p>
+
+  <h3>التقارير</h3>
+  <p>اثنا عشر تقريرًا، لكلٍّ فلاتر وفترة، وتُطبع على A4 أو تُصدَّر إلى Excel وCSV:</p>
+  <table>
+    <tr><th>التشغيل</th><th>المال</th><th>الرقابة</th></tr>
+    <tr><td>الإشغال · الوصول والمغادرة · النزلاء الحاليون · القريبة من الانتهاء والمتجاوزة · حالة الغرف وفترات الخلو</td>
+        <td>الإيرادات والتحصيل · الديون · المصروفات · حركة الصندوق والورديات</td>
+        <td>التعديلات والخصومات والإلغاءات · الاستجابة للتنبيهات · سجل التدقيق</td></tr>
+  </table>
+  <figure><img src="../screens/10-reports.png" alt="التقارير" /><figcaption>التقارير: الفترة والفلاتر أعلى الجدول، والطباعة والتصدير بزر واحد.</figcaption></figure>
+</section>
+
+<section>
+  <h3 style="margin-top:0">لوحة المالك</h3>
+  <p>أول ما يراه المالك عند دخوله: الإشغال اليوم ومتوسط الفترة، إيراد الفترة ومقارنته بفترة سابقة بالطول نفسه، المحصّل، الديون المستحقة،
+    التنبيهات المُهمَلة، منحنى الإشغال لآخر 30 يومًا، الإيراد مقابل المحصّل أسبوعيًا، قائمة «يحتاج انتباهك»، وجدول استجابة كل موظف للتنبيهات.</p>
+  <figure><img src="../screens/13-owner-dashboard.png" alt="لوحة المالك" /><figcaption>لوحة المالك: كل رقم فيها يفتح تقريره الكامل.</figcaption></figure>
+  <div class="tech"><span class="tag">للتقنيين</span>
+    <p>كل الحسابات في الخادم (<code>reports/owner-dashboard</code>)؛ الواجهة تعرض فقط. متوسط الإشغال = الليالي المشغولة ÷ (الغرف − غرف الصيانة) بالمعادلة نفسها لتقرير الإشغال،
+      والغرفة تُحسب مشغولة عن الليلة إذا كانت فيها إقامة جارية عند منتصف الليل. الإيراد يُحتسب عند التسكين والتمديد، والمحصّل عند استلام الدفعة.</p>
+  </div>
+</section>
+
+<!-- ============================ 6. A day ============================ -->
+<section>
+  <h2><span class="num">6</span>يوم كامل في الفندق</h2>
+  <p class="lead">هكذا يمشي يوم عادي، ومن يفعل كل خطوة، وما يفعله النظام وحده.</p>
+  <ol class="steps">
+    <li><b>صباحًا — فتح الوردية:</b> يدخل الموظف برمزه السري السريع ويفتح ورديته بمبلغ الدرج. يرى على شاشة الدخول عدد مهام المتابعة المستحقة.</li>
+    <li><b>وصول نزيل:</b> من لوحة الغرف يختار غرفة جاهزة، ينشئ الإقامة، ويستلم دفعة. يُطبع الإيصال فورًا.</li>
+    <li><b>النظام يحسب:</b> الإجمالي، المتبقي، الإشغال، والإيراد، دون أي جمع يدوي.</li>
+    <li><b>تنبيه ظهرًا:</b> «غرفة 305 تنتهي إقامتها اليوم». يتصل الموظف بالنزيل ويسجّل: تمديد أسبوع، أو مغادرة.</li>
+    <li><b>مصروف طارئ:</b> شراء مواد تنظيف نقدًا، يُسجَّل في سطر واحد ويُخصم من الدرج.</li>
+    <li><b>مغادرة:</b> تسجيل الخروج يُغلق الإقامة، وتصبح الغرفة «تحتاج تنظيف» حتى يُؤكَّد تجهيزها.</li>
+    <li><b>مساءً — إغلاق الوردية:</b> يعدّ الموظف النقد، يرى المتوقع والفرق، ويكتب السبب إن وُجد فرق. <b>تُحفظ نسخة احتياطية تلقائيًا.</b></li>
+    <li><b>المالك:</b> يفتح لوحة المالك بحسابه، على جهاز الاستقبال أو على جهازه بعد فتح أحدث نسخة، ويرى أرقام اليوم وأي تنبيه أُهمل.</li>
+  </ol>
+  <div class="note">كل خطوة أعلاه تُسجَّل في <b>سجل التدقيق</b> باسم من نفّذها ووقتها، ولا يستطيع أحد حذفها أو تعديلها.</div>
+</section>
+
+<!-- ============================ 7. Roles ============================ -->
+<section>
+  <h2><span class="num">7</span>الأدوار والصلاحيات</h2>
+  <p class="lead">صفحة دخول واحدة للجميع. يكتب كل شخص اسم المستخدم وكلمة المرور، ويعرف النظام دوره من حسابه، فيفتح له ما يخصه.
+    الموظفون يستطيعون الدخول السريع بالرمز السري (4 إلى 6 أرقام).</p>
+  <table>
+    <tr><th style="width:52%">العمل</th><th>المالك</th><th>المدير</th><th>موظف الاستقبال</th></tr>
+    <tr><td>لوحة الغرف، الحجز، التسكين، الدفعات، الخروج</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
+    <tr><td>الوردية والمصروفات</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
+    <tr><td>خصم فوق الحد، إلغاء إقامة، خروج بدين، نقل إلى غرفة أرخص</td><td class="y">✓</td><td class="y">✓</td><td class="n">بكلمة مرور المدير</td></tr>
+    <tr><td>التقارير والطباعة والتصدير</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓ (رقم الهوية مخفي)</td></tr>
+    <tr><td>الإعدادات: الغرف والأسعار وقواعد التنبيه</td><td class="y">✓</td><td class="y">✓</td><td class="n">عرض فقط</td></tr>
+    <tr><td>إضافة المستخدمين وتعديل أسماء دخولهم وكلمات مرورهم</td><td class="y">✓ الجميع</td><td class="y">✓ عدا المالك</td><td class="n">—</td></tr>
+    <tr><td>لوحة المالك</td><td class="y">✓ (صفحته الأولى)</td><td class="y">✓</td><td class="n">—</td></tr>
+  </table>
+  <div class="plain"><span class="tag">أول دخول</span>
+    <p>البرنامج بعد التثبيت فيه حساب مالك جاهز: <b class="ltr">admin</b> / <b class="ltr">123456</b>، تظهره صفحة الدخول حتى تُغيَّر كلمة المرور،
+      ويذكّر البرنامج بتغييرها بعد الدخول دون أن يُلزم. ومن الإعدادات › المستخدمون يضيف المالك الموظفين والمديرين.</p>
+  </div>
+  <div class="tech"><span class="tag">للتقنيين</span>
+    <p>مصادقة بالرمز (Token) مع صلاحية للجلسة وقفل للشاشة عند الخمول. العمليات الحساسة تطلب رمز تأكيد (<code>X-Confirm-Token</code>) يصدر بإعادة إدخال كلمة المرور.
+      الصلاحيات في الخادم (<code>IsManager</code> لـ manager/owner، وقاعدة <code>can_manage_user</code>)، والواجهة تعكسها ولا تقررها.</p>
+  </div>
+</section>
+
+<!-- ============================ 8. Security ============================ -->
+<section>
+  <h2><span class="num">8</span>الأمان وحماية البيانات</h2>
+  <div class="cards">
+    <div class="card"><h4>قفل بعد 5 محاولات</h4><p>خمس محاولات دخول خاطئة تقفل الحساب خمس دقائق، وتُسجَّل في التدقيق.</p></div>
+    <div class="card"><h4>لا حذف أبدًا</h4><p>السجلات لا تُحذف؛ التصحيح قيد جديد، والإلغاء بسبب. ما حدث يبقى ظاهرًا.</p></div>
+    <div class="card"><h4>سجل تدقيق مسلسل</h4><p>كل عملية مرتبطة بما قبلها كسلسلة؛ أي عبث بالسجل يُكتشف عند الفحص والاستيراد.</p></div>
+    <div class="card"><h4>حارس الساعة</h4><p>إرجاع ساعة الجهاز للوراء (للتلاعب بالتواريخ) يوقف التسجيل حتى تُصحَّح الساعة.</p></div>
+    <div class="card"><h4>نسخ مشفّرة</h4><p>النسخ الاحتياطية مشفّرة، لا تُقرأ دون مفتاح الفندق أو كلمة مرور المالك أو مدير.</p></div>
+    <div class="card"><h4>الجهاز فقط</h4><p>الخادم يستمع على الجهاز نفسه فقط، فلا يصل إليه أحد من الشبكة.</p></div>
+    <div class="card"><h4>صلاحيات المجلد</h4><p>مجلد البيانات يكتب فيه مسؤولو الجهاز والخدمة فقط.</p></div>
+    <div class="card"><h4>إخفاء الهوية</h4><p>رقم هوية النزيل يظهر مخفيًّا للموظف (آخر أرقامه فقط)، وكاملًا للمدير.</p></div>
+  </div>
+  <div class="tech"><span class="tag">للتقنيين</span>
+    <p><b>سلسلة التدقيق:</b> <code>AuditLog</code> بتسلسل ومُلخّص يتضمن مُلخّص السجل السابق، ويُتحقق منها في كل استيراد. <b>حارس الساعة:</b>
+      <code>ClockGuardMiddleware</code> يرد HTTP 423 <code>clock_rollback</code> على أي كتابة إذا تأخرت الساعة عن آخر كتابة مسجّلة.
+      <b>المنفذ:</b> ربط حصري <code>SO_EXCLUSIVEADDRUSE</code> على <code>127.0.0.1:8471</code> حتى لا يشاركه برنامج آخر.
+      <b>المفاتيح:</b> مفتاح الفندق age (X25519) محفوظ بـ DPAPI على ويندوز.</p>
+  </div>
+</section>
+
+<!-- ============================ 9. Backups ============================ -->
+<section>
+  <h2><span class="num">9</span>النسخ الاحتياطي وجهاز المالك</h2>
+  <div class="plain"><span class="tag">ببساطة</span>
+    <ul>
+      <li>النسخ الاحتياطية <b>تعمل من أول يوم</b> دون أي إعداد: كل عدة ساعات، عند إغلاق كل وردية، وبزر «نسخة احتياطية الآن».</li>
+      <li>تُحفظ في مجلد على الجهاز، ويمكن نسخها تلقائيًا إلى <b>فلاشة USB</b> أو إلى <b>Google Drive</b>. الأقدم يُحذف تلقائيًا حسب المدة التي تختارها.</li>
+      <li>على جهاز آخر، تُفتح النسخة <b>باسم المستخدم وكلمة المرور</b> للمالك أو مدير، <b>بعد تغيير كلمة المرور الافتراضية</b> (النسخ لا تُفتح بـ 123456 حمايةً للبيانات).</li>
+      <li>جهاز جديد: يظهر فيه مربع «جهاز جديد» ← «فتح من نسخة احتياطية»، فتختار:
+        <b>للاطلاع فقط</b> (جهاز المالك) أو <b>للعمل عليه</b> (بدل جهاز استقبال تعطّل). يُعاد تشغيل البرنامج خلال ثوانٍ بالبيانات. <b>لا يُحذف شيء</b> أبدًا.</li>
+      <li>بعد أول مرة، يفتح جهاز المالك النسخ الأحدث بضغطة، بلا كلمة مرور.</li>
+    </ul>
+  </div>
+  <div class="tech"><span class="tag">للتقنيين</span>
+    <p><b>التصدير:</b> <code>VACUUM INTO</code> لنسخة متسقة من SQLite، والمرفقات (كاملة أسبوعيًا، وإلا المتغيّر فقط)، و<code>manifest.json</code> بـ SHA-256 لكل ملف، ثم ZIP مشفّر بـ age.
+      <b>صيغة الملف 2:</b> سطر تعريف، ثم سطر JSON (معرّف الفندق، التسلسل، الوقت، و<b>خانات المفتاح</b>)، ثم الحمولة المشفّرة.
+      خانة المفتاح هي مفتاح الفندق مشفّرًا بوضع كلمة المرور في age (scrypt) بكلمة مرور كل مالك أو مدير نشط، وتُكتب عند إنشاء الحساب أو تغيير كلمة مروره أو أول دخول بكلمة المرور بعد التحديث.</p>
+    <p><b>الاستيراد (جهاز المالك):</b> خمسة فحوص قبل الدمج: التوقيع، سلامة القاعدة، معرّف الفندق، الإصدار (هجرات غير معروفة)، وسلسلة التدقيق.
+      الدمج <b>إضافي</b> بترتيب الجداول: الصف الجديد يُضاف، والأحدث بـ <code>updated_at</code> يَغلب، وجداول الإضافة فقط لا تُعدَّل أبدًا.
+      <b>الجهاز الجديد:</b> <code>POST backup/adopt</code> يفحص الملف ويضعه في <code>pending-import/</code> ثم ينهي العملية (رمز 3) لتعيد إجراءات الاسترداد في ويندوز تشغيل الخدمة؛
+      قبل فتح قاعدة البيانات تُنقل الملفات ويُضبط الدور، والتثبيت الفارغ يُحفظ في <code>backups/pre-import-&lt;stamp&gt;/</code>.</p>
+  </div>
+</section>
+
+<!-- ============================ 10. Install ============================ -->
+<section>
+  <h2><span class="num">10</span>التثبيت والبدء</h2>
+  <ol class="steps">
+    <li><b>التنزيل:</b> من الرابط الثابت الذي يعطي أحدث إصدار دائمًا:<br /><span class="ltr" style="font-size:9pt">https://github.com/Stingcompiler/hotel-mg/releases/latest/download/SkyTowers-Setup.exe</span></li>
+    <li><b>التشغيل:</b> إن ظهرت نافذة «Windows protected your PC» اضغط <b>More info</b> ثم <b>Run anyway</b> (البرنامج غير موقَّع بشهادة مدفوعة، ولا يعني ذلك خطرًا)، ووافق على طلب صلاحيات المسؤول.</li>
+    <li><b>المعالج بالعربية:</b> التالي ← تثبيت ← إنهاء. <b>لا أسئلة.</b></li>
+    <li><b>صفحة الدخول:</b> ادخل بـ <span class="ltr">admin / 123456</span> (زر «تعبئة الحقول»)، ثم غيّر كلمة المرور من الإعدادات › المستخدمون.</li>
+    <li><b>الإعداد مرة واحدة:</b> أنواع الغرف والأسعار ← الغرف ← المستخدمون ← بيانات الفندق. ثم افتح وردية وابدأ.</li>
+  </ol>
+  <figure><img src="img/login.png" alt="صفحة الدخول" /><figcaption>صفحة الدخول: ترحيب بالفندق بجانب حقلي الدخول، وحساب المالك الجاهز لأول مرة.</figcaption></figure>
+  <p class="muted" style="font-size:9.5pt">التحديث: تنزيل الملف نفسه وتشغيله فوق الإصدار القديم؛ تبقى كل البيانات ويأخذ البرنامج نسخة احتياطية قبل التحديث.
+    المتطلبات: ويندوز 10 أو 11 (64 بت)، ولا يحتاج إنترنت.</p>
+</section>
+
+<!-- ============================ 11. Technical ============================ -->
+<section>
+  <h2><span class="num">11</span>للتقنيين: البنية التقنية</h2>
+  <table>
+    <tr><th style="width:24%">الطبقة</th><th>التقنية</th><th style="width:36%">ملاحظات</th></tr>
+    <tr><td>الخادم</td><td><span class="ltr">Python 3.12 · Django 5 · Django REST Framework · drf-spectacular</span></td><td>منطق العمل كله هنا فقط</td></tr>
+    <tr><td>قاعدة البيانات</td><td><span class="ltr">SQLite (WAL)</span></td><td>ORM فقط؛ التحويل إلى PostgreSQL تغيير إعداد واحد</td></tr>
+    <tr><td>التشغيل</td><td><span class="ltr">Waitress · Windows Service (pywin32) · PyInstaller</span></td><td>خدمة تبدأ مع ويندوز وتُعاد عند التعطل</td></tr>
+    <tr><td>الواجهة</td><td><span class="ltr">React 18 · Vite · TypeScript · Tailwind · TanStack Query · openapi-fetch</span></td><td>RTL، ألوان من الرموز فقط، نصوص من <code>ar.json</code></td></tr>
+    <tr><td>سطح المكتب</td><td><span class="ltr">Tauri 2 (WebView2) · NSIS</span></td><td>مثبّت عربي، WebView2 مضمّن دون إنترنت</td></tr>
+    <tr><td>التشفير</td><td><span class="ltr">age (pyrage): X25519 + scrypt</span></td><td>مفتاح الفندق + خانات كلمات المرور</td></tr>
+    <tr><td>التكامل</td><td><span class="ltr">Google Drive API v3</span></td><td>اختياري لرفع النسخ وتنزيلها</td></tr>
+  </table>
+
+  <h3>قواعد الكود</h3>
+  <ul>
+    <li>كل تطبيق Django: <code>models</code>، <code>rules.py</code> (دوال نقية بلا قاعدة بيانات، مغطاة 100% بالاختبارات)، <code>services.py</code> (حالة استخدام واحدة في معاملة واحدة تكتب قيد تدقيق)، <code>serializers</code>، <code>views</code>.</li>
+    <li>كل نموذج يرث <code>BaseModel</code>: مفتاح UUID، <code>hotel_id</code>، <code>created_at/updated_at</code>، <code>version</code>، <code>created_by</code>. جداول الإضافة فقط ترث <code>AppendOnlyModel</code>.</li>
+    <li>الأخطاء <code>{"code", "detail"}</code>: رمز ثابت للبرامج ورسالة عربية للمستخدم؛ رسائل الخادم تطابق <code>ar.json</code> باختبار.</li>
+    <li>عقد الـ API مجمّد (<code>api/openapi.yml</code> الإصدار 1.3)، والتغييرات إضافية فقط، ويولَّد منه نوع TypeScript للواجهة.</li>
+  </ul>
+
+  <h3>الجودة والإصدار</h3>
+  <ul>
+    <li>نحو 470 اختبارًا للخادم و45 للواجهة، وتغطية 100% لملفات القواعد، وفحوص تنسيق وأنماط الواجهة (لا ألوان خارج الرموز، اتجاهات منطقية فقط).</li>
+    <li>كل تغيير يمرّ عبر طلب دمج: CI على لينكس وويندوز، ثم بناء المثبّت على <span class="ltr">windows-latest</span> وتثبيته صامتًا وفحص أن الخدمة تعمل والواجهة تُخدم ثم إزالته.</li>
+    <li>كل دمج في <code>main</code> يبني المثبّت وينشره إصدارًا على GitHub برابط ثابت لأحدث نسخة.</li>
+  </ul>
+
+  <div class="avoid">
+  <h3>أين الأشياء على الجهاز</h3>
+  <table>
+    <tr><th>ما</th><th>أين</th></tr>
+    <tr><td>البرنامج</td><td><span class="ltr">C:\Program Files\Sky Towers\</span></td></tr>
+    <tr><td>قاعدة البيانات والمرفقات</td><td><span class="ltr">%ProgramData%\SkyTowers\data\</span></td></tr>
+    <tr><td>النسخ الاحتياطية</td><td><span class="ltr">%ProgramData%\SkyTowers\backups\</span></td></tr>
+    <tr><td>المفاتيح</td><td><span class="ltr">%ProgramData%\SkyTowers\keys\</span></td></tr>
+    <tr><td>سجل الخدمة</td><td><span class="ltr">%ProgramData%\SkyTowers\logs\server.log</span></td></tr>
+    <tr><td>إعداد الجهاز</td><td><span class="ltr">%ProgramData%\SkyTowers\config.json</span> (الدور، معرّف الفندق)</td></tr>
+  </table>
+  </div>
+  <p class="muted" style="font-size:9.5pt">أوامر الصيانة (من موجّه أوامر بصلاحيات المسؤول، والخدمة متوقفة): <code>skytowers-server.exe manage reset_data --yes</code> لإفراغ جهاز بعد تجربة،
+    و<code>manage restore_full</code> للاستعادة الكاملة يدويًا. الدليل التقني الكامل: <code>docs/windows.md</code>.</p>
+</section>
+
+<!-- ============================ 12. FAQ ============================ -->
+<section>
+  <h2><span class="num">12</span>أسئلة شائعة</h2>
+  <div class="avoid"><h3>انقطعت الكهرباء أو الإنترنت. هل تضيع البيانات؟</h3>
+    <p>لا. البرنامج لا يحتاج إنترنت أصلًا، وقاعدة البيانات تحفظ كل عملية لحظة تأكيدها. عند عودة الجهاز تبدأ الخدمة وحدها.</p></div>
+  <div class="avoid"><h3>تعطل جهاز الاستقبال. ماذا أفعل؟</h3>
+    <p>ثبّت البرنامج على جهاز جديد، وافتح آخر نسخة احتياطية (من الفلاشة أو Drive) من مربع «جهاز جديد»، واختر «للعمل عليه». تعود البيانات كما كانت عند آخر نسخة.</p></div>
+  <div class="avoid"><h3>هل يستطيع موظف التلاعب بالأرقام؟</h3>
+    <p>لا يستطيع حذف أي عملية أو تعديلها بصمت: كل تصحيح يظهر كقيد جديد باسمه، والخصومات الكبيرة والإلغاءات تحتاج كلمة مرور المدير،
+      وتغيير الساعة للوراء يوقف التسجيل، وتقرير «التعديلات والخصومات والإلغاءات» يعرض كل ذلك للمالك.</p></div>
+  <div class="avoid"><h3>نسيت كلمة المرور.</h3>
+    <p>المالك أو المدير يعيّن كلمة مرور جديدة ورمزًا سريًا جديدًا لأي موظف من الإعدادات › المستخدمون. الحساب المقفول بعد خمس محاولات يُفتح بعد خمس دقائق أو بزر «فتح القفل».</p></div>
+  <div class="avoid"><h3>هل أحتاج جهازًا ثانيًا للمالك؟</h3>
+    <p>لا. المالك يدخل بحسابه على جهاز الاستقبال ويرى لوحته. الجهاز الثاني اختياري لمن يريد المتابعة من البيت.</p></div>
+  <div class="avoid"><h3>لماذا تظهر نافذة «Windows protected your PC»؟</h3>
+    <p>لأن ملف التثبيت غير موقَّع بشهادة تجارية مدفوعة. اضغط More info ثم Run anyway. يمكن إزالتها لاحقًا بشراء شهادة توقيع.</p></div>
+  <div class="avoid"><h3>هل تبقى البيانات إذا أزلت البرنامج؟</h3>
+    <p>نعم. الإزالة لا تحذف مجلد البيانات عمدًا؛ إعادة التثبيت تجد كل شيء كما كان.</p></div>
+</section>
+
+</body>
+</html>
