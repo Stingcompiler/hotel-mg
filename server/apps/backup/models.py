@@ -48,6 +48,9 @@ class BackupRun(AppendOnlyModel):
     size = models.PositiveBigIntegerField(default=0)
     sha256 = models.CharField(max_length=64, blank=True)
     audit_seq = models.PositiveBigIntegerField(default=0, help_text="Last audit seq included; detects «no changes».")
+    slots = models.PositiveSmallIntegerField(
+        default=0, help_text="Owner/manager key slots in the file: 0 = it opens on no other PC (default password)."
+    )
     message = models.CharField(max_length=300, blank=True)
 
     class Meta:

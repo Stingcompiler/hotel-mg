@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 
 MANIFEST = "manifest.json"
 DB_FILE = "hotel.db"
-FULL_EVERY = timedelta(days=7)
 
 
 def file_name(hotel_id: str, seq: int, created_at: datetime) -> str:
@@ -67,11 +66,6 @@ def mismatched_files(manifest: dict, files: dict[str, bytes]) -> list[str]:
         if data is None or len(data) != entry["size"] or sha256_hex(data) != entry["sha256"]:
             bad.append(entry["name"])
     return bad
-
-
-def needs_full(last_full_at: datetime | None, now: datetime) -> bool:
-    """Weekly full backup (all attachments); in between, only attachments changed since the last full."""
-    return last_full_at is None or now - last_full_at >= FULL_EVERY
 
 
 def to_delete(paths_newest_first: list[str], keep: int) -> list[str]:
@@ -145,3 +139,20 @@ def slot_for(header: dict | None, username: str) -> str | None:
         if isinstance(slot, dict) and str(slot.get("username", "")).strip().lower() == username.strip().lower():
             return slot.get("wrapped")
     return None
+
+
+def attachment_path(name: str) -> tuple[str, ...] | None:
+    """The parts of an attachment's path inside ``attachments/`` from an archive entry name, or None when the entry
+    is not an attachment or would leave that folder (``..``, an absolute path, a drive letter, a backslash)."""
+    if not name.startswith("attachments/"):
+        return None
+    parts = tuple(name.removeprefix("attachments/").split("/"))
+    if not parts or any(p in ("", ".", "..") or "\\" in p or ":" in p for p in parts):
+        return None
+    return parts
+
+
+def key_id(public_key: str) -> str:
+    """A short fingerprint of a public key for the backup header: tells a PC whether it holds the file's key without
+    revealing the key (a file this PC should open but cannot is damaged; one for another key needs a login)."""
+    return hashlib.sha256(public_key.strip().encode("ascii")).hexdigest()[:16]

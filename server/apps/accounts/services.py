@@ -97,6 +97,33 @@ def login_with_password(username: str, password: str) -> LoginResult:
     return result
 
 
+@transaction.atomic
+def reset_password_offline(username: str, password: str) -> User:
+    """``manage reset_password``: an administrator of the reception PC sets a new password (the owner forgot the only
+    owner password). Unlocks the account and rewrites its backup key slot, so backups keep opening elsewhere."""
+    if len(password) < 6:
+        raise ApiError("validation_error", 400, detail="كلمة المرور 6 أحرف على الأقل.")
+    user = User.objects.select_for_update().filter(username=username).first()
+    if user is None:
+        raise ApiError("not_found", 404, detail=f"لا يوجد مستخدم باسم {username}.")
+    before = audit.snapshot(user, USER_FIELDS)
+    user.set_password(password)
+    user.default_password = False
+    user.failed_attempts, user.locked_until = 0, None
+    user.is_active = True
+    user.save()
+    _backup_slot(user, password)
+    audit.record(
+        actor=None,
+        action="user.reset_password_offline",
+        entity="user",
+        entity_id=user.pk,
+        before=before,
+        after=audit.snapshot(user, USER_FIELDS),
+    )
+    return user
+
+
 def _backup_slot(user: User, password: str | None, on_login: bool = False) -> None:
     """Keep this person's backup key slot in step with the password (apps.backup.keyslots)."""
     from apps.backup import keyslots  # accounts must not import backup at load time

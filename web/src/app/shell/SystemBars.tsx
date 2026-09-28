@@ -73,6 +73,21 @@ export function SystemBars({ reception = true }: { reception?: boolean }) {
       ),
     });
   }
+  // BAK-1 (review 2026-09-28): until an owner or a manager replaces the default password, backups carry no key slot
+  // and open on no other PC — losing this PC would lose the hotel. Said plainly to everyone at reception.
+  if (reception && s?.backup_opens_elsewhere === false) {
+    bars.push({
+      key: "backupLocal",
+      tone: "warning",
+      icon: icon(DatabaseBackup),
+      text: t("system.backupLocalOnly"),
+      action: (
+        <Link to="/settings/users" className={`${link} text-warning-text`}>
+          {t("system.changePassword")}
+        </Link>
+      ),
+    });
+  }
   if (s?.disk_low) {
     bars.push({
       key: "disk",

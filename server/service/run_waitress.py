@@ -17,6 +17,7 @@ from pathlib import Path
 HOST = "127.0.0.1"
 PORT = 8471
 THREADS = 8
+_FILE_HANDLERS: dict[str, logging.Handler] = {}
 
 
 def setup_django() -> str:
@@ -24,12 +25,19 @@ def setup_django() -> str:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from config import runtime
 
-    cfg = runtime.load()
-    # A hotel adopted from a backup on this PC (1.1) takes its files and role before the database opens.
-    from service import pending_import
-
-    if pending_import.apply(cfg.home) or runtime.promote_empty_owner(cfg.home):
+    # server.log first: the support log must also hold what goes wrong before Django starts (a damaged config.json,
+    # an adoption cut short); the fallback page's «فتح سجل الأخطاء» opens it.
+    _log_to_file(runtime.default_home() / "logs")
+    try:
         cfg = runtime.load()
+        # A hotel adopted from a backup on this PC (1.1) takes its files and role before the database opens.
+        from service import pending_import
+
+        if pending_import.apply(cfg.home) or runtime.promote_empty_owner(cfg.home):
+            cfg = runtime.load()
+    except Exception:
+        logging.getLogger(__name__).exception("the service could not prepare its data folder")
+        raise
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"config.settings.{cfg.role}")
 
     import django
@@ -44,32 +52,34 @@ def setup_django() -> str:
     from apps.backup import adopt
 
     adopt.finish_pending()
+    from apps.backup import export as backup_export
+    from apps.backup import keys as backup_keys
+
+    backup_keys.migrate_protection()  # 1.1.0–1.1.1 keys: user scope → machine scope (installer commands can read)
+    backup_export.clean_leftovers()  # copies left by a backup cut short
     if cfg.role == "reception":
         # A new install opens on the login page with the default owner account, never a setup form.
         from apps.accounts.services import ensure_default_owner
 
         ensure_default_owner()
-        # The hotel key: backups need no key setup (1.1).
-        from apps.backup import keys as backup_keys
-
-        backup_keys.ensure_hotel_key()
-    if cfg.role == "owner":
-        # The owner's backup key is made on the first start; the login page shows its public half.
-        from apps.backup import keys
-
-        keys.generate()
+        backup_keys.ensure_hotel_key()  # backups need no key setup (1.1)
     return cfg.role
 
 
 def _log_to_file(folder: Path) -> None:
     """``<home>/logs/server.log`` (the desktop fallback page's «فتح سجل الأخطاء»), 5 × 2 MB."""
     folder.mkdir(parents=True, exist_ok=True)
-    handler = logging.handlers.RotatingFileHandler(
-        folder / "server.log", maxBytes=2_000_000, backupCount=5, encoding="utf-8"
-    )
-    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    target = str((folder / "server.log").resolve())
     root = logging.getLogger()
-    root.addHandler(handler)
+    # One handler per file for the whole process: django.setup() drops it from the root logger, so it is attached
+    # again rather than opened twice (a second open file blocks the rotation on Windows).
+    handler = _FILE_HANDLERS.get(target)
+    if handler is None:
+        handler = logging.handlers.RotatingFileHandler(target, maxBytes=2_000_000, backupCount=5, encoding="utf-8")
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+        _FILE_HANDLERS[target] = handler
+    if handler not in root.handlers:
+        root.addHandler(handler)
     root.setLevel(logging.INFO)
 
 

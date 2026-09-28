@@ -144,7 +144,7 @@ def init_config(home: Path, role: str, force: bool = False) -> bool:
         raw["hotel_id"] = raw.get("hotel_id") or str(hotel_in_database(home / "data" / "hotel.db") or uuid.uuid4())
     else:
         raw["hotel_id"] = raw.get("hotel_id") or ""
-    config_file.write_text(json.dumps(raw, indent=2), encoding="utf-8")
+    write_config(config_file, raw)
     return True
 
 
@@ -165,8 +165,9 @@ def hotel_in_database(db_path: Path) -> uuid.UUID | None:
     return uuid.UUID(str(row[0])) if row and row[0] else None
 
 
-def users_in_database(db_path: Path) -> int:
-    """How many accounts the database holds, without Django (0 when there is no database yet)."""
+def users_in_database(db_path: Path) -> int | None:
+    """How many accounts the database holds, without Django: 0 when there is no database or no accounts table yet,
+    None when the file cannot be read (damaged) — never mistaken for an empty PC."""
     import sqlite3
 
     if not db_path.is_file():
@@ -177,8 +178,10 @@ def users_in_database(db_path: Path) -> int:
             return con.execute("select count(*) from accounts_user").fetchone()[0]
         finally:
             con.close()
+    except sqlite3.OperationalError as exc:
+        return 0 if "no such table" in str(exc) else None
     except sqlite3.Error:
-        return 0
+        return None
 
 
 def promote_empty_owner(home: Path) -> bool:
@@ -190,6 +193,13 @@ def promote_empty_owner(home: Path) -> bool:
     when config.json was rewritten.
     """
     cfg = load(home)
-    if cfg.role != "owner" or users_in_database(cfg.db_path):
+    if cfg.role != "owner" or users_in_database(cfg.db_path) != 0:  # None: a damaged database is not "empty"
         return False
     return init_config(home, "reception", force=True)
+
+
+def write_config(config_file: Path, raw: dict) -> None:
+    """Replace config.json atomically: a power cut leaves the old or the new file, never half of one."""
+    tmp = config_file.with_name(config_file.name + ".tmp")
+    tmp.write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
+    os.replace(tmp, config_file)

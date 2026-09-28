@@ -7508,6 +7508,12 @@ components:
           nullable: true
           description: 'Owner PC: public key to paste in the reception''s backup settings
             (public).'
+        backup_opens_elsewhere:
+          type: boolean
+          nullable: true
+          description: 'Reception PC: new backups carry a key slot (an owner/manager
+            changed the default password), so they open on another PC. False = they
+            open only here (the system bar warns). Owner PC: null.'
         can_adopt:
           type: boolean
           description: '1.1: a new PC (only the untouched default account): «استيراد
@@ -7540,6 +7546,7 @@ components:
       - needs_setup
       - due_tasks
       - owner_public_key
+      - backup_opens_elsewhere
       - can_adopt
       - default_login
       - version

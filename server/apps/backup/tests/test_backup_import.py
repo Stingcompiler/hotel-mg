@@ -333,7 +333,6 @@ def test_file_name_rules():
     assert rules.parse_file_name("skytowers-a-b-c.age") is None
     assert rules.to_delete(["c", "b", "a"], 2) == ["a"] and rules.to_delete(["a"], 0) == []
     now = timezone.now()
-    assert rules.needs_full(None, now) and not rules.needs_full(now - timedelta(days=6), now)
     assert rules.is_due(None, 6, now) and not rules.is_due(now, 6, now) and not rules.is_due(None, 0, now)
     assert rules.unknown_migrations({("stays", "0009_x"), ("other", "1")}, {("stays", "0001")}) == {("stays", "0009_x")}
     assert date.today()  # keep the import used

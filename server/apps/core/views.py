@@ -38,6 +38,12 @@ def _default_login() -> dict | None:
     }
 
 
+def _backup_opens_elsewhere() -> bool:
+    from apps.backup import keyslots  # core must not import backup at module load
+
+    return bool(keyslots.for_export())
+
+
 def _can_adopt() -> bool:
     from apps.backup.adopt import is_fresh  # core must not import backup at module load
 
@@ -67,6 +73,11 @@ class SystemStatusSerializer(serializers.Serializer):
     )
     owner_public_key = serializers.CharField(
         allow_null=True, help_text="Owner PC: public key to paste in the reception's backup settings (public)."
+    )
+    backup_opens_elsewhere = serializers.BooleanField(
+        allow_null=True,
+        help_text="Reception PC: new backups carry a key slot (an owner/manager changed the default password), so "
+        "they open on another PC. False = they open only here (the system bar warns). Owner PC: null.",
     )
     can_adopt = serializers.BooleanField(
         help_text="1.1: a new PC (only the untouched default account): «استيراد نسخة» may open a hotel here."
@@ -136,6 +147,7 @@ class SystemStatusView(APIView):
             "owner_public_key": _owner_public_key() if settings.SKYTOWERS_ROLE == "owner" else None,
             "default_login": _default_login() if settings.SKYTOWERS_ROLE == "reception" else None,
             "can_adopt": _can_adopt(),
+            "backup_opens_elsewhere": _backup_opens_elsewhere() if settings.SKYTOWERS_ROLE == "reception" else None,
             "version": settings.APP_VERSION,
             "schema_version": SCHEMA_VERSION,
             "spa_built": (settings.SPA_ROOT / "index.html").is_file(),

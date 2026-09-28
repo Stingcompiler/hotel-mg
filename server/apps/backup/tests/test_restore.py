@@ -55,7 +55,8 @@ def test_restore_refuses_wrong_key_foreign_hotel_and_owner_role(hotel, owner_ide
     path = backup(hotel)
     other = tmp_path / "other.key"
     keys.generate(other)
-    with pytest.raises(CommandError, match="التوقيع"):
+    # A key that is not the file's: refused (the file has no key slots, so it says how to get one that opens).
+    with pytest.raises(CommandError, match="التوقيع|كلمة المرور الافتراضية"):
         _restore(path, other)
     with pytest.raises(CommandError, match="غير موجود"):
         _restore(tmp_path / "missing.age", tmp_path / "owner.key")

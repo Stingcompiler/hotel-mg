@@ -80,4 +80,4 @@ def test_an_owner_pc_holding_an_imported_hotel_keeps_its_role(tmp_path):
     assert runtime.promote_empty_owner(tmp_path) is False
     assert json.loads((tmp_path / "config.json").read_text(encoding="utf-8"))["role"] == "owner"
     (tmp_path / "data" / "hotel.db").write_bytes(b"not a database")
-    assert runtime.users_in_database(tmp_path / "data" / "hotel.db") == 0
+    assert runtime.users_in_database(tmp_path / "data" / "hotel.db") is None  # unreadable, not «empty»

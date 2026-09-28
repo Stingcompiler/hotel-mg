@@ -53,6 +53,10 @@ def prepare(raw: bytes, file_name: str, credentials: tuple[str, str] | None, mod
         manifest, files, adopted = merge.open_backup(raw, keys.local_identities(), credentials)
     except merge.ImportRejected as exc:
         raise _rejected(exc) from None
+    except Exception:  # noqa: BLE001 - a crafted or damaged file (zip, JSON, header): refused, never a 500
+        log.exception("backup could not be opened for adoption")
+        detail = "تعذّر فتح النسخة: الملف تالف أو ليس نسخة من هذا البرنامج."
+        raise ApiError("backup_rejected", 400, detail=detail) from None
     if rules.mismatched_files(manifest, files):
         raise ApiError("backup_rejected", 400, detail="فشل فحص التوقيع — الملف مُعدَّل أو غير مكتمل.")
     incoming = {tuple(m.split(".", 1)) for m in manifest.get("migrations", [])}
@@ -70,8 +74,9 @@ def prepare(raw: bytes, file_name: str, credentials: tuple[str, str] | None, mod
         raise ApiError("backup_rejected", 400, detail="قاعدة البيانات في النسخة تالفة.")
     if mode == "work":
         for name, data in files.items():
-            if name.startswith("attachments/"):
-                dest = pending / name
+            relative = rules.attachment_path(name)
+            if relative is not None:  # a name that would leave the folder is skipped
+                dest = pending.joinpath("attachments", *relative)
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(data)
     else:

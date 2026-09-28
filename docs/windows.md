@@ -58,24 +58,32 @@ service migrates the database on start. Uninstalling never deletes `%ProgramData
 | Database, attachments | `%ProgramData%\SkyTowers\data\` |
 | Backups | `%ProgramData%\SkyTowers\backups\` |
 | Service log | `%ProgramData%\SkyTowers\logs\server.log` («فتح سجل الأخطاء» on the start page) |
-| Owner key (owner PC only) | `%ProgramData%\SkyTowers\keys\` — keep a copy offline; backups cannot be opened without it |
+| Keys | `%ProgramData%\SkyTowers\keys\` — the hotel key (DPAPI, this PC only); backups open elsewhere with the owner's or a manager's password |
 
 ### Restoring a reception PC from a backup (disaster recovery)
 
-If the reception PC is lost, install Sky Towers on the new PC as *reception*, then, from an administrator
-command prompt with the service stopped:
+If the reception PC is lost: install Sky Towers on the new PC, sign in with `admin` / `123456`, and on «جهاز جديد»
+choose **فتح من نسخة احتياطية** → the newest `.age` file (USB stick or Drive) → the login of the owner or a manager
+**as on the old reception PC** → **للعمل عليه**. The service restarts with the hotel's database and every attachment
+(each backup carries all of them since 1.1.2). The empty install is kept in `backups\pre-import-<stamp>\`.
+
+This needs a backup taken **after** an owner or manager replaced the default password: files made while only
+`admin` / `123456` existed carry no key slot and open on no other PC — the system bar says so until it is changed.
+
+`manage restore_full <file> --identity <key file>` remains for technicians; the key file must be readable on the
+new PC, which a DPAPI-protected `keys\*.age-identity` from another PC is not.
+
+### The owner forgot the password
+
+From an administrator command prompt on the reception PC:
 
 ```bat
-sc stop SkyTowersServer
 cd "C:\Program Files\Sky Towers\server"
-skytowers-server.exe manage restore_full D:\skytowers-5a7e0000-000117-20260926-2053.age --identity D:\owner.key
-sc start SkyTowersServer
+skytowers-server.exe manage reset_password admin
 ```
 
-`owner.key` is the owner PC's `%ProgramData%\SkyTowers\keys\owner.key`, copied for the restore only — delete the
-copy afterwards. The previous database and attachments are kept in `%ProgramData%\SkyTowers\backups\pre-restore-<stamp>\`.
-The command refuses a file from another hotel, a tampered file, the wrong key, or a database that is still in use.
-
+It asks for the new password twice, unlocks the account and rewrites its backup key slot, so backups keep opening
+on another PC with the new password (audited as `user.reset_password_offline`). Use the account's own login name.
 ### Starting over with an empty program
 
 A new install is empty and opens on the login page with the default owner account (dmin / 123456).

@@ -78,8 +78,9 @@ class Command(BaseCommand):
         runtime.attachments_dir.mkdir(parents=True, exist_ok=True)
         restored = 0
         for name, data in files.items():
-            if name.startswith("attachments/"):
-                dest = runtime.attachments_dir / name.removeprefix("attachments/")
+            relative = rules.attachment_path(name)
+            if relative is not None:  # a name that would leave the folder is skipped
+                dest = runtime.attachments_dir.joinpath(*relative)
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(data)
                 restored += 1
