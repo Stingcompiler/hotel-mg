@@ -184,3 +184,17 @@ test("an owner PC with no accounts still opens on the login fields, never a setu
   expect(screen.getByLabelText("اسم المستخدم")).toBeInTheDocument();
   expect(screen.queryByText("إعداد جهاز المالك")).not.toBeInTheDocument();
 });
+
+test("a wrong password says how many attempts are left, then until when the account is locked", async () => {
+  passwordReply = { status: 401, body: { code: "authentication_failed", detail: "بيانات الدخول غير صحيحة.", attempts_left: 2 } };
+  renderLogin("password");
+  fireEvent.change(await screen.findByLabelText("اسم المستخدم"), { target: { value: "admin" } });
+  fireEvent.change(screen.getByLabelText("كلمة المرور"), { target: { value: "nope" } });
+  fireEvent.click(screen.getByRole("button", { name: "دخول" }));
+  expect(await screen.findByText("اسم المستخدم أو كلمة المرور غير صحيحة — بقيت 2 محاولات قبل القفل")).toBeInTheDocument();
+
+  passwordReply = { status: 423, body: { code: "account_locked", detail: "الحساب مقفل.", locked_until: "2026-09-28T10:05:00" } };
+  fireEvent.change(screen.getByLabelText("كلمة المرور"), { target: { value: "nope" } });
+  fireEvent.click(screen.getByRole("button", { name: "دخول" }));
+  expect(await screen.findByText("5 محاولات خاطئة — قُفل الحساب حتى 10:05 · سُجِّل في التدقيق")).toBeInTheDocument();
+});

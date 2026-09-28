@@ -7861,6 +7861,11 @@ components:
           readOnly: true
           description: Still the install's default password (the login page shows
             it; a reminder after login).
+        default_pin:
+          type: boolean
+          readOnly: true
+          description: 'The quick-login PIN is the well-known default (123456): anyone
+            can pick the account and type it.'
         version:
           type: integer
           readOnly: true
@@ -7881,6 +7886,7 @@ components:
       - last_login
       - locked_until
       - default_password
+      - default_pin
       - version
       - created_at
       - updated_at

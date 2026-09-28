@@ -9,7 +9,7 @@ WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 CLOCK_EXEMPT_PREFIXES = (
     "/api/v1/auth/",
     "/api/v1/system/clock/approve",
-    "/admin/login/",
+    "/admin/login/",  # development only (config/urls.py)
 )
 
 

@@ -288,7 +288,7 @@ def reset_pin(actor: User, user_id, pin: str) -> User:
     _ensure_can_manage(actor, user.role)
     user.set_pin(pin)
     user.failed_attempts, user.locked_until = 0, None
-    user.save(update_fields=["pin_hash", "failed_attempts", "locked_until"])
+    user.save(update_fields=["pin_hash", "default_pin", "failed_attempts", "locked_until"])
     audit.record(actor=actor, action="user.reset_pin", entity="user", entity_id=user.pk)
     return user
 

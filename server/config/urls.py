@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -11,8 +12,8 @@ from apps.rooms.urls import room_type_urls
 from apps.stays.urls import reservation_urls, room_board_urls, stay_urls
 
 api_v1 = [
+    # Signed-in staff only (SPECTACULAR_SETTINGS.SERVE_PERMISSIONS); the contract lives in api/openapi.yml.
     path("schema", SpectacularAPIView.as_view(), name="schema"),
-    path("schema/swagger/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("system/", include("apps.core.urls")),
     path("auth/", include("apps.accounts.urls")),
     path("users/", include("apps.accounts.urls_users")),
@@ -36,10 +37,14 @@ api_v1 = [
 
 handler404 = "apps.core.errors.api_not_found"
 
+if settings.DEBUG:
+    # Development only: Swagger and the Django admin sign in with a Django session, which bypasses the lockout
+    # after 5 wrong passwords and the 12-hour sessions of the API (review 2026-09-28, SEC-2).
+    api_v1.append(path("schema/swagger/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"))
+
 urlpatterns = [
     path("api/v1/", include(api_v1)),
-    # Staff-only verification UI during the backend phases (spec §12).
-    path("admin/", admin.site.urls),
+    *([path("admin/", admin.site.urls)] if settings.DEBUG else []),
     # The SPA (F3): hashed assets, then index.html for every client route. Unknown API paths stay 404 JSON.
     path("assets/<path:path>", spa.asset),
     re_path(r"^(?!api/|admin/|static/)(?P<path>.*)$", spa.index),

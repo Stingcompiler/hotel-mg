@@ -209,6 +209,19 @@ function Skyline() {
   );
 }
 
+/** The same counters as the PIN pad (review 2026-09-28, UI-12): attempts left, then until when it is locked. */
+function passwordError(err: unknown): string {
+  if (!(err instanceof ApiError)) return t("errors.error");
+  if (err.code === "account_locked" && typeof err.extra.locked_until === "string") {
+    return t("login.passwordLocked", { time: formatTime(err.extra.locked_until) });
+  }
+  if (err.code === "authentication_failed" && typeof err.extra.attempts_left === "number") {
+    const n = err.extra.attempts_left;
+    return n === 1 ? t("login.wrongPasswordLast") : t("login.wrongPassword", { n: digits(String(n)) });
+  }
+  return err.message;
+}
+
 function PasswordForm({
   defaultLogin,
   onDone,
@@ -231,7 +244,7 @@ function PasswordForm({
       const result = await data(api.POST("/api/v1/auth/password", { body: { username: username.trim(), password } }));
       onDone(result.token, result.user);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : t("errors.error"));
+      setError(passwordError(err));
       setPassword("");
     } finally {
       setBusy(false);

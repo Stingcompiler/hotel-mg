@@ -41,8 +41,9 @@ def test_system_status_is_public(api):
     }
 
 
-def test_openapi_schema_is_served(api):
-    res = api.get("/api/v1/schema", HTTP_ACCEPT="application/vnd.oai.openapi+json")
+def test_openapi_schema_is_served(api, manager_api):
+    assert api.get("/api/v1/schema").status_code == 401  # signed-in staff only (review 2026-09-28)
+    res = manager_api.get("/api/v1/schema", HTTP_ACCEPT="application/vnd.oai.openapi+json")
     assert res.status_code == 200
     schema = res.json()
     assert schema["info"]["title"] == "Sky Towers API"

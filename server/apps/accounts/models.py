@@ -48,6 +48,10 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
         default=False,
         help_text="Still the install's default password (the login page shows it; a reminder after login).",
     )
+    default_pin = models.BooleanField(
+        default=False,
+        help_text="The quick-login PIN is the well-known default (123456): anyone can pick the account and type it.",
+    )
 
     objects = UserManager()
 
@@ -61,6 +65,7 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
         if not rules.is_valid_pin(pin):
             raise ValidationError("رمز الدخول يجب أن يكون من 4 إلى 6 أرقام.", code="invalid_pin")
         self.pin_hash = make_password(pin)
+        self.default_pin = pin == rules.DEFAULT_PIN  # review 2026-09-28, SEC-3: a reminder until it changes
 
     def check_pin(self, pin: str) -> bool:
         return bool(self.pin_hash) and rules.is_valid_pin(pin) and check_password(pin, self.pin_hash)
