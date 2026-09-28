@@ -56,7 +56,11 @@ export function ReceptionShell() {
           alerts={alerts}
         />
         <SystemBars />
-        {me?.default_password && <DefaultPasswordNotice />}
+        {me?.default_password ? (
+          <DefaultPasswordNotice />
+        ) : (
+          me?.default_pin && me.role !== "reception" && <DefaultPasswordNotice kind="pin" />
+        )}
         <main className="min-h-0 flex-1 overflow-auto">
           <Outlet />
         </main>

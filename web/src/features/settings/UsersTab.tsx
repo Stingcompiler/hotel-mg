@@ -82,7 +82,12 @@ export function UsersTab({ readOnly }: { readOnly: boolean }) {
               {u.username}
             </div>
             <div>{t(`roles.${u.role}`)}</div>
-            <div className="tracking-widest text-text-secondary">••••••</div>
+            <div className="flex items-center gap-2">
+              <span className="tracking-widest text-text-secondary">••••••</span>
+              {u.default_pin && (
+                <span className="inline-flex h-6 items-center rounded-control bg-warning-soft px-2 text-label text-warning-text">{t("settings.users.defaultPin")}</span>
+              )}
+            </div>
             <div className="text-text-secondary">{u.last_login ? formatWhen(u.last_login) : "—"}</div>
             <div className="flex items-center gap-2">
               <Toggle checked={u.is_active} disabled={readOnly || toggle.isPending} label={t("settings.users.col_status")} onChange={() => toggle.mutate(u)} />
@@ -130,6 +135,7 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
     role: (user?.role ?? "reception") as Role,
     pin: "",
     password: "",
+    confirm: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -182,7 +188,9 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
 
   const pinOk = user ? form.pin === "" || /^\d{4,6}$/.test(form.pin) : /^\d{4,6}$/.test(form.pin);
   const needsPassword = !user && form.role !== "reception";
-  const valid = form.full_name.trim() && (user || form.username.trim()) && pinOk && (!needsPassword || form.password);
+  // A new password is typed twice (review 2026-09-28, UI-14): a typo would lock the owner out of their own PC.
+  const mismatch = !!form.password && form.confirm !== form.password;
+  const valid = form.full_name.trim() && (user || form.username.trim()) && pinOk && (!needsPassword || form.password) && !mismatch;
 
   return (
     <Modal
@@ -247,6 +255,22 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
           <TextInput type="password" autoComplete="new-password" value={form.password} onChange={(e) => set({ password: e.target.value })} />
         </Field>
       </div>
+      {form.password && (
+        <Field
+          label={t("settings.users.confirmPassword")}
+          required
+          error={form.confirm && mismatch ? t("settings.users.passwordMismatch") : null}
+          className="w-[calc(50%-8px)] self-end"
+        >
+          <TextInput
+            type="password"
+            autoComplete="new-password"
+            value={form.confirm}
+            invalid={!!form.confirm && mismatch}
+            onChange={(e) => set({ confirm: e.target.value })}
+          />
+        </Field>
+      )}
       <div className="text-label font-normal text-text-secondary">{t("settings.users.footnote")}</div>
     </Modal>
   );

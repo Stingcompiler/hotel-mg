@@ -3630,6 +3630,8 @@ export interface components {
             readonly locked_until: string | null;
             /** @description Still the install's default password (the login page shows it; a reminder after login). */
             readonly default_password: boolean;
+            /** @description The quick-login PIN is the well-known default (123456): anyone can pick the account and type it. */
+            readonly default_pin: boolean;
             readonly version: number;
             /** Format: date-time */
             readonly created_at: string;

@@ -30,6 +30,7 @@ class UserSerializer(serializers.ModelSerializer):
             "last_login",
             "locked_until",
             "default_password",
+            "default_pin",
             "version",
             "created_at",
             "updated_at",

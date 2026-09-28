@@ -110,8 +110,7 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "apps.accounts.authentication.ExpiringTokenAuthentication",
-        # Session auth serves the browsable API / Swagger for staff during the backend phases.
-        "rest_framework.authentication.SessionAuthentication",
+        # Session auth (Swagger, the Django admin) is added in config/settings/dev.py only (SEC-2).
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.Pagination",
@@ -126,6 +125,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Local API of the Sky Towers hotel management system.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAuthenticated"],
     "SCHEMA_PATH_PREFIX": r"/api/v1",
     "COMPONENT_SPLIT_REQUEST": True,
     "POSTPROCESSING_HOOKS": [
@@ -146,7 +146,7 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-APP_VERSION = "1.1.3"
+APP_VERSION = "1.1.4"
 
 LOGGING = {
     "version": 1,

@@ -75,3 +75,25 @@ test("a role change asks for the manager's password, keeps the session on a wron
     ]),
   );
 });
+
+test("a new password is typed twice and a default PIN is flagged", async () => {
+  USERS[1] = { ...USERS[1], default_pin: true } as (typeof USERS)[number];
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter initialEntries={["/settings/users"]}>
+        <Routes>
+          <Route path="/settings/:tab" element={<SettingsPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByText("افتراضي 123456")).toBeInTheDocument();
+  fireEvent.click(screen.getAllByRole("button", { name: "تعديل" })[1]);
+  fireEvent.change(screen.getByLabelText(/كلمة مرور جديدة/), { target: { value: "secret-22" } });
+  const save = screen.getByRole("button", { name: "حفظ" });
+  expect(save).toBeDisabled();
+  fireEvent.change(screen.getByLabelText(/تأكيد كلمة المرور/), { target: { value: "secret-2" } });
+  expect(screen.getByText("كلمتا المرور غير متطابقتين")).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText(/تأكيد كلمة المرور/), { target: { value: "secret-22" } });
+  expect(save).toBeEnabled();
+});
