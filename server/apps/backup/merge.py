@@ -28,6 +28,7 @@ from pyrage import x25519
 
 from apps.audit import services as audit_services
 from apps.core.models import AppendOnlyModel
+from config import runtime
 
 from . import keys, keyslots, rules
 from .models import ImportRun
@@ -99,6 +100,15 @@ def open_backup(raw: bytes, identities, credentials: tuple[str, str] | None = No
             break
         except Exception:  # noqa: BLE001, S112 - not this key: try the next one
             continue
+    ours = {rules.key_id(str(i.to_public())) for i in identities}
+    theirs = set(header.get("keys") or []) if header else set()
+    for_this_pc = bool(ours & theirs) if theirs else bool(identities)  # files before 1.1.2 carry no fingerprints
+    if archive is None and header is not None and not header.get("slots") and not for_this_pc:
+        raise ImportRejected(
+            "لا يمكن فتح هذه النسخة على جهاز آخر: أُخذت وحساب المالك بكلمة المرور الافتراضية 123456. غيّر كلمة المرور "
+            "في جهاز الاستقبال، ثم خذ نسخة جديدة وافتحها.",
+            [rules.check("credentials_wrong", "فتح النسخة", "لا توجد في الملف حسابات تفتحه", "fail")],
+        )
     if archive is None and header is not None and header.get("slots"):
         if not credentials:
             raise ImportRejected(
@@ -232,9 +242,10 @@ def _copy_attachments(files: dict[str, bytes]) -> int:
     copied = 0
     root = settings.RUNTIME.attachments_dir
     for name, data in files.items():
-        if not name.startswith("attachments/"):
+        relative = rules.attachment_path(name)
+        if relative is None:  # not an attachment, or a name that would leave the attachments folder
             continue
-        dest = root / name.removeprefix("attachments/")
+        dest = root.joinpath(*relative)
         if not dest.exists():
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes(data)
@@ -247,7 +258,7 @@ def _set_hotel_id(hotel_id: str) -> None:
     config_file = settings.RUNTIME.home / "config.json"
     data = json.loads(config_file.read_text(encoding="utf-8")) if config_file.exists() else {"role": "owner"}
     data["hotel_id"] = hotel_id
-    config_file.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    runtime.write_config(config_file, data)
     settings.RUNTIME = dataclasses.replace(settings.RUNTIME, hotel_id=uuid.UUID(hotel_id))
 
 

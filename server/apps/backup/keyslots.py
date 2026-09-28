@@ -29,7 +29,7 @@ def unwrap(wrapped: str, password: str) -> str | None:
     """The identity, or None for a wrong password or a damaged slot."""
     try:
         return passphrase.decrypt(base64.b64decode(wrapped), password).decode("ascii")
-    except (pyrage.DecryptError, ValueError):
+    except (pyrage.DecryptError, ValueError, TypeError):  # TypeError: a crafted header (e.g. a number)
         return None
 
 

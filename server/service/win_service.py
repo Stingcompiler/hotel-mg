@@ -49,7 +49,15 @@ class SkyTowersService(win32serviceutil.ServiceFramework):
         )
         from service import run_waitress
 
-        self.server = run_waitress.create_server()
+        try:
+            self.server = run_waitress.create_server()
+        except Exception:
+            # In server.log for support; the error stop then triggers the recovery actions (hooks.nsh sets the
+            # failure flag, so Windows restarts the service after an error as well as after a crash).
+            import logging
+
+            logging.getLogger(__name__).exception("the service could not start")
+            raise
         try:
             self.server.run()
         except OSError:  # a socket closed during stop
