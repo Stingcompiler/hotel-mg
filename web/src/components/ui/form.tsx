@@ -2,6 +2,7 @@ import { CircleAlert } from "lucide-react";
 import { forwardRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
 import { ChevronDown } from "lucide-react";
 
+import { toWestern } from "@/i18n/digits";
 import { t } from "@/i18n/t";
 
 /** Numbered form section (6.4): 28 px step badge + 16/600 title. */
@@ -78,20 +79,42 @@ export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLIn
   },
 );
 
-/** Money typed in currency units («15,000»), shown with the «ج.س» suffix; the caller parses it. */
-export function MoneyInput({ invalid, ...rest }: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
+/** «1500000» → «1,500,000» as it is typed, keeping the caret after the same digit. Anything that is not a plain
+ *  amount (a sign, letters) is left for the caller's validation. */
+export function groupThousands(el: HTMLInputElement) {
+  const raw = el.value;
+  const plain = toWestern(raw).replace(/[,٬\s]/g, "");
+  if (!/^\d*(\.\d{0,2})?$/.test(plain)) return;
+  const [whole, fraction] = plain.split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (fraction === undefined ? "" : `.${fraction}`);
+  if (grouped === raw) return;
+  const caret = el.selectionStart ?? raw.length;
+  const before = toWestern(raw.slice(0, caret)).replace(/[^\d.]/g, "").length;
+  let pos = 0;
+  for (let seen = 0; pos < grouped.length && seen < before; pos++) if (/[\d.]/.test(grouped[pos])) seen++;
+  el.value = grouped;
+  el.setSelectionRange(pos, pos);
+}
+
+/** Money typed in currency units («15,000»), shown with the «ج.س» suffix; the caller parses it.
+ *  Wide enough for «100,000,000 ج.س» wherever it is placed (review 2026-09-28: fields too small for big amounts). */
+export function MoneyInput({ invalid, onChange, ...rest }: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
   return (
     <span
-      className={`flex h-9 items-center justify-between gap-2 rounded-control border px-3 focus-within:border-primary ${
+      className={`flex h-9 min-w-[10.5rem] items-center justify-between gap-2 rounded-control border px-3 focus-within:border-primary ${
         invalid ? "border-danger bg-bg-surface" : rest.readOnly ? "border-border bg-bg-surface-2" : "border-border-strong bg-bg-surface"
       }`}
     >
       <input
         inputMode="decimal"
         {...rest}
+        onChange={(e) => {
+          groupThousands(e.target);
+          onChange?.(e);
+        }}
         className="h-full w-full min-w-0 border-0 bg-transparent p-0 font-sans text-body text-text-primary outline-none placeholder:text-text-disabled"
       />
-      <span className="text-body text-text-secondary">{t("money.currency")}</span>
+      <span className="flex-none text-body text-text-secondary">{t("money.currency")}</span>
     </span>
   );
 }

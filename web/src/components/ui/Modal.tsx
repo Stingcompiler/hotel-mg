@@ -41,13 +41,13 @@ export function Modal({ title, onClose, width = 560, footer, children }: Props) 
 
 export const buttons = {
   primary:
-    "inline-flex h-11 items-center justify-center gap-2 rounded-control border-0 bg-primary px-6 font-sans text-body font-semibold text-primary-text-on hover:bg-primary-hover disabled:bg-bg-surface-2 disabled:text-text-disabled",
+    "inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap gap-2 rounded-control border-0 bg-primary px-6 font-sans text-body font-semibold text-primary-text-on hover:bg-primary-hover disabled:bg-bg-surface-2 disabled:text-text-disabled",
   secondary:
-    "inline-flex h-11 items-center justify-center gap-2 rounded-control border border-border-strong bg-bg-surface px-6 font-sans text-body font-semibold text-text-primary hover:bg-bg-surface-2 disabled:text-text-disabled",
+    "inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap gap-2 rounded-control border border-border-strong bg-bg-surface px-6 font-sans text-body font-semibold text-text-primary hover:bg-bg-surface-2 disabled:text-text-disabled",
   danger:
-    "inline-flex h-11 items-center justify-center gap-2 rounded-control border-0 bg-danger px-6 font-sans text-body font-semibold text-primary-text-on disabled:bg-bg-surface-2 disabled:text-text-disabled",
+    "inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap gap-2 rounded-control border-0 bg-danger px-6 font-sans text-body font-semibold text-primary-text-on disabled:bg-bg-surface-2 disabled:text-text-disabled",
   ghost:
-    "inline-flex h-11 items-center justify-center rounded-control border-0 bg-transparent px-4 font-sans text-body font-medium text-text-secondary hover:bg-bg-surface-2",
+    "inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-control border-0 bg-transparent px-4 font-sans text-body font-medium text-text-secondary hover:bg-bg-surface-2",
   dangerGhost:
-    "inline-flex h-11 items-center justify-center rounded-control border-0 bg-transparent px-4 font-sans text-body font-semibold text-danger hover:bg-danger-soft disabled:text-text-disabled",
+    "inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-control border-0 bg-transparent px-4 font-sans text-body font-semibold text-danger hover:bg-danger-soft disabled:text-text-disabled",
 };

@@ -17,7 +17,7 @@ import { apiErrorText, Card, Footnote, HeadRow, linkButton, smallButton } from "
 
 type Room = components["schemas"]["Room"];
 type Draft = { number: string; floor: string; room_type: string; note: string; in_service: boolean };
-const GRID = "grid grid-cols-[80px_1.2fr_70px_130px_2fr_100px_110px] items-center gap-4 px-4";
+const GRID = "grid grid-cols-[72px_minmax(90px,1.2fr)_64px_130px_minmax(120px,2fr)_80px_90px] items-center gap-3 px-4";
 const ROOMS = ["rooms", "settings"] as const;
 
 /** V2 6.11 C «الغرف»: rooms by floor, edited in place (type, note, in service). */

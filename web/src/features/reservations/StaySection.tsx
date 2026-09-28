@@ -1,25 +1,37 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalendarCheck } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { api, data } from "@/api/client";
 import { Field, Section, Segmented, Select, TextInput } from "@/components/ui/form";
-import { stateColor } from "@/design/state";
+import { type RoomState, stateColor } from "@/design/state";
 import { nights, roomsAvailable } from "@/i18n/counts";
 import { formatDayDate } from "@/i18n/dates";
-import { digits } from "@/i18n/digits";
+import { digits, toWestern } from "@/i18n/digits";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 
 import type { Errors, Form, Kind, Quote } from "./model";
 
-type Props = { form: Form; errors: Errors; update: (patch: Partial<Form>) => void; quote: Quote | undefined; quoteLoading: boolean };
+type Props = {
+  form: Form;
+  errors: Errors;
+  update: (patch: Partial<Form>) => void;
+  quote: Quote | undefined;
+  quoteLoading: boolean;
+  today: string;
+  roomStatus: Record<string, string>;
+};
 
 export function useRoomTypes() {
   return useQuery({ queryKey: ["room-types"], queryFn: () => data(api.GET("/api/v1/room-types/")), staleTime: 5 * 60_000 });
 }
 
 /** Step 2 «الإقامة»: room type, free rooms for the whole period, arrival, duration; mixed stays pick a pricing. */
-export function StaySection({ form, errors, update, quote, quoteLoading }: Props) {
+export function StaySection({ form, errors, update, quote, quoteLoading, today, roomStatus }: Props) {
+  // The count is typed freely (clearing it to type «15» must not jump to «1»); only whole 1–366 values are applied.
+  const [countText, setCountText] = useState(String(form.count));
+  useEffect(() => setCountText((text) => (Number(text) === form.count ? text : String(form.count))), [form.count]);
   const types = useRoomTypes().data?.filter((rt) => rt.is_active) ?? [];
   const rooms = useQuery({
     queryKey: ["availability", form.room_type, form.check_in_date, quote?.check_out_date],
@@ -78,6 +90,9 @@ export function StaySection({ form, errors, update, quote, quoteLoading }: Props
               ? [1, 2, 3].map((i) => <div key={i} className="skeleton h-9 w-[110px] rounded-control" />)
               : free.map((r) => {
                   const selected = form.room === r.id;
+                  // Arriving today: a room still being cleaned can be booked but not checked into yet.
+                  const status = roomStatus[r.id];
+                  const notReady = form.check_in_date === today && status && status !== "ready" ? status : null;
                   return (
                     <button
                       key={r.id}
@@ -92,6 +107,7 @@ export function StaySection({ form, errors, update, quote, quoteLoading }: Props
                       <span className={`text-label font-normal ${selected ? "text-primary" : "text-text-secondary"}`}>
                         {t("newRes.floor", { n: digits(String(r.floor)) })}
                       </span>
+                      {notReady && <span className={`text-label font-normal ${stateColor(notReady as RoomState).text}`}>{t(`roomState.${notReady}`)}</span>}
                     </button>
                   );
                 })}
@@ -102,7 +118,7 @@ export function StaySection({ form, errors, update, quote, quoteLoading }: Props
 
       <div className="grid grid-cols-4 items-end gap-3">
         <Field label={t("newRes.arrival")}>
-          <TextInput type="date" value={form.check_in_date} onChange={(e) => update({ check_in_date: e.target.value, room: null })} />
+          <TextInput type="date" min={today} value={form.check_in_date} onChange={(e) => e.target.value && update({ check_in_date: e.target.value, room: null })} />
         </Field>
         <div className="flex flex-col gap-1.5">
           <span className="text-label text-text-secondary">{t("newRes.durationKind")}</span>
@@ -115,11 +131,16 @@ export function StaySection({ form, errors, update, quote, quoteLoading }: Props
         </div>
         <Field label={t("newRes.count")} className="max-w-[140px]">
           <TextInput
-            type="number"
-            min={1}
-            max={366}
-            value={form.count}
-            onChange={(e) => update({ count: Math.max(1, Math.min(366, Number(e.target.value) || 1)), option_key: null, price: null, room: null })}
+            inputMode="numeric"
+            value={countText}
+            invalid={!/^\d+$/.test(countText) || Number(countText) < 1 || Number(countText) > 366}
+            onChange={(e) => {
+              const text = toWestern(e.target.value).replace(/\D/g, "").slice(0, 3);
+              setCountText(text);
+              const n = Number(text);
+              if (n >= 1 && n <= 366 && n !== form.count) update({ count: n, option_key: null, price: null, room: null });
+            }}
+            onBlur={() => setCountText(String(form.count))}
           />
         </Field>
       </div>

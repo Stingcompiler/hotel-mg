@@ -119,8 +119,10 @@ export function NewReservationPage() {
     return roomNumber ? t("newRes.summary", vars) : t("newRes.summaryNoRoom", vars);
   }, [quote.data, type, option, roomNumber]);
 
+  const roomReady = !form.room || board?.rooms.find((r) => r.id === form.room)?.status === "ready";
+
   async function save(checkInNow: boolean) {
-    const problems = validate(form, checkInNow);
+    const problems = validate(form, checkInNow, price, roomReady);
     setErrors(problems);
     if (Object.keys(problems).length) return setBanner(errorSummary(problems));
     setBanner(null);
@@ -215,7 +217,15 @@ export function NewReservationPage() {
           {banner && <ErrorBanner>{banner}</ErrorBanner>}
           <GuestSection form={form} errors={errors} update={update} />
           {stayOpen ? (
-            <StaySection form={form} errors={errors} update={update} quote={quote.data} quoteLoading={quote.isFetching} />
+            <StaySection
+              form={form}
+              errors={errors}
+              update={update}
+              quote={quote.data}
+              quoteLoading={quote.isFetching}
+              today={board?.date ?? todayIso()}
+              roomStatus={Object.fromEntries((board?.rooms ?? []).map((r) => [r.id, r.status]))}
+            />
           ) : (
             <Section step={2} title={t("newRes.stay")} note={t("newRes.stayClosed")} />
           )}
@@ -226,6 +236,7 @@ export function NewReservationPage() {
               update={update}
               planPrice={planPrice}
               planLabel={t("newRes.fromPlan", { type: type?.name ?? "", kind: option!.label })}
+              total={total}
             />
           ) : (
             <Section step={3} title={t("newRes.money")} note={t("newRes.moneyClosed")} />
@@ -234,17 +245,19 @@ export function NewReservationPage() {
         </div>
       </div>
 
-      <div className="flex h-[72px] flex-none items-center gap-8 border-t border-border bg-bg-surface px-6 shadow-elevated">
+      {/* Amounts never wrap under their «ج.س» (a wrapped bar grew past 72 px and scrolled the whole page on 1100 px). */}
+      <div className="flex min-h-[72px] flex-none items-center gap-8 border-t border-border bg-bg-surface px-6 py-2 shadow-elevated max-[1399px]:gap-5">
         <Total label={t("newRes.total")} value={money(total)} />
         <Total label={t("newRes.paid")} value={money(deposit)} />
-        <div className="flex flex-col">
+        <div className="flex flex-none flex-col">
           <span className="text-label text-text-secondary">{t("newRes.remaining")}</span>
-          <span className={`text-headline-number ${priced && total - deposit > 0 ? "text-danger" : ""}`}>
+          <span className={`whitespace-nowrap text-headline-number ${priced && total - deposit > 0 ? "text-danger" : ""}`}>
             {money(total - deposit)} {priced && <span className="text-[16px] font-semibold">{t("money.currency")}</span>}
           </span>
         </div>
-        <div className="flex-1" />
-        {summary && <div className="truncate text-body text-text-secondary">{summary}</div>}
+        <div className="min-w-0 flex-1 truncate text-end text-body text-text-secondary" title={summary || undefined}>
+          {summary}
+        </div>
         <button
           type="button"
           disabled={!canSave}
@@ -270,9 +283,9 @@ export function NewReservationPage() {
 
 function Total({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-none flex-col">
       <span className="text-label text-text-secondary">{label}</span>
-      <span className="text-page-title">
+      <span className="whitespace-nowrap text-page-title">
         {value} {value !== "—" && <span className="text-body font-medium text-text-secondary">{t("money.currency")}</span>}
       </span>
     </div>

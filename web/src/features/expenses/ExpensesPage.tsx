@@ -49,7 +49,7 @@ export function ExpensesPage() {
   const rows = list.data?.results ?? [];
 
   return (
-    <div className="flex h-full flex-col gap-4 p-6 max-[1599px]:gap-3">
+    <div className="flex h-full min-h-[620px] flex-col gap-4 p-6 max-[1599px]:gap-3">
       <div className="flex h-9 items-center gap-3">
         <h1 className="m-0 text-page-title">{t("expenses.title")}</h1>
         <Segmented<Scope>
@@ -176,7 +176,7 @@ function QuickExpense({ threshold, onSaved, onNeedsReceipt }: { threshold: numbe
     <section className="flex flex-col gap-2 rounded-card border border-border bg-bg-surface px-4 py-3">
       <div className="flex flex-wrap items-end gap-3">
         <span className="text-label text-text-secondary">{t("expenses.quickTitle")}</span>
-        <label className="flex w-40 flex-col gap-1">
+        <label className="flex w-48 shrink-0 flex-col gap-1">
           <span className="sr-only">{t("expenses.quickAmount")}</span>
           <MoneyInput
             value={amount}
@@ -186,7 +186,7 @@ function QuickExpense({ threshold, onSaved, onNeedsReceipt }: { threshold: numbe
             onKeyDown={(e) => e.key === "Enter" && submit()}
           />
         </label>
-        <div className="w-40">
+        <div className="w-40 shrink-0">
           <Select aria-label={t("expenses.category")} value={category} onChange={(e) => setCategory(e.target.value as Category)}>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
@@ -201,7 +201,7 @@ function QuickExpense({ threshold, onSaved, onNeedsReceipt }: { threshold: numbe
           value={note}
           onChange={(e) => setNote(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
-          className="max-w-md flex-1"
+          className="min-w-56 max-w-md flex-1"
         />
         <button type="button" disabled={save.isPending} onClick={submit} className={`${buttons.primary} h-9 px-4`}>
           {needsReceipt ? t("expenses.new") : t("expenses.quickSave")}
@@ -223,7 +223,8 @@ function Tile({ label, value, hint, warn = false }: { label: string; value: stri
   );
 }
 
-const GRID = "grid grid-cols-[160px_140px_1fr_160px_120px_140px_140px_64px] items-center gap-4 px-4";
+// The description keeps at least 160 px; the fixed columns fit their content (an amount up to 100,000,000).
+const GRID = "grid grid-cols-[130px_120px_minmax(160px,1fr)_130px_90px_110px_120px_64px] items-center gap-3 px-4";
 
 function ExpenseTable({
   rows,

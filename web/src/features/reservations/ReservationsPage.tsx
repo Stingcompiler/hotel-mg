@@ -9,7 +9,7 @@ import { api, ApiError, data } from "@/api/client";
 import { keys, useSystemStatus } from "@/api/queries";
 import { ErrorBanner, Field, Segmented, Select, TextInput } from "@/components/ui/form";
 import { buttons, Modal } from "@/components/ui/Modal";
-import { reservedSoon, stateColor } from "@/design/state";
+import { reservedSoon, type RoomState, stateColor } from "@/design/state";
 import { useRoomBoard } from "@/features/rooms/RoomBoardPage";
 import { formatDayMonth, formatRange } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
@@ -32,7 +32,7 @@ export function ReservationsPage() {
   const [view, setView] = useState<"timeline" | "list">(params.get("focus") ? "list" : "timeline");
   const [focus, setFocus] = useState<string | null>(params.get("focus"));
   return (
-    <div className="flex h-full flex-col gap-4 p-6 max-[1599px]:gap-3">
+    <div className="flex h-full min-h-[620px] flex-col gap-4 p-6 max-[1599px]:gap-3">
       {view === "timeline" ? (
         <Timeline
           header={<ViewSwitch view={view} onChange={setView} />}
@@ -51,7 +51,7 @@ export function ReservationsPage() {
 function ViewSwitch({ view, onChange }: { view: "timeline" | "list"; onChange: (v: "timeline" | "list") => void }) {
   return (
     <>
-      <h1 className="m-0 text-page-title">{t("reservations.title")}</h1>
+      <h1 className="m-0 whitespace-nowrap text-page-title">{t("reservations.title")}</h1>
       <Segmented
         label={t("reservations.title")}
         value={view}
@@ -139,14 +139,14 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
 
   return (
     <>
-      <div className="flex h-9 items-center gap-3">
+      <div className="flex min-h-9 flex-wrap items-center gap-3">
         {header}
-        <div className="inline-flex h-9 items-center overflow-hidden rounded-control border border-border-strong bg-bg-surface">
+        <div className="inline-flex h-9 shrink-0 items-center overflow-hidden rounded-control border border-border-strong bg-bg-surface">
           {/* The window moves back in time to the right and forward to the left (RTL notes «الزمن الأفقي»). */}
           <button type="button" aria-label={t("reservations.prev")} onClick={() => setOffset((o) => o - span)} className="flex h-9 w-9 items-center justify-center border-0 bg-bg-surface text-text-primary">
             <ChevronRight className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
           </button>
-          <span className="flex h-9 items-center border-x border-border px-3 text-body font-medium">{formatRange(start, addDays(end, -1))}</span>
+          <span className="flex h-9 items-center whitespace-nowrap border-x border-border px-3 text-body font-medium">{formatRange(start, addDays(end, -1))}</span>
           <button type="button" aria-label={t("reservations.next")} onClick={() => setOffset((o) => o + span)} className="flex h-9 w-9 items-center justify-center border-0 bg-bg-surface text-text-primary">
             <ChevronLeft className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
           </button>
@@ -154,7 +154,7 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
         <button type="button" onClick={() => setOffset(0)} className={`${buttons.secondary} h-9 px-3`}>
           {t("reservations.today")}
         </button>
-        <label className="flex items-center gap-2 text-label text-text-secondary">
+        <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-label text-text-secondary">
           {t("reservations.jumpTo")}
           <input
             type="date"
@@ -164,7 +164,7 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
             className="h-9 rounded-control border border-border-strong bg-bg-surface px-2 font-sans text-body text-text-primary"
           />
         </label>
-        <div className="w-40">
+        <div className="w-40 shrink-0">
           <Select aria-label={t("reservations.allFloors")} value={floor ?? ""} onChange={(e) => setFloor(e.target.value === "" ? null : Number(e.target.value))}>
             <option value="">{t("reservations.allFloors")}</option>
             {floors.map((f) => (
@@ -295,6 +295,7 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
   const [range, setRange] = useState<Range>("next2");
   const [status, setStatus] = useState<Status | "all">(focus ? "all" : "confirmed");
   const [cancelling, setCancelling] = useState<Reservation | null>(null);
+  const [assigning, setAssigning] = useState<Reservation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [from, to] = today ? rangeOf(range, today) : [undefined, undefined];
   const list = useWindow(from, to);
@@ -315,7 +316,9 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : t("errors.error")),
   });
-  const GRID = "grid grid-cols-[120px_80px_1.5fr_1fr_1fr_100px_120px_140px_130px] items-center gap-3 px-4";
+  // Fixed columns sized for their content (a deposit up to 100,000,000) so the guest name keeps its room on 1366 px.
+  const GRID =
+    "grid grid-cols-[104px_64px_minmax(140px,1.5fr)_minmax(96px,1fr)_minmax(96px,1fr)_64px_96px_112px_112px] items-center gap-3 px-4";
   const chip: Record<string, string> = {
     confirmed: `bg-bg-surface ${reservedSoon.border} ${reservedSoon.text}`,
     checked_in: `${stateColor("occupied").solid} text-primary-text-on`,
@@ -333,7 +336,7 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
 
   return (
     <>
-      <div className="flex h-9 items-center gap-3">
+      <div className="flex min-h-9 flex-wrap items-center gap-3">
         {header}
         <Segmented
           label={t("reservations.colStatus")}
@@ -344,7 +347,7 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
             label: `${t(f.label)} ${digits(String(f.value === "all" ? all.length : all.filter((r) => r.status === f.value).length))}`,
           }))}
         />
-        <div className="w-60">
+        <div className="w-60 shrink-0">
           <Select aria-label={t("reservations.rangeNext2")} value={range} onChange={(e) => setRange(e.target.value as Range)}>
             <option value="next2">{t("reservations.rangeNext2")}</option>
             <option value="month">{t("reservations.rangeMonth")}</option>
@@ -378,7 +381,7 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
               <div
                 key={r.id}
                 onClick={() => onFocus(sel ? null : r.id)}
-                className={`${GRID} h-10 cursor-pointer border-b border-border text-table-cell ${sel ? "bg-primary-soft" : i % 2 ? "bg-bg-page" : "bg-bg-surface"} ${dead ? "text-text-secondary line-through" : ""}`}
+                className={`${GRID} min-h-10 cursor-pointer border-b border-border text-table-cell ${sel ? "bg-primary-soft" : i % 2 ? "bg-bg-page" : "bg-bg-surface"} ${dead ? "text-text-secondary line-through" : ""}`}
               >
                 <div dir="ltr" className="text-end text-label text-text-secondary">
                   {r.invoice}
@@ -391,7 +394,7 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
                   )}
                 </div>
                 {sel && !dead ? (
-                  <div className="col-span-4 flex items-center gap-2 no-underline" onClick={(e) => e.stopPropagation()}>
+                  <div className="col-span-4 flex flex-wrap items-center gap-2 py-1 no-underline" onClick={(e) => e.stopPropagation()}>
                     {r.stay && (
                       <button type="button" onClick={() => navigate(`/stays/${r.stay}`)} className={`${buttons.secondary} h-8 px-3`}>
                         {t("reservations.openStay")}
@@ -399,6 +402,10 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
                     )}
                     {r.status === "confirmed" && (
                       <>
+                        {/* A booking saved without a room gets one here; the check-in button needs it. */}
+                        <button type="button" disabled={offline} onClick={() => setAssigning(r)} className={`${r.room ? buttons.secondary : buttons.primary} h-8 px-3`}>
+                          {r.room ? t("reservations.changeRoom") : t("reservations.pickRoom")}
+                        </button>
                         <button
                           type="button"
                           disabled={offline || !r.room || !today || r.check_in_date > today || act.isPending}
@@ -437,6 +444,18 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
           <CalendarDays className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
         </div>
       </section>
+      {assigning && (
+        <AssignRoomModal
+          reservation={assigning}
+          today={today}
+          onClose={() => setAssigning(null)}
+          onDone={(stayId) => {
+            setAssigning(null);
+            refresh();
+            if (stayId) navigate(`/stays/${stayId}`);
+          }}
+        />
+      )}
       {cancelling && (
         <CancelReservationModal
           reservation={cancelling}
@@ -448,6 +467,109 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
         />
       )}
     </>
+  );
+}
+
+/** «اختيار غرفة»: the free rooms of the booked type for the whole stay; on the arrival day, save and check in at once. */
+function AssignRoomModal({
+  reservation,
+  today,
+  onClose,
+  onDone,
+}: {
+  reservation: Reservation;
+  today: string | undefined;
+  onClose: () => void;
+  onDone: (stayId?: string) => void;
+}) {
+  const board = useRoomBoard().data;
+  const [room, setRoom] = useState<string | null>(reservation.room);
+  const [error, setError] = useState<string | null>(null);
+  const free = useQuery({
+    queryKey: ["availability", reservation.room_type, reservation.check_in_date, reservation.check_out_date],
+    queryFn: () =>
+      data(
+        api.GET("/api/v1/reservations/availability", {
+          params: { query: { room_type: reservation.room_type, date_from: reservation.check_in_date, date_to: reservation.check_out_date } },
+        }),
+      ),
+  });
+  // Its own room is busy with this very booking: keep it in the list.
+  const rooms = (free.data ?? []).map(({ id, number, floor }) => ({ id, number, floor }));
+  if (reservation.room && !rooms.some((r) => r.id === reservation.room)) {
+    const own = board?.rooms.find((r) => r.id === reservation.room);
+    if (own) rooms.unshift({ id: own.id, number: own.number, floor: own.floor });
+  }
+  const arrivesToday = reservation.check_in_date === today;
+  const status = (id: string) => board?.rooms.find((r) => r.id === id)?.status;
+  const save = useMutation({
+    mutationFn: async (checkIn: boolean) => {
+      let version = reservation.version;
+      if (room !== reservation.room) {
+        const saved = await data(
+          api.POST("/api/v1/reservations/{id}/assign-room", { params: { path: { id: reservation.id } }, body: { room: room!, version } }),
+        );
+        version = saved.version;
+      }
+      if (!checkIn) return undefined;
+      const stay = await data(api.POST("/api/v1/stays/check-in", { body: { reservation: reservation.id, version } }));
+      return stay.id;
+    },
+    onSuccess: onDone,
+    onError: (e) => setError(e instanceof ApiError ? e.message : t("errors.error")),
+  });
+  const ready = room !== null && status(room) === "ready";
+  return (
+    <Modal
+      title={t("reservations.pickRoomTitle", { guest: reservation.guest_name })}
+      onClose={onClose}
+      width={560}
+      footer={
+        <>
+          <button type="button" disabled={!room || room === reservation.room || save.isPending} onClick={() => save.mutate(false)} className={buttons.secondary}>
+            {t("reservations.saveRoom")}
+          </button>
+          {arrivesToday && (
+            <button type="button" disabled={!room || !ready || save.isPending} onClick={() => save.mutate(true)} className={buttons.primary}>
+              {t("reservations.saveAndCheckIn")}
+            </button>
+          )}
+          <div className="flex-1" />
+          <button type="button" onClick={onClose} className={buttons.ghost}>
+            {t("common.cancel")}
+          </button>
+        </>
+      }
+    >
+      <div className="text-body text-text-secondary">
+        {reservation.room_type_name} · {formatRange(reservation.check_in_date, addDays(reservation.check_out_date, -1))}
+      </div>
+      {free.isSuccess && rooms.length === 0 && <div className="text-body text-danger">{t("reservations.noRoomsFree")}</div>}
+      <div className="flex flex-wrap gap-2">
+        {rooms.map((r) => {
+          const selected = room === r.id;
+          const st = status(r.id);
+          const notReady = arrivesToday && st && st !== "ready" ? st : null;
+          return (
+            <button
+              key={r.id}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => setRoom(r.id)}
+              className={`inline-flex h-9 items-center gap-2 rounded-control border px-3.5 font-sans text-body font-semibold ${
+                selected ? "border-primary bg-primary-soft text-primary" : "border-border-strong bg-bg-surface text-text-primary hover:bg-bg-surface-2"
+              }`}
+            >
+              <span>{digits(r.number)}</span>
+              <span className="text-label font-normal text-text-secondary">{t("newRes.floor", { n: digits(String(r.floor)) })}</span>
+              {notReady && <span className={`text-label font-normal ${stateColor(notReady as RoomState).text}`}>{t(`roomState.${notReady}`)}</span>}
+            </button>
+          );
+        })}
+      </div>
+      {arrivesToday && room && !ready && <div className="text-label font-normal text-text-secondary">{t("reservations.notReadyHint")}</div>}
+      {error && <ErrorBanner>{error}</ErrorBanner>}
+    </Modal>
   );
 }
 

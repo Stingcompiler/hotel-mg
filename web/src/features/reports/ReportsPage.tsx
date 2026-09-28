@@ -123,13 +123,13 @@ export function ReportsPage() {
     | undefined;
 
   return (
-    <div className="grid h-full grid-cols-[280px_1fr] grid-rows-[36px_1fr] gap-4 p-6 max-[1599px]:grid-cols-[220px_1fr] max-[1599px]:gap-3">
-      <div className="col-span-2 flex items-center gap-3">
-        <h1 className="m-0 text-page-title">{t("reports.title")}</h1>
+    <div className="grid h-full min-h-[620px] grid-cols-[280px_1fr] grid-rows-[auto_1fr] gap-4 p-6 max-[1599px]:grid-cols-[220px_1fr] max-[1599px]:gap-3 max-[1399px]:grid-cols-[210px_1fr]">
+      <div className="col-span-2 flex flex-wrap items-center gap-3">
+        <h1 className="m-0 whitespace-nowrap text-page-title">{t("reports.title")}</h1>
         {title && (
           <>
             <span className="text-text-disabled">/</span>
-            <span className="text-section-title">{title}</span>
+            <span className="whitespace-nowrap text-section-title">{title}</span>
           </>
         )}
         <div className="flex-1" />
@@ -171,7 +171,7 @@ export function ReportsPage() {
         )}
         {kind === "period" && (
           <>
-            <div className="w-44">
+            <div className="w-44 shrink-0">
               <Select aria-label={t("reports.periodMonth")} value={period} onChange={(e) => setPeriod(e.target.value)}>
                 <option value="today">{t("reports.periodToday")}</option>
                 <option value="week">{t("reports.periodWeek")}</option>
@@ -191,7 +191,7 @@ export function ReportsPage() {
           </>
         )}
         {accepted.includes("room_type") && (
-          <div className="w-40">
+          <div className="w-40 shrink-0">
             <Select aria-label={t("reports.allRoomTypes")} value={filters.room_type} onChange={(e) => setFilters({ ...filters, room_type: e.target.value })}>
               <option value="">{t("reports.allRoomTypes")}</option>
               {roomTypes.map((rt) => (
@@ -203,7 +203,7 @@ export function ReportsPage() {
           </div>
         )}
         {accepted.includes("method") && (
-          <div className="w-32">
+          <div className="w-36 shrink-0">
             <Select aria-label={t("reports.allMethods")} value={filters.method} onChange={(e) => setFilters({ ...filters, method: e.target.value })}>
               <option value="">{t("reports.allMethods")}</option>
               {METHODS.map((m) => (
@@ -215,7 +215,7 @@ export function ReportsPage() {
           </div>
         )}
         {accepted.includes("expense_category") && (
-          <div className="w-36">
+          <div className="w-36 shrink-0">
             <Select aria-label={t("reports.allCategories")} value={filters.expense_category} onChange={(e) => setFilters({ ...filters, expense_category: e.target.value })}>
               <option value="">{t("reports.allCategories")}</option>
               {CATEGORIES.map((c) => (
@@ -245,7 +245,7 @@ export function ReportsPage() {
             key={item.name}
             to={`/reports/${item.name}`}
             className={() =>
-              `flex h-10 items-center justify-between rounded-control px-3 text-body ${
+              `flex h-10 items-center justify-between gap-2 rounded-control px-3 text-body ${
                 item.name === current ? "bg-primary-soft font-semibold text-primary hover:text-primary" : "text-text-primary hover:bg-bg-surface-2 hover:text-text-primary"
               }`
             }
@@ -254,8 +254,10 @@ export function ReportsPage() {
               navigate(`/reports/${item.name}`);
             }}
           >
-            <span className="truncate">{item.title}</span>
-            {item.badge ? <span className={`text-label font-semibold ${item.badge > 0 ? "text-danger" : "text-text-secondary"}`}>{digits(String(item.badge))}</span> : null}
+            <span className="min-w-0 truncate" title={item.title}>
+              {item.title}
+            </span>
+            {item.badge ? <span className={`flex-none text-label font-semibold ${item.badge > 0 ? "text-danger" : "text-text-secondary"}`}>{digits(String(item.badge))}</span> : null}
           </NavLink>
         ))}
       </nav>
@@ -315,45 +317,49 @@ function ReportTable({ report, totals }: { report: Report; totals: Record<string
   const rows = sort ? [...report.rows].sort((x, y) => sort.dir * compare(cell(x, sort.key), cell(y, sort.key))) : report.rows;
   const cycle = (key: string) => setSort((s) => (s?.key !== key ? { key, dir: 1 } : s.dir === 1 ? { key, dir: -1 } : null));
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
-      <div className="grid h-10 flex-none items-center gap-3 bg-bg-surface-2 px-4 text-label text-text-secondary" style={{ gridTemplateColumns: template }}>
-        {cols.map((c) => (
-          <button
-            key={c.key}
-            type="button"
-            aria-sort={sort?.key === c.key ? (sort.dir === 1 ? "ascending" : "descending") : "none"}
-            title={t("reports.sortBy", { col: c.label })}
-            onClick={() => cycle(c.key)}
-            className={`flex h-10 items-center gap-1 border-0 bg-transparent p-0 font-sans text-label ${numeric(c) ? "justify-end text-end" : "text-start"} ${
-              sort?.key === c.key ? "text-primary" : "text-text-secondary hover:text-text-primary"
-            }`}
-          >
-            {c.label}
-            {sort?.key === c.key && (sort.dir === 1 ? <ArrowUp className="h-3.5 w-3.5" strokeWidth={2} aria-hidden /> : <ArrowDown className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />)}
-          </button>
-        ))}
-      </div>
-      <div className="min-h-0 flex-1 overflow-auto">
-        {report.rows.length === 0 && <div className="p-8 text-center text-body text-text-secondary">{t("reports.empty")}</div>}
-        {rows.map((row, i) => (
-          <div key={i} className="grid h-10 items-center gap-3 border-b border-border px-4 text-table-cell hover:bg-bg-page" style={{ gridTemplateColumns: template }}>
-            {cols.map((c) => (
-              <div key={c.key} className={`truncate ${numeric(c) ? "text-end font-semibold" : ""}`}>
-                {formatCell((row as Record<string, unknown>)[c.key], c.type)}
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-      {hasTotals && (
-        <div className="grid h-11 flex-none items-center gap-3 border-t border-border px-4 text-body font-semibold" style={{ gridTemplateColumns: template }}>
-          {cols.map((c, i) => (
-            <div key={c.key} className={numeric(c) ? "text-end" : ""}>
-              {i === 0 ? `${t("reports.total")} · ${t("reports.rows", { n: digits(String(report.rows.length)) })}` : c.key in totals ? formatCell(totals[c.key], c.type) : ""}
+    // One scroll box for header, rows and totals: a report wider than the window scrolls sideways instead of losing
+    // its last columns (review 2026-09-28, small screens).
+    <section className="min-h-0 flex-1 overflow-auto rounded-card border border-border bg-bg-surface">
+      <div className="w-max min-w-full">
+        <div className="sticky top-0 z-10 grid h-10 items-center gap-3 bg-bg-surface-2 px-4 text-label text-text-secondary" style={{ gridTemplateColumns: template }}>
+          {cols.map((c) => (
+            <button
+              key={c.key}
+              type="button"
+              aria-sort={sort?.key === c.key ? (sort.dir === 1 ? "ascending" : "descending") : "none"}
+              title={t("reports.sortBy", { col: c.label })}
+              onClick={() => cycle(c.key)}
+              className={`flex h-10 items-center gap-1 border-0 bg-transparent p-0 font-sans text-label ${numeric(c) ? "justify-end text-end" : "text-start"} ${
+                sort?.key === c.key ? "text-primary" : "text-text-secondary hover:text-text-primary"
+              }`}
+            >
+              {c.label}
+              {sort?.key === c.key && (sort.dir === 1 ? <ArrowUp className="h-3.5 w-3.5" strokeWidth={2} aria-hidden /> : <ArrowDown className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />)}
+            </button>
+          ))}
+        </div>
+        <div>
+          {report.rows.length === 0 && <div className="p-8 text-center text-body text-text-secondary">{t("reports.empty")}</div>}
+          {rows.map((row, i) => (
+            <div key={i} className="grid h-10 items-center gap-3 border-b border-border px-4 text-table-cell hover:bg-bg-page" style={{ gridTemplateColumns: template }}>
+              {cols.map((c) => (
+                <div key={c.key} className={`truncate ${numeric(c) ? "text-end font-semibold" : ""}`}>
+                  {formatCell((row as Record<string, unknown>)[c.key], c.type)}
+                </div>
+              ))}
             </div>
           ))}
         </div>
-      )}
+        {hasTotals && (
+          <div className="sticky bottom-0 grid h-11 items-center gap-3 border-t border-border bg-bg-surface px-4 text-body font-semibold" style={{ gridTemplateColumns: template }}>
+            {cols.map((c, i) => (
+              <div key={c.key} className={`whitespace-nowrap ${numeric(c) ? "text-end" : ""}`}>
+                {i === 0 ? `${t("reports.total")} · ${t("reports.rows", { n: digits(String(report.rows.length)) })}` : c.key in totals ? formatCell(totals[c.key], c.type) : ""}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

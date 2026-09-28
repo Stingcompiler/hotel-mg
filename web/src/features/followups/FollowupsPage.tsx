@@ -45,7 +45,7 @@ export function FollowupsPage() {
   const nothingDue = !b.late.length && !b.today.length && !b.system.length;
 
   return (
-    <div className="flex h-full flex-col gap-4 p-6 max-[1599px]:gap-3">
+    <div className="flex h-full min-h-[620px] flex-col gap-4 p-6 max-[1599px]:gap-3">
       <div className="flex h-9 items-center gap-6 max-[1599px]:gap-4">
         <h1 className="m-0 text-page-title">{t("followups.title")}</h1>
         <div className="flex gap-2">

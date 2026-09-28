@@ -64,11 +64,14 @@ export function GuestsPage() {
   const warnCount = useQuery({ queryKey: ["guests", "count", "warning"], queryFn: () => guestList({ warning: 1 }) }).data?.count;
   const allCount = useQuery({ queryKey: ["guests", "count", "all"], queryFn: () => guestList({}) }).data?.count;
   const rows = list.data?.results ?? [];
-  const GRID = "grid grid-cols-[1.6fr_170px_110px_110px_130px_140px] items-center gap-3 px-4";
+  // Below 1400 px (1366×768 at 100–125 %) nationality and stay count move to the profile: the name stays readable.
+  const GRID =
+    "grid grid-cols-[minmax(160px,1.6fr)_150px_100px_70px_120px_110px] max-[1399px]:grid-cols-[minmax(140px,1fr)_130px_110px_100px] items-center gap-3 px-4";
+  const wide = "max-[1399px]:hidden";
 
   return (
-    <div className="grid h-full grid-cols-[1fr_520px] grid-rows-[36px_1fr] gap-4 p-6 max-[1599px]:grid-cols-[1fr_440px] max-[1599px]:gap-3">
-      <div className="col-span-2 flex items-center gap-3">
+    <div className="grid h-full min-h-[620px] grid-cols-[1fr_520px] grid-rows-[auto_1fr] gap-4 p-6 max-[1599px]:grid-cols-[1fr_440px] max-[1599px]:gap-3 max-[1399px]:grid-cols-[1fr_360px]">
+      <div className="col-span-2 flex flex-wrap items-center gap-3">
         <h1 className="m-0 text-page-title">{t("guests.title")}</h1>
         {allCount !== undefined && <span className="text-body text-text-secondary">{t("guests.total", { n: digits(String(allCount)) })}</span>}
         <span className="flex h-9 w-[360px] items-center gap-2 rounded-control border border-border-strong bg-bg-surface px-3 focus-within:border-primary max-[1599px]:w-64">
@@ -104,7 +107,7 @@ export function GuestsPage() {
       <section className="flex min-h-0 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
         <div className={`${GRID} h-10 flex-none bg-bg-surface-2 text-label text-text-secondary`}>
           {["colName", "colPhone", "colNationality", "colStays", "colLast", "colDebt"].map((k) => (
-            <div key={k} className={k === "colDebt" ? "text-end" : ""}>
+            <div key={k} className={k === "colDebt" ? "text-end" : k === "colNationality" || k === "colStays" ? wide : ""}>
               {t(`guests.${k}`)}
             </div>
           ))}
@@ -124,11 +127,11 @@ export function GuestsPage() {
                 <span className={`truncate ${selected === g.id ? "font-semibold" : ""}`}>{g.full_name}</span>
                 {g.warning_note && <TriangleAlert className="h-icon-inline w-icon-inline flex-none text-warning" strokeWidth={1.75} aria-label={t("guests.warningTitle")} />}
               </span>
-              <span dir="ltr" className="text-end text-text-secondary">
+              <span dir="ltr" className="truncate text-end text-text-secondary">
                 {g.phone}
               </span>
-              <span>{g.nationality}</span>
-              <span>{digits(String(g.stays_count))}</span>
+              <span className={`truncate ${wide}`}>{g.nationality}</span>
+              <span className={wide}>{digits(String(g.stays_count))}</span>
               <span className="text-label font-normal text-text-secondary">
                 {g.last_stay ? `${formatDayMonth(g.last_stay.check_in_date)} · ${digits(g.last_stay.room)}` : "—"}
               </span>
