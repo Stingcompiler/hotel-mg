@@ -6,7 +6,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.services import verify_manager_override
-from apps.core.serializers import ReasonSerializer
 
 from . import services
 from .models import Folio, FolioLine, Payment
@@ -16,11 +15,18 @@ from .serializers import (
     PaymentCreateSerializer,
     PaymentSerializer,
     RefundSerializer,
+    ReversalSerializer,
 )
 
 
 def _folios():
     return Folio.objects.select_related("reservation__guest", "reservation__room")
+
+
+def _approval(data: dict):
+    """(reason, approving manager or None) — a wrong password counts towards the managers' lockout (decision 150)."""
+    password = data.get("manager_password") or ""
+    return data["reason"], verify_manager_override(password, data["reason"]) if password else None
 
 
 def _folio_response(folio_id, code=status.HTTP_200_OK):
@@ -56,12 +62,13 @@ class FolioLineView(APIView):
 class ReverseLineView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=ReasonSerializer, responses=FolioSerializer)
+    @extend_schema(request=ReversalSerializer, responses=FolioSerializer)
     def post(self, request, pk, line_pk):
         get_object_or_404(FolioLine, pk=line_pk, folio_id=pk)
-        data = ReasonSerializer(data=request.data)
+        data = ReversalSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        services.reverse_line(request.user, line_pk, **data.validated_data)
+        reason, approver = _approval(data.validated_data)
+        services.reverse_line(request.user, line_pk, reason=reason, approver=approver)
         return _folio_response(pk)
 
 
@@ -102,10 +109,11 @@ class PaymentDetailView(APIView):
 class ReversePaymentView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=ReasonSerializer, responses={201: PaymentSerializer})
+    @extend_schema(request=ReversalSerializer, responses={201: PaymentSerializer})
     def post(self, request, pk):
         get_object_or_404(Payment, pk=pk)
-        data = ReasonSerializer(data=request.data)
+        data = ReversalSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        reversal = services.reverse_payment(request.user, pk, **data.validated_data)
+        reason, approver = _approval(data.validated_data)
+        reversal = services.reverse_payment(request.user, pk, reason=reason, approver=approver)
         return Response(PaymentSerializer(reversal).data, status=status.HTTP_201_CREATED)

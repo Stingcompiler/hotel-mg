@@ -63,3 +63,24 @@ def test_texts():
         "قبل 14 يومًا",
     ]
     assert rules.local_at(date(2026, 9, 26), time(9), TZ).hour == 9
+
+
+def test_escalation_counts_from_creation_when_created_late():
+    """BIZ-11: a task created two days late (the PC was off) gets its full time from creation."""
+    late = T0 + timedelta(days=2)
+    assert not rules.should_escalate("open", T0, 24, late + timedelta(hours=1), created_at=late)
+    assert rules.should_escalate("open", T0, 24, late + timedelta(hours=24), created_at=late)
+    assert rules.should_escalate("open", T0, 24, T0 + timedelta(hours=24), created_at=T0 - timedelta(hours=1))
+
+
+def test_responsible_shift():
+    """BIZ-10: the shift open at the due time, else the next one that opened, else none."""
+    shifts = [
+        ("a", T0 - timedelta(hours=10), T0 - timedelta(hours=2)),
+        ("b", T0 + timedelta(hours=3), T0 + timedelta(hours=11)),
+        ("c", T0 + timedelta(hours=11), None),
+    ]
+    assert rules.responsible_shift(shifts, T0 - timedelta(hours=5)) == "a"
+    assert rules.responsible_shift(shifts, T0) == "b"  # nobody was at the desk: waiting for «b»
+    assert rules.responsible_shift(shifts, T0 + timedelta(days=3)) == "c"
+    assert rules.responsible_shift(shifts[:2], T0 + timedelta(days=3)) is None

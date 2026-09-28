@@ -428,6 +428,24 @@
     "savedBooking": "تم حفظ الحجز",
     "savedCheckIn": "تم التسكين وفتح الإقامة"
   },
+  "folioAction": {
+    "reverse": "عكس",
+    "reversed": "معكوس",
+    "reverseLine": "عكس بند",
+    "reversePayment": "عكس دفعة",
+    "reverseText": "يُسجَّل قيد عكس بنفس المبلغ ويبقى الأصل ظاهرًا في الفاتورة.",
+    "reverseReason": "سبب العكس",
+    "managerNeeded": "عكس بند الإقامة أو الخصم أو دفعة موظف آخر يحتاج موافقة المدير.",
+    "managerPassword": "كلمة مرور المدير",
+    "reverseDone": "تم تسجيل العكس",
+    "refund": "ردّ مبلغ",
+    "refundTitle": "ردّ مبلغ للنزيل — غرفة {room}",
+    "refundCredit": "رصيد النزيل: {amount}",
+    "refundReason": "سبب الردّ",
+    "refundSave": "تسجيل الردّ",
+    "refundDone": "تم ردّ {amount} للنزيل",
+    "errRefundAmount": "المبلغ أكبر من رصيد النزيل"
+  },
   "stay": {
     "back": "لوحة الغرف",
     "title": "تفاصيل الإقامة",

@@ -33,3 +33,31 @@ def test_running_ledger_and_columns():
     assert rules.as_debit_credit(-500) == (0, 500)
     rows = rules.running_ledger([{"debit": 300, "credit": 0}, {"debit": 0, "credit": 15}, {"debit": 50, "credit": 0}])
     assert [r["balance"] for r in rows] == [300, 285, 335]
+
+
+@pytest.mark.parametrize(
+    ("kind", "manager", "approved", "needs"),
+    [
+        ("room", False, False, True),
+        ("discount", False, False, True),
+        ("adjustment", False, False, True),
+        ("room", True, False, False),
+        ("room", False, True, False),
+        ("service", False, False, False),
+    ],
+)
+def test_line_reversal_needs_manager(kind, manager, approved, needs):
+    assert rules.line_reversal_needs_manager(kind, manager, approved) is needs
+
+
+@pytest.mark.parametrize(
+    ("own", "manager", "approved", "needs"),
+    [
+        (True, False, False, False),
+        (False, False, False, True),
+        (False, True, False, False),
+        (False, False, True, False),
+    ],
+)
+def test_payment_reversal_needs_manager(own, manager, approved, needs):
+    assert rules.payment_reversal_needs_manager(own, manager, approved) is needs

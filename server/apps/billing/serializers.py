@@ -78,6 +78,16 @@ class LineCreateSerializer(serializers.Serializer):
         return attrs
 
 
+class ReversalSerializer(serializers.Serializer):
+    """«عكس» a line or a payment: a reason; the manager's password when the reversal is a price decision (a room
+    charge, a discount) or undoes someone else's money (review 2026-09-28, SEC-1)."""
+
+    reason = serializers.CharField(max_length=300)
+    manager_password = serializers.CharField(
+        max_length=128, required=False, allow_blank=True, default="", style={"input_type": "password"}
+    )
+
+
 class PaymentCreateSerializer(serializers.Serializer):
     amount = MoneyMinorField(min_value=1)
     method = serializers.ChoiceField(choices=PaymentMethod.choices)

@@ -10,6 +10,7 @@ from apps.billing.models import FolioLine, Payment
 from apps.cash.models import Shift
 from apps.core import arabic
 from apps.core.models import HotelSettings
+from apps.followups import rules as followup_rules
 from apps.followups.models import FollowupTask
 from apps.rooms.models import Room
 from apps.stays import rules as stay_rules
@@ -131,15 +132,11 @@ def _staff_response(month: Params) -> list[dict]:
     midnight alerts before the morning shift) belongs to the next shift that opened: it was waiting for them.
     """
     shifts = list(Shift.objects.select_related("created_by").order_by("opened_at"))
+    windows = [(s.pk, s.opened_at, s.closed_at) for s in shifts]
+    names = {s.pk: (s.created_by.full_name if s.created_by_id else "—") for s in shifts}
 
     def owner_of(when):
-        shift = next(
-            (s for s in reversed(shifts) if s.opened_at <= when and (s.closed_at is None or when < s.closed_at)),
-            None,
-        ) or next((s for s in shifts if s.opened_at > when), None)
-        if shift is None:
-            return None
-        return shift.created_by.full_name if shift.created_by_id else "—"
+        return names.get(followup_rules.responsible_shift(windows, when))  # the engine's rule too (BIZ-10)
 
     stats = defaultdict(lambda: {"total": 0, "handled": 0, "neglected": 0, "delays": []})
     for task in FollowupTask.objects.filter(_in_period("due_at", month)).prefetch_related("actions"):

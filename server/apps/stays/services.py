@@ -115,6 +115,24 @@ def available_rooms(room_type: RoomType | None, check_in: date, check_out: date)
     return qs.select_related("room_type").order_by("number")
 
 
+def check_type_capacity(room_type: RoomType, check_in: date, check_out: date) -> None:
+    """Refuse a booking of ``room_type`` when every in-service room of the type is already taken on some night,
+    counting bookings that have no room yet (review 2026-09-28, BIZ-8)."""
+    RoomType.objects.select_for_update().filter(pk=room_type.pk).first()  # serialise bookings of one type
+    on_day = today()
+    held = [
+        (r.check_in_date, rules.blocking_until(r.status, r.check_out_date, on_day))
+        for r in blocking_reservations(check_in, check_out, on_day=on_day).filter(room_type=room_type)
+    ]
+    capacity = Room.objects.filter(room_type=room_type, in_service=True).count()
+    if rules.peak_overlap(held, check_in, check_out) >= capacity:
+        raise ApiError(
+            "room_unavailable",
+            409,
+            detail=f"كل غرف «{room_type.name}» محجوزة في بعض ليالي هذه الفترة، ومنها حجوزات لم تُحدَّد غرفها بعد.",
+        )
+
+
 def lock_room_for(room: Room, check_in: date, check_out: date, *, exclude_pk=None) -> Room:
     """Lock the room row and refuse if another reservation holds it for the period."""
     room = Room.objects.select_for_update().get(pk=room.pk)  # row lock on PostgreSQL; IMMEDIATE txn on SQLite
@@ -181,7 +199,9 @@ def create_reservation(
     override_reason = override_reason.strip()
     if rules.override_needs_reason(base_total, final_total) and not override_reason:
         raise ApiError("reason_required", 400, detail="سبب تعديل السعر مطلوب.")
+    price_approver = approve_price(base_total, final_total, manager_password, manager_reason or override_reason)
 
+    check_type_capacity(room_type, q.check_in_date, q.check_out_date)
     if room is not None:
         if room.room_type_id != room_type.pk:
             raise ApiError("room_type_mismatch", 400)
@@ -204,6 +224,7 @@ def create_reservation(
             "base_total": base_total,
             "override_total": final_total if final_total != base_total else None,
             "override_reason": override_reason if final_total != base_total else "",
+            "override_approved_by": str(price_approver.pk) if price_approver else None,
         },
         total=final_total,
         notes=notes,
@@ -224,6 +245,21 @@ def create_reservation(
             actor, folio, amount=deposit, method=deposit_method, reference=deposit_reference, kind="deposit"
         )
     return reservation
+
+
+def approve_price(base_total: int, final_total: int, password: str, reason: str):
+    """A price set below the base is a discount (review 2026-09-28, BIZ-3): within the hotel's limit anyone may give
+    it with a reason; beyond it the manager's password is required. Returns the approving manager or None."""
+    if final_total >= base_total:
+        return None
+    limit = HotelSettings.load().max_discount_percent
+    if billing_rules.discount_within_limit(base_total - final_total, base_total, limit):
+        return None
+    if not password:
+        raise ApiError(
+            "override_required", 403, detail=f"السعر أقل من السعر الأساسي بأكثر من {limit}٪ ويحتاج موافقة المدير."
+        )
+    return verify_manager_override(password, reason)
 
 
 def _book_discount(reservation: Reservation, discount: int, reason: str, manager_password: str, manager_reason: str):

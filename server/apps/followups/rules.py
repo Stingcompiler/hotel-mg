@@ -39,9 +39,29 @@ def is_due(due_at: datetime, now: datetime) -> bool:
     return due_at <= now
 
 
-def should_escalate(status: str, due_at: datetime, escalate_after_hours: int, now: datetime) -> bool:
-    """A task still open this long after it fell due becomes «مُهمَلة» (spec §6.6)."""
-    return status == "open" and escalate_after_hours > 0 and now >= due_at + timedelta(hours=escalate_after_hours)
+def should_escalate(
+    status: str, due_at: datetime, escalate_after_hours: int, now: datetime, created_at: datetime | None = None
+) -> bool:
+    """A task still open this long after it fell due becomes «مُهمَلة» (spec §6.6).
+
+    The clock starts when the staff could first see it: a task created late (the PC was off when it fell due)
+    gets the full time from its creation (review 2026-09-28, BIZ-11).
+    """
+    start = max(due_at, created_at) if created_at else due_at
+    return status == "open" and escalate_after_hours > 0 and now >= start + timedelta(hours=escalate_after_hours)
+
+
+def responsible_shift(shifts: list[tuple], when: datetime):
+    """Id of the shift that answers for an alert due at ``when`` — one rule for every screen (BIZ-10).
+
+    ``shifts`` is ``(id, opened_at, closed_at or None)`` ordered by ``opened_at``. The shift open at that time;
+    when none was open (the midnight alerts before the morning shift), the next shift that opened: the alert
+    was waiting for them. None when no shift fits.
+    """
+    for shift_id, opened_at, closed_at in reversed(shifts):
+        if opened_at <= when and (closed_at is None or when < closed_at):
+            return shift_id
+    return next((shift_id for shift_id, opened_at, _ in shifts if opened_at > when), None)
 
 
 def can_snooze(snooze_count: int, max_snoozes: int) -> bool:

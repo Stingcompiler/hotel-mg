@@ -726,13 +726,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/ReversalRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/ReversalRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/ReversalRequest'
         required: true
       security:
       - tokenAuth: []
@@ -1594,13 +1594,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/ReversalRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/ReversalRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/ReversalRequest'
         required: true
       security:
       - tokenAuth: []
@@ -4266,12 +4266,18 @@ components:
           minLength: 1
         final_total:
           type: integer
-          minimum: 0
+          minimum: 1
           nullable: true
         override_reason:
           type: string
           default: ''
           maxLength: 300
+        override_password:
+          type: string
+          default: ''
+          description: The manager's password when the price is below the base beyond
+            the discount limit.
+          maxLength: 128
         version:
           type: integer
           minimum: 1
@@ -5526,6 +5532,9 @@ components:
       - username
     PatchedAlertRuleUpdateRequest:
       type: object
+      description: |-
+        PATCH with partial=True skips required fields: refuse a missing ``version`` as 400, never a 500
+        (review 2026-09-28, BIZ-13).
       properties:
         name:
           type: string
@@ -5588,6 +5597,9 @@ components:
           minimum: 1
     PatchedBackupSettingsUpdateRequest:
       type: object
+      description: |-
+        PATCH with partial=True skips required fields: refuse a missing ``version`` as 400, never a 500
+        (review 2026-09-28, BIZ-13).
       properties:
         owner_recipient:
           type: string
@@ -5705,6 +5717,9 @@ components:
           minimum: 1
     PatchedRoomTypeUpdateRequest:
       type: object
+      description: |-
+        PATCH with partial=True skips required fields: refuse a missing ``version`` as 400, never a 500
+        (review 2026-09-28, BIZ-13).
       properties:
         name:
           type: string
@@ -5731,6 +5746,9 @@ components:
           minimum: 1
     PatchedRoomUpdateRequest:
       type: object
+      description: |-
+        PATCH with partial=True skips required fields: refuse a missing ``version`` as 400, never a 500
+        (review 2026-09-28, BIZ-13).
       properties:
         number:
           type: string
@@ -6366,9 +6384,10 @@ components:
           description: From the quote; needed if several.
         final_total:
           type: integer
-          minimum: 0
+          minimum: 1
           nullable: true
-          description: Price override.
+          description: Price override; below the base beyond the discount limit needs
+            manager_password.
         override_reason:
           type: string
           default: ''
@@ -6452,6 +6471,22 @@ components:
       required:
       - value
       - change_percent
+    ReversalRequest:
+      type: object
+      description: |-
+        «عكس» a line or a payment: a reason; the manager's password when the reversal is a price decision (a room
+        charge, a discount) or undoes someone else's money (review 2026-09-28, SEC-1).
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+        manager_password:
+          type: string
+          default: ''
+          maxLength: 128
+      required:
+      - reason
     Room:
       type: object
       properties:
@@ -7241,7 +7276,7 @@ components:
           minLength: 1
         final_total:
           type: integer
-          minimum: 0
+          minimum: 1
           nullable: true
         override_reason:
           type: string

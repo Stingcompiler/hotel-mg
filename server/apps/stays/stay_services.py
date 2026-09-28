@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.accounts.services import verify_manager_override
@@ -22,7 +23,16 @@ from apps.rooms.models import Room, RoomStatus, RoomType
 
 from . import rules
 from .models import Reservation, ReservationStatus, Stay, StaySegment
-from .services import available_rooms, create_reservation, lock_room_for, prices_of, quote, snapshot, today
+from .services import (
+    approve_price,
+    available_rooms,
+    create_reservation,
+    lock_room_for,
+    prices_of,
+    quote,
+    snapshot,
+    today,
+)
 
 
 def _stay_for_update(stay_id, version: int | None) -> Stay:
@@ -32,11 +42,14 @@ def _stay_for_update(stay_id, version: int | None) -> Stay:
     return stay
 
 
-def _retire_tasks(stay: Stay, reason: str) -> None:
-    """Pending follow-up tasks of the stay become superseded; the engine re-plans from the new end (spec §6.6)."""
+def _retire_tasks(stay: Stay, reason: str, actor=None, action: str = "") -> None:
+    """Pending follow-up tasks of the stay become superseded; the engine re-plans from the new end (spec §6.6).
+
+    ``action`` (extend / confirm_checkout) is recorded on the alerts already due: the staff answered them here.
+    """
     from apps.followups.services import supersede_for_stay  # followups depends on stays; import at use
 
-    supersede_for_stay(stay, reason=reason)
+    supersede_for_stay(stay, actor, reason, action)
 
 
 def _open_segment(stay: Stay) -> StaySegment:
@@ -167,6 +180,7 @@ def extend(
     option_key: str | None = None,
     final_total: int | None = None,
     override_reason: str = "",
+    override_password: str = "",
     version: int | None = None,
 ) -> Stay:
     """Add nights after the current end, priced at today's rates for the room type (artboard 6.5 D)."""
@@ -182,6 +196,7 @@ def extend(
     final_total = option.total if final_total is None else final_total
     if rules.override_needs_reason(option.total, final_total) and not override_reason.strip():
         raise ApiError("reason_required", 400, detail="سبب تعديل السعر مطلوب.")
+    approver = approve_price(option.total, final_total, override_password, override_reason)
     lock_room_for(reservation.room, reservation.check_out_date, q.check_out_date, exclude_pk=reservation.pk)
 
     before = snapshot(reservation)
@@ -203,13 +218,14 @@ def extend(
             "base_total": option.total,
             "total": final_total,
             "override_reason": override_reason.strip(),
+            "approved_by": str(approver.pk) if approver else None,
         }
     )
     reservation.save()
     segment = _open_segment(stay)
     segment.to_date = q.check_out_date
     segment.save()
-    _retire_tasks(stay, f"تمديد حتى {rules.last_night(q.check_out_date):%d/%m}")
+    _retire_tasks(stay, f"تمديد حتى {rules.last_night(q.check_out_date):%d/%m}", actor, "extend")
     billing.post_line(
         actor,
         billing.folio_of(reservation),
@@ -231,11 +247,16 @@ def change_room_difference(stay: Stay, new_type: RoomType) -> int:
     reservation = stay.reservation
     if new_type.pk == reservation.room_type_id:
         return 0
-    units = reservation.rate_snapshot.get("units") or {}
-    option = rules.Option(units.get("monthly", 0), units.get("weekly", 0), units.get("daily", 0))
+    # The whole stay (booking + every extension) priced at the CURRENT type against the new one: a second change
+    # starts from where the first left the guest, and extended nights count (review 2026-09-28, BIZ-1/2).
+    rate = reservation.rate_snapshot
+    units = rate.get("units") or {}
+    parts = [rules.Option(units.get("monthly", 0), units.get("weekly", 0), units.get("daily", 0))]
+    parts += [rules.parse_option_key(e.get("option", "")) or rules.Option(0, 0, 0) for e in rate.get("extensions", [])]
+    option = rules.combine(*parts)
     if option.nights == 0:  # snapshot without units (e.g. migrated data): price by nights
         option = rules.Option(0, 0, reservation.nights)
-    old_total = rules.price(option, reservation.rate_snapshot.get("prices") or prices_of(reservation.room_type))
+    old_total = rules.price(option, prices_of(reservation.room_type))
     new_total = rules.price(option, prices_of(new_type))
     remaining = rules.remaining_nights(reservation.check_out_date, today())
     return rules.room_change_difference(old_total, new_total, remaining, option.nights)
@@ -335,7 +356,7 @@ def change_room(
 
 def _close(stay: Stay, actor, *, status: str, room_status: str, maintenance_reason: str, why: str) -> None:
     reservation = stay.reservation
-    _retire_tasks(stay, why)
+    _retire_tasks(stay, why, actor, "confirm_checkout")
     segment = _open_segment(stay)
     segment.to_date = max(today(), segment.from_date)
     segment.save()
@@ -439,7 +460,12 @@ def cancel_stay(
     before = snapshot(reservation)
     folio = Folio.objects.select_for_update().get(reservation=reservation)
     totals = billing.FolioTotals.of(folio)
-    services_total = sum(folio.lines.filter(kind="service").values_list("amount", flat=True))
+    # Services net of their reversals: a reversed laundry line is not charged again (review 2026-09-28, BIZ-5).
+    services_total = sum(
+        folio.lines.filter(Q(kind="service") | Q(kind="reversal", reverses__kind="service")).values_list(
+            "amount", flat=True
+        )
+    )
     settlement_line = new_total - (totals.total - services_total)
     if settlement_line:
         billing.post_line(

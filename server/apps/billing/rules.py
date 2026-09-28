@@ -18,6 +18,21 @@ def discount_within_limit(discount: int, charges: int, max_percent: int) -> bool
     return discount * 100 <= charges * max_percent
 
 
+MANAGER_REVERSAL_KINDS = frozenset({"room", "discount", "adjustment"})
+
+
+def line_reversal_needs_manager(kind: str, actor_is_manager: bool, approved: bool) -> bool:
+    """Reversing a room charge, a discount or a room-change difference is a price decision: reception needs a
+    manager (review 2026-09-28, SEC-1). A mistaken service line may be reversed by the person at the desk."""
+    return kind in MANAGER_REVERSAL_KINDS and not actor_is_manager and not approved
+
+
+def payment_reversal_needs_manager(own_payment_this_shift: bool, actor_is_manager: bool, approved: bool) -> bool:
+    """Staff may undo their own payment in their open shift (e.g. entered twice); anyone else's money, or money
+    from a closed shift, needs a manager."""
+    return not own_payment_this_shift and not actor_is_manager and not approved
+
+
 def refund_due(total_charges: int, paid: int) -> int:
     """What the guest gets back when charges fall below what was paid (V2 cancel modal «يُرَدّ للنزيل»)."""
     return max(paid - total_charges, 0)

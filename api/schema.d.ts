@@ -2112,6 +2112,11 @@ export interface components {
             final_total?: number | null;
             /** @default  */
             override_reason?: string;
+            /**
+             * @description The manager's password when the price is below the base beyond the discount limit.
+             * @default
+             */
+            override_password?: string;
             version?: number;
         };
         Folio: {
@@ -2652,6 +2657,10 @@ export interface components {
             username: string;
             password: string;
         };
+        /**
+         * @description PATCH with partial=True skips required fields: refuse a missing ``version`` as 400, never a 500
+         *     (review 2026-09-28, BIZ-13).
+         */
         PatchedAlertRuleUpdateRequest: {
             name?: string;
             trigger_kind?: components["schemas"]["TriggerKindEnum"];
@@ -2685,6 +2694,10 @@ export interface components {
             is_active?: boolean;
             version?: number;
         };
+        /**
+         * @description PATCH with partial=True skips required fields: refuse a missing ``version`` as 400, never a 500
+         *     (review 2026-09-28, BIZ-13).
+         */
         PatchedBackupSettingsUpdateRequest: {
             /** @description Owner's age public key (age1…); backups are encrypted to it. */
             owner_recipient?: string;
@@ -2739,6 +2752,10 @@ export interface components {
             thermal_printer?: string;
             version?: number;
         };
+        /**
+         * @description PATCH with partial=True skips required fields: refuse a missing ``version`` as 400, never a 500
+         *     (review 2026-09-28, BIZ-13).
+         */
         PatchedRoomTypeUpdateRequest: {
             name?: string;
             /** Format: int64 */
@@ -2749,6 +2766,10 @@ export interface components {
             is_active?: boolean;
             version?: number;
         };
+        /**
+         * @description PATCH with partial=True skips required fields: refuse a missing ``version`` as 400, never a 500
+         *     (review 2026-09-28, BIZ-13).
+         */
         PatchedRoomUpdateRequest: {
             number?: string;
             /** Format: int64 */
@@ -3015,7 +3036,7 @@ export interface components {
             count: number;
             /** @description From the quote; needed if several. */
             option_key?: string | null;
-            /** @description Price override. */
+            /** @description Price override; below the base beyond the discount limit needs manager_password. */
             final_total?: number | null;
             /** @default  */
             override_reason?: string;
@@ -3063,6 +3084,15 @@ export interface components {
             value: number;
             /** @description Against the month before the period; null without data. */
             change_percent: number | null;
+        };
+        /**
+         * @description «عكس» a line or a payment: a reason; the manager's password when the reversal is a price decision (a room
+         *     charge, a discount) or undoes someone else's money (review 2026-09-28, SEC-1).
+         */
+        ReversalRequest: {
+            reason: string;
+            /** @default  */
+            manager_password?: string;
         };
         Room: {
             /** Format: uuid */
@@ -4288,9 +4318,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ReasonRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["ReasonRequest"];
-                "multipart/form-data": components["schemas"]["ReasonRequest"];
+                "application/json": components["schemas"]["ReversalRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReversalRequest"];
+                "multipart/form-data": components["schemas"]["ReversalRequest"];
             };
         };
         responses: {
@@ -5068,9 +5098,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ReasonRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["ReasonRequest"];
-                "multipart/form-data": components["schemas"]["ReasonRequest"];
+                "application/json": components["schemas"]["ReversalRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReversalRequest"];
+                "multipart/form-data": components["schemas"]["ReversalRequest"];
             };
         };
         responses: {

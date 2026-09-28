@@ -6,6 +6,7 @@ from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 
+from apps.accounts import rules as account_rules
 from apps.audit import services as audit
 from apps.cash.services import require_open_shift
 from apps.core.errors import ApiError
@@ -58,9 +59,11 @@ class FolioTotals:
 
     @classmethod
     def of(cls, folio: Folio) -> "FolioTotals":
-        lines = dict(folio.lines.values_list("kind").annotate(s=Sum("amount")))
-        total = sum(lines.values())
-        discounts = lines.get("discount", 0)
+        # A reversal counts with the kind it reverses: a cancelled discount is no longer shown as a discount on the
+        # invoice and the stay screen (review 2026-09-28, BIZ-7).
+        rows = folio.lines.values_list("kind", "reverses__kind").annotate(s=Sum("amount"))
+        total = sum(s for _, _, s in rows)
+        discounts = sum(s for kind, reversed_kind, s in rows if "discount" in (kind, reversed_kind))
         paid = folio.payments.aggregate(s=Sum("amount"))["s"] or 0
         return cls(total - discounts, discounts, total, paid, rules.balance([total], [paid]))
 
@@ -133,12 +136,14 @@ def add_line(actor, folio_id, *, kind: str, description: str, amount: int, reaso
 
 
 @transaction.atomic
-def reverse_line(actor, line_id, *, reason: str) -> FolioLine:
+def reverse_line(actor, line_id, *, reason: str, approver=None) -> FolioLine:
     if not reason.strip():
         raise ApiError("reason_required", 400, detail="سبب العكس مطلوب.")
     line = FolioLine.objects.select_for_update().select_related("folio").get(pk=line_id)
     if line.kind == "reversal" or FolioLine.objects.filter(reverses=line).exists():
         raise ApiError("already_reversed", 409)
+    if rules.line_reversal_needs_manager(line.kind, account_rules.is_manager(actor.role), approver is not None):
+        raise ApiError("override_required", 403, detail="عكس بند الإقامة أو الخصم يحتاج موافقة المدير.")
     reversal = FolioLine.objects.create(
         folio=line.folio,
         kind="reversal",
@@ -149,13 +154,10 @@ def reverse_line(actor, line_id, *, reason: str) -> FolioLine:
         posted_at=timezone.now(),
         created_by=actor,
     )
-    audit.record(
-        actor=actor,
-        action="folio.reverse_line",
-        entity="folio",
-        entity_id=line.folio_id,
-        after=audit.snapshot(reversal, LINE_FIELDS),
-    )
+    after = audit.snapshot(reversal, LINE_FIELDS)
+    if approver:
+        after["approved_by"] = str(approver.pk)
+    audit.record(actor=actor, action="folio.reverse_line", entity="folio", entity_id=line.folio_id, after=after)
     return reversal
 
 
@@ -215,7 +217,7 @@ def refund(actor, folio_id, *, amount: int, method: str, reason: str, reference:
 
 
 @transaction.atomic
-def reverse_payment(actor, payment_id, *, reason: str) -> Payment:
+def reverse_payment(actor, payment_id, *, reason: str, approver=None) -> Payment:
     """Undo a mistaken payment with an opposite row in the current shift (artboard 6.5: «عكس دفعة»)."""
     if not reason.strip():
         raise ApiError("reason_required", 400, detail="سبب العكس مطلوب.")
@@ -223,6 +225,9 @@ def reverse_payment(actor, payment_id, *, reason: str) -> Payment:
     if original.kind == "reversal" or Payment.objects.filter(reverses=original).exists():
         raise ApiError("already_reversed", 409)
     shift = require_open_shift()
+    own = original.created_by_id == actor.pk and original.shift_id == shift.pk
+    if rules.payment_reversal_needs_manager(own, account_rules.is_manager(actor.role), approver is not None):
+        raise ApiError("override_required", 403, detail="عكس دفعة استلمها غيرك أو من وردية سابقة يحتاج موافقة المدير.")
     reversal = Payment.objects.create(
         folio=original.folio,
         shift=shift,
@@ -236,13 +241,10 @@ def reverse_payment(actor, payment_id, *, reason: str) -> Payment:
         received_at=timezone.now(),
         created_by=actor,
     )
-    audit.record(
-        actor=actor,
-        action="payment.reverse",
-        entity="folio",
-        entity_id=original.folio_id,
-        after=audit.snapshot(reversal, PAYMENT_FIELDS),
-    )
+    after = audit.snapshot(reversal, PAYMENT_FIELDS)
+    if approver:
+        after["approved_by"] = str(approver.pk)
+    audit.record(actor=actor, action="payment.reverse", entity="folio", entity_id=original.folio_id, after=after)
     return reversal
 
 

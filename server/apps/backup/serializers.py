@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.core.serializers import VersionRequiredMixin
+
 from .models import BackupRun, BackupSettings, ImportRun
 
 
@@ -29,7 +31,7 @@ class BackupSettingsSerializer(serializers.ModelSerializer):
         return value.strip()
 
 
-class BackupSettingsUpdateSerializer(BackupSettingsSerializer):
+class BackupSettingsUpdateSerializer(VersionRequiredMixin, BackupSettingsSerializer):
     version = serializers.IntegerField(min_value=1)
 
     class Meta(BackupSettingsSerializer.Meta):

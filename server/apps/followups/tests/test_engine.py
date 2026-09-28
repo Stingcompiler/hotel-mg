@@ -12,7 +12,6 @@ from apps.accounts.services import login_with_password
 from apps.cash import services as cash
 from apps.followups import engine
 from apps.followups.models import AlertRule, FollowupTask, TaskAction, Toast
-from apps.stays.models import Stay
 from conftest import PASSWORD
 
 pytestmark = pytest.mark.django_db
@@ -21,23 +20,6 @@ TZ = ZoneInfo("Africa/Khartoum")
 
 def at(day, hour=9, minute=0, month=10):
     return datetime(2026, month, day, hour, minute, tzinfo=TZ)
-
-
-@pytest.fixture
-def monthly_stay(reception_api, guest, double, rooms):
-    """Walk-in 26 Sep, monthly: last night 25 Oct → first alert 20 Oct 09:00, second 23 Oct 09:00."""
-    payload = {
-        "guest": str(guest.pk),
-        "room_type": str(double.pk),
-        "room": str(rooms["202"].pk),
-        "check_in_date": "2026-09-26",
-        "duration_kind": "monthly",
-        "count": 1,
-        "check_in_now": True,
-    }
-    res = reception_api.post("/api/v1/reservations/", payload, format="json")
-    assert res.status_code == 201, res.json()
-    return Stay.objects.get(reservation_id=res.json()["id"])
 
 
 def tick(now):
