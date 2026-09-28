@@ -199,7 +199,13 @@ def create_reservation(
     override_reason = override_reason.strip()
     if rules.override_needs_reason(base_total, final_total) and not override_reason:
         raise ApiError("reason_required", 400, detail="سبب تعديل السعر مطلوب.")
-    price_approver = approve_price(base_total, final_total, manager_password, manager_reason or override_reason)
+    if discount < 0 or discount > final_total:
+        raise ApiError("validation_error", 400, detail="قيمة الخصم غير صحيحة.")
+    # One limit for what the guest pays: a price cut and a discount each within the limit could otherwise add up to
+    # more than it without the manager (review of the booking flow, 2026-09-28).
+    price_approver = approve_price(
+        base_total, final_total - discount, manager_password, manager_reason or override_reason or discount_reason
+    )
 
     check_type_capacity(room_type, q.check_in_date, q.check_out_date)
     if room is not None:
@@ -232,7 +238,7 @@ def create_reservation(
     )
     folio = billing.open_folio(reservation, actor)
     if discount:
-        _book_discount(reservation, discount, discount_reason, manager_password, manager_reason)
+        _book_discount(reservation, discount, discount_reason, price_approver)
     audit.record(
         actor=actor,
         action="reservation.create",
@@ -257,23 +263,20 @@ def approve_price(base_total: int, final_total: int, password: str, reason: str)
         return None
     if not password:
         raise ApiError(
-            "override_required", 403, detail=f"السعر أقل من السعر الأساسي بأكثر من {limit}٪ ويحتاج موافقة المدير."
+            "override_required",
+            403,
+            detail=f"المبلغ المتفق عليه أقل من السعر الأساسي بأكثر من {limit}٪ ويحتاج موافقة المدير.",
         )
     return verify_manager_override(password, reason)
 
 
-def _book_discount(reservation: Reservation, discount: int, reason: str, manager_password: str, manager_reason: str):
-    """Discount agreed at booking; posted with the room charge at check-in (artboard 6.4: «سبب الخصم *»)."""
-    if discount < 0 or discount > reservation.total:
-        raise ApiError("validation_error", 400, detail="قيمة الخصم غير صحيحة.")
+def _book_discount(reservation: Reservation, discount: int, reason: str, approver):
+    """Discount agreed at booking; posted with the room charge at check-in (artboard 6.4: «سبب الخصم *»).
+
+    The limit was already checked on the price after the discount (``approve_price`` in ``create_reservation``).
+    """
     if not reason.strip():
         raise ApiError("reason_required", 400, detail="سبب الخصم مطلوب عند إدخال أي خصم.")
-    approver = None
-    limit = HotelSettings.load().max_discount_percent
-    if not billing_rules.discount_within_limit(discount, reservation.total, limit):
-        if not manager_password:
-            raise ApiError("override_required", 403, detail=f"الخصم أكبر من {limit}٪ ويحتاج موافقة المدير.")
-        approver = verify_manager_override(manager_password, manager_reason or reason)
     reservation.rate_snapshot["discount"] = {
         "amount": discount,
         "reason": reason.strip(),

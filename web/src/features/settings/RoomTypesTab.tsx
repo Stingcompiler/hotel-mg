@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { components } from "@api/schema";
 
 import { api, data } from "@/api/client";
-import { ErrorBanner, MoneyInput, TextInput } from "@/components/ui/form";
+import { ErrorBanner, Field, MoneyInput, TextInput } from "@/components/ui/form";
 import { Toggle } from "@/components/ui/Toggle";
 import { digits, toWestern } from "@/i18n/digits";
 import { formatMoney, parseMoney } from "@/i18n/money";
@@ -16,7 +16,8 @@ import { apiErrorText, Card, Footnote, HeadRow, linkButton, smallButton } from "
 
 type RoomType = components["schemas"]["RoomType"];
 type Draft = { name: string; capacity: string; nightly: string; weekly: string; monthly: string; is_active: boolean };
-const GRID = "grid grid-cols-[1.3fr_80px_90px_1fr_1fr_1fr_90px_110px] items-center gap-4 px-4";
+// Prices keep room for «100,000,000»; the rest is sized to its content.
+const GRID = "grid grid-cols-[minmax(80px,1.3fr)_64px_64px_minmax(96px,1fr)_minmax(96px,1fr)_minmax(96px,1fr)_64px_80px] items-center gap-3 px-4";
 export const ROOM_TYPES = ["room-types"] as const;
 
 const toDraft = (r?: RoomType): Draft => ({
@@ -90,20 +91,28 @@ export function RoomTypesTab({ readOnly }: { readOnly: boolean }) {
         const isEditing = r ? editing === r.id : true;
         if (isEditing) {
           return (
-            <div key={r?.id ?? "new"} className={`${GRID} min-h-16 border-b border-border bg-primary-soft py-2 text-table-cell`}>
-              <TextInput aria-label={t("settings.types.col_name")} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-              <TextInput
-                aria-label={t("settings.types.col_capacity")}
-                inputMode="numeric"
-                value={draft.capacity}
-                onChange={(e) => setDraft({ ...draft, capacity: toWestern(e.target.value).replace(/\D/g, "") })}
-              />
-              <div className="text-text-secondary">{digits(String(r?.room_count ?? 0))}</div>
-              <MoneyInput aria-label={t("settings.types.col_nightly")} value={draft.nightly} onChange={(e) => setDraft({ ...draft, nightly: e.target.value })} />
-              <MoneyInput aria-label={t("settings.types.col_weekly")} value={draft.weekly} onChange={(e) => setDraft({ ...draft, weekly: e.target.value })} />
-              <MoneyInput aria-label={t("settings.types.col_monthly")} value={draft.monthly} onChange={(e) => setDraft({ ...draft, monthly: e.target.value })} />
-              <Toggle checked={draft.is_active} label={t("settings.types.col_active")} onChange={(is_active) => setDraft({ ...draft, is_active })} />
-              <div className="flex gap-2">
+            // Edited as a labelled form, not squeezed into the row: three price fields need room for big amounts.
+            <div key={r?.id ?? "new"} className="flex flex-wrap items-end gap-3 border-b border-border bg-primary-soft px-4 py-3 text-table-cell">
+              <Field label={t("settings.types.col_name")} className="w-48">
+                <TextInput value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+              </Field>
+              <Field label={t("settings.types.col_capacity")} className="w-20">
+                <TextInput inputMode="numeric" value={draft.capacity} onChange={(e) => setDraft({ ...draft, capacity: toWestern(e.target.value).replace(/\D/g, "") })} />
+              </Field>
+              <Field label={t("settings.types.col_nightly")} className="w-48">
+                <MoneyInput value={draft.nightly} onChange={(e) => setDraft({ ...draft, nightly: e.target.value })} />
+              </Field>
+              <Field label={t("settings.types.col_weekly")} className="w-48">
+                <MoneyInput value={draft.weekly} onChange={(e) => setDraft({ ...draft, weekly: e.target.value })} />
+              </Field>
+              <Field label={t("settings.types.col_monthly")} className="w-48">
+                <MoneyInput value={draft.monthly} onChange={(e) => setDraft({ ...draft, monthly: e.target.value })} />
+              </Field>
+              <div className="flex h-9 items-center gap-2">
+                <Toggle checked={draft.is_active} label={t("settings.types.col_active")} onChange={(is_active) => setDraft({ ...draft, is_active })} />
+                <span className="text-label text-text-secondary">{t("settings.types.col_active")}</span>
+              </div>
+              <div className="flex h-9 items-center gap-2">
                 <button type="button" disabled={!draft.name.trim() || save.isPending} onClick={() => save.mutate()} className={smallButton("primary")}>
                   {t("settings.save")}
                 </button>

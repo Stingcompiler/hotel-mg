@@ -91,7 +91,7 @@ export function StayDetailPage() {
   ];
 
   return (
-    <div className="flex h-full flex-col gap-4 p-6">
+    <div className="flex h-full min-h-[620px] flex-col gap-4 p-6">
       <div className="flex h-9 items-center gap-3">
         <Link to="/" className="inline-flex items-center gap-1 text-body text-text-secondary">
           <ChevronRight className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
@@ -278,7 +278,8 @@ export function StayDetailPage() {
   );
 }
 
-const GRID = "grid grid-cols-[180px_1fr_160px_160px_160px_160px_80px] items-center gap-4 px-4";
+// The text keeps at least 160 px on a 1100 px window; amount columns fit «100,000,000».
+const GRID = "grid grid-cols-[150px_minmax(160px,1fr)_120px_120px_130px_130px_64px] items-center gap-3 px-4";
 
 /** Ledger: reversal rows in danger with ↩ and a link to the original entry; nothing is edited or deleted. */
 type ReverseProps = { reversed: Set<string | null>; onReverse?: (e: Entry) => void };
@@ -339,7 +340,7 @@ function InvoiceTab({ ledger, balance, reversed, onReverse }: { ledger: Ledger; 
                   </button>
                 )}
                 {e.reference && (
-                  <span dir="ltr" className="text-label font-normal text-text-secondary">
+                  <span dir="ltr" className="flex-none whitespace-nowrap text-label font-normal text-text-secondary">
                     {e.reference}
                   </span>
                 )}
@@ -370,7 +371,7 @@ function InvoiceTab({ ledger, balance, reversed, onReverse }: { ledger: Ledger; 
   );
 }
 
-const PAY_GRID = "grid grid-cols-[180px_1fr_160px_200px_160px_110px_80px] items-center gap-4 px-4";
+const PAY_GRID = "grid grid-cols-[150px_minmax(160px,1fr)_130px_130px_130px_110px_64px] items-center gap-3 px-4";
 
 function PaymentsTab({ ledger, reversed, onReverse }: { ledger: Ledger } & ReverseProps) {
   if (!ledger.length) return <Empty icon={<Wallet className="h-10 w-10 text-text-disabled" strokeWidth={1.75} aria-hidden />} text={t("stay.noPayments")} />;

@@ -6,7 +6,7 @@ import type { components } from "@api/schema";
 
 import { api, ApiError, data } from "@/api/client";
 import { keys, useCurrentShift, useSystemStatus } from "@/api/queries";
-import { ErrorBanner, Segmented, Select } from "@/components/ui/form";
+import { ErrorBanner, groupThousands, Segmented, Select } from "@/components/ui/form";
 import { buttons, Modal } from "@/components/ui/Modal";
 import { stateColor } from "@/design/state";
 import { openPrint } from "@/features/print/PrintPage";
@@ -28,7 +28,7 @@ export function CashPage() {
   // «طباعة كشف الوردية»: the open shift, or the last closed one when none is open.
   const printable = current?.shift?.id ?? current?.last_closed?.id;
   return (
-    <div className="flex h-full flex-col gap-4 p-6 max-[1599px]:gap-3">
+    <div className="flex h-full min-h-[620px] flex-col gap-4 p-6 max-[1599px]:gap-3">
       <div className="flex h-9 items-center gap-4">
         <h1 className="m-0 text-page-title">{t("cash.title")}</h1>
         <Segmented
@@ -154,7 +154,10 @@ function OpenShift({ current }: { current: Current }) {
               <input
                 inputMode="decimal"
                 value={counted}
-                onChange={(e) => setCounted(e.target.value)}
+                onChange={(e) => {
+                  groupThousands(e.target);
+                  setCounted(e.target.value);
+                }}
                 className="w-full border-0 bg-transparent p-0 font-sans text-page-title text-text-primary outline-none"
               />
               <span className="text-body font-medium text-text-secondary">{t("money.currency")}</span>
@@ -183,7 +186,7 @@ function OpenShift({ current }: { current: Current }) {
             />
           </label>
           {error && <ErrorBanner>{error}</ErrorBanner>}
-          <div className="mt-auto flex items-center gap-2">
+          <div className="mt-auto flex flex-wrap items-center gap-2">
             <button type="button" disabled={offline || close.isPending} onClick={submit} className={buttons.primary}>
               <Lock className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
               {t("cash.close")}
@@ -371,7 +374,7 @@ function HistoryTab() {
     queryKey: ["shifts", "history", period, user],
     queryFn: () => data(api.GET("/api/v1/shifts/", { params: { query: { ...range(period), ...(user ? { user } : {}) } } })),
   }).data;
-  const GRID = "grid grid-cols-[150px_110px_1fr_110px_110px_110px_110px_110px_1.4fr_40px] items-center gap-3 px-4";
+  const GRID = "grid grid-cols-[130px_110px_minmax(120px,1fr)_110px_110px_110px_110px_110px_minmax(140px,1.4fr)_40px] items-center gap-3 px-4";
   const zero = stateColor("ready");
   return (
     <>
@@ -402,51 +405,54 @@ function HistoryTab() {
           <Kpi label={t("cash.kNet")} value={signed(history.net_difference)} danger={history.net_difference !== 0} currency />
         </div>
       )}
-      <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
-        <div className={`${GRID} h-10 flex-none bg-bg-surface-2 text-label text-text-secondary`}>
-          {["hDate", "hTime", "hUser", "hOpening", "hReceipts", "hExpenses", "hCounted", "hDiff", "hReason"].map((k) => (
-            <div key={k}>{t(`cash.${k}`)}</div>
-          ))}
-          <div />
-        </div>
-        <div className="min-h-0 flex-1 overflow-auto">
-          {history?.shifts.length === 0 && <div className="p-6 text-center text-body text-text-secondary">{t("cash.noHistory")}</div>}
-          {history?.shifts.map((s) => (
-            <div key={s.id} className={`${GRID} h-10 border-b border-border text-table-cell hover:bg-bg-page`}>
-              <div>{formatDayMonth(s.opened_at)}</div>
-              <div dir="ltr" className="text-end text-text-secondary">
-                {formatTime(s.opened_at)}–{s.closed_at ? formatTime(s.closed_at) : ""}
+      {/* Ten columns: wider than a 1366 px window, so the table scrolls sideways instead of squeezing the names. */}
+      <section className="min-h-0 flex-1 overflow-auto rounded-card border border-border bg-bg-surface">
+        <div className="w-max min-w-full">
+          <div className={`${GRID} sticky top-0 z-10 h-10 bg-bg-surface-2 text-label text-text-secondary`}>
+            {["hDate", "hTime", "hUser", "hOpening", "hReceipts", "hExpenses", "hCounted", "hDiff", "hReason"].map((k) => (
+              <div key={k}>{t(`cash.${k}`)}</div>
+            ))}
+            <div />
+          </div>
+          <div>
+            {history?.shifts.length === 0 && <div className="p-6 text-center text-body text-text-secondary">{t("cash.noHistory")}</div>}
+            {history?.shifts.map((s) => (
+              <div key={s.id} className={`${GRID} h-10 border-b border-border text-table-cell hover:bg-bg-page`}>
+                <div>{formatDayMonth(s.opened_at)}</div>
+                <div dir="ltr" className="text-end text-text-secondary">
+                  {formatTime(s.opened_at)}–{s.closed_at ? formatTime(s.closed_at) : ""}
+                </div>
+                <div>{s.opened_by}</div>
+                <div>{money(s.opening)}</div>
+                <div>{money(s.receipts)}</div>
+                <div>{money(s.cash_expenses)}</div>
+                <div className="font-semibold">{s.counted === null ? "—" : money(s.counted)}</div>
+                <div>
+                  {s.difference === null ? (
+                    <span className="text-label text-text-secondary">{t("cash.stillOpen")}</span>
+                  ) : (
+                    <span className={`inline-flex h-6 items-center rounded-control px-2 text-label ${s.difference === 0 ? `${zero.soft} ${zero.text}` : "bg-danger-soft text-danger-text"}`}>
+                      <span dir="ltr">{signed(s.difference)}</span>
+                    </span>
+                  )}
+                </div>
+                <div className="truncate text-label font-normal text-text-secondary">{s.difference_reason}</div>
+                <button
+                  type="button"
+                  aria-label={t("print.printStatement")}
+                  title={t("print.printStatement")}
+                  onClick={() => openPrint("shift", s.id)}
+                  className="flex h-8 w-8 items-center justify-center rounded-control border-0 bg-transparent text-text-secondary hover:bg-bg-surface-2"
+                >
+                  <Printer className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
+                </button>
               </div>
-              <div>{s.opened_by}</div>
-              <div>{money(s.opening)}</div>
-              <div>{money(s.receipts)}</div>
-              <div>{money(s.cash_expenses)}</div>
-              <div className="font-semibold">{s.counted === null ? "—" : money(s.counted)}</div>
-              <div>
-                {s.difference === null ? (
-                  <span className="text-label text-text-secondary">{t("cash.stillOpen")}</span>
-                ) : (
-                  <span className={`inline-flex h-6 items-center rounded-control px-2 text-label ${s.difference === 0 ? `${zero.soft} ${zero.text}` : "bg-danger-soft text-danger-text"}`}>
-                    <span dir="ltr">{signed(s.difference)}</span>
-                  </span>
-                )}
-              </div>
-              <div className="truncate text-label font-normal text-text-secondary">{s.difference_reason}</div>
-              <button
-                type="button"
-                aria-label={t("print.printStatement")}
-                title={t("print.printStatement")}
-                onClick={() => openPrint("shift", s.id)}
-                className="flex h-8 w-8 items-center justify-center rounded-control border-0 bg-transparent text-text-secondary hover:bg-bg-surface-2"
-              >
-                <Printer className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
-              </button>
-            </div>
-          ))}
-        </div>
-        <div className="flex h-10 flex-none items-center justify-between border-t border-border px-4 text-label font-normal text-text-secondary">
-          <span>{t("cash.historyCount", { n: digits(String(history?.shifts.length ?? 0)) })}</span>
-          <span>{t("cash.historyFoot")}</span>
+            ))}
+          </div>
+          <div className="flex h-10 flex-none items-center justify-between border-t border-border px-4 text-label font-normal text-text-secondary">
+            <span>{t("cash.historyCount", { n: digits(String(history?.shifts.length ?? 0)) })}</span>
+            <span>{t("cash.historyFoot")}</span>
+          </div>
         </div>
       </section>
     </>

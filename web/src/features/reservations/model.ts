@@ -92,17 +92,21 @@ const FIELD_NAMES: Record<keyof Errors, string> = {
 };
 
 /** Required-field checks before sending (the server validates again and has the final word). */
-export function validate(form: Form, checkInNow: boolean): Errors {
+export function validate(form: Form, checkInNow: boolean, price: number | null = null, roomReady = true): Errors {
   const e: Errors = {};
   if (form.guestMode === "new" && !guestReady(form)) e.full_name = t("newRes.errFullName");
   if (!form.room_type) e.room_type = t("newRes.errRoomType");
   if (checkInNow && !form.room) e.room = t("newRes.errRoom");
+  // Walk-in into a room still being cleaned: the server refuses it; say so before sending.
+  else if (checkInNow && !roomReady) e.room = t("newRes.errRoomNotReady");
   if (form.price !== null) {
-    if (amount(form.price) === null) e.price = t("newRes.errAmount");
+    const edited = amount(form.price);
+    if (edited === null || edited <= 0) e.price = t("newRes.errAmount");
     if (!form.override_reason.trim()) e.override_reason = t("newRes.errOverrideReason");
   }
   const discount = amount(form.discount);
   if (discount === null) e.discount = t("newRes.errAmount");
+  else if (price !== null && discount > price) e.discount = t("newRes.errDiscountTooBig");
   else if (discount > 0 && !form.discount_reason.trim()) e.discount_reason = t("newRes.errDiscountReason");
   const deposit = amount(form.deposit);
   if (deposit === null) e.deposit = t("newRes.errAmount");

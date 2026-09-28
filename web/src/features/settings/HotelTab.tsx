@@ -116,14 +116,16 @@ export function HotelTab({ readOnly }: { readOnly: boolean }) {
               <TextInput readOnly={readOnly} dir="ltr" value={draft.phone} onChange={(e) => set({ phone: e.target.value })} />
             </Field>
             <Field label={t("settings.hotel.hotelId")} hint={t("settings.hotel.hotelIdHint")}>
-              <TextInput readOnly dir="ltr" value={settings.hotel_id} />
+              <div dir="ltr" className="min-h-9 rounded-control border border-border bg-bg-surface-2 px-3 py-1.5 text-body text-text-primary break-all text-end">
+                {settings.hotel_id}
+              </div>
             </Field>
           </div>
         </Card>
         <Card title={t("settings.hotel.rules")}>
           <div className="grid grid-cols-2 gap-4 p-4">
             <Field label={t("settings.hotel.currency")}>
-              <TextInput readOnly value={`${t("money.currency")} — ${t("settings.hotel.currencyName")} (${settings.currency})`} />
+              <div className="min-h-9 rounded-control border border-border bg-bg-surface-2 px-3 py-1.5 text-body text-text-primary">{`${t("money.currency")} — ${t("settings.hotel.currencyName")} (${settings.currency})`}</div>
             </Field>
             <Field label={t("settings.hotel.digits")}>
               <Segmented<Draft["digits"]>
