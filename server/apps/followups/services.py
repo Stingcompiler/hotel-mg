@@ -92,17 +92,24 @@ def ensure_default_rules() -> int:
 # --- Stay hooks -------------------------------------------------------------------------------
 
 
-def supersede_for_stay(stay, actor=None, reason: str = "") -> int:
+def supersede_for_stay(stay, actor=None, reason: str = "", action: str = "") -> int:
     """Extension, room change, checkout or cancellation retire the stay's pending tasks (spec §6.6).
 
-    The engine creates fresh ones from the new end date on its next tick. Nothing is deleted.
+    The engine creates fresh ones from the new end date on its next tick. Nothing is deleted; a task that was
+    neglected keeps ``neglected_at`` (reports count it from there). When the staff extended or checked the guest
+    out from the stay screen (``action``), the alerts already due get that action recorded: it answered them
+    (review 2026-09-28, BIZ-9, BIZ-12).
     """
     pending = FollowupTask.objects.filter(stay=stay, status__in=rules.OPEN_STATES)
-    count = 0
+    now, shift, count = timezone.now(), current_shift(), 0
     for task in pending:
         task.status = FollowupTask.Status.SUPERSEDED
         task.note = reason[:300]
         task.save(update_fields=["status", "note"])
+        if action and rules.is_due(task.due_at, now):
+            TaskAction.objects.create(
+                task=task, action=action, at=now, note=reason[:300], shift=shift, created_by=actor
+            )
         count += 1
     return count
 

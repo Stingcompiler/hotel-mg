@@ -142,3 +142,17 @@ def test_room_line_text():
     assert rules.room_line_text("monthly", "مزدوجة", "203", 30) == "إقامة شهرية — مزدوجة 203 (30 ليلة)"
     assert rules.room_line_text("daily", "مفردة", "101", 3) == "إقامة يومية — مفردة 101 (3 ليالٍ)"
     assert rules.room_line_text("mixed", "مفردة", "101", 10, "أسبوع + 3 ليالٍ") == "إقامة — مفردة 101 (أسبوع + 3 ليالٍ)"
+
+
+def test_parse_option_key_and_combine():
+    assert rules.parse_option_key("m1w0d3") == Option(1, 0, 3)
+    assert rules.parse_option_key("") is None and rules.parse_option_key("weekly") is None
+    assert rules.combine(Option(0, 0, 3), Option(0, 1, 2), Option(1, 0, 0)) == Option(1, 1, 5)
+
+
+def test_peak_overlap():
+    d = date(2026, 9, 26)
+    ranges = [(d, date(2026, 9, 29)), (date(2026, 9, 28), date(2026, 9, 30)), (date(2026, 10, 1), date(2026, 10, 2))]
+    assert rules.peak_overlap(ranges, d, date(2026, 10, 2)) == 2  # the 28th
+    assert rules.peak_overlap(ranges, date(2026, 9, 29), date(2026, 10, 1)) == 1
+    assert rules.peak_overlap([], d, date(2026, 9, 27)) == 0

@@ -120,7 +120,12 @@ class ReservationCreateSerializer(serializers.Serializer):
     duration_kind = serializers.ChoiceField(choices=BOOKING_KINDS)
     count = serializers.IntegerField(min_value=1, max_value=366)
     option_key = serializers.CharField(required=False, allow_null=True, help_text="From the quote; needed if several.")
-    final_total = MoneyMinorField(required=False, allow_null=True, min_value=0, help_text="Price override.")
+    final_total = MoneyMinorField(
+        required=False,
+        allow_null=True,
+        min_value=1,
+        help_text="Price override; below the base beyond the discount limit needs manager_password.",
+    )
     override_reason = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
     notes = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
     check_in_now = serializers.BooleanField(default=False, help_text="Walk-in «تسكين الآن»: book and check in at once.")
@@ -210,8 +215,16 @@ class ExtendQuoteSerializer(serializers.Serializer):
 
 class ExtendSerializer(ExtendQuoteRequestSerializer):
     option_key = serializers.CharField(required=False, allow_null=True)
-    final_total = MoneyMinorField(required=False, allow_null=True, min_value=0)
+    final_total = MoneyMinorField(required=False, allow_null=True, min_value=1)
     override_reason = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
+    override_password = serializers.CharField(
+        max_length=128,
+        required=False,
+        allow_blank=True,
+        default="",
+        style={"input_type": "password"},
+        help_text="The manager's password when the price is below the base beyond the discount limit.",
+    )
     version = serializers.IntegerField(min_value=1, required=False)
 
 

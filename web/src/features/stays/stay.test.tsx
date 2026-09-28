@@ -70,3 +70,79 @@ test("header, reversal link, and the check-out rule for a debt", async () => {
   fireEvent.change(within(dialog).getByLabelText(/سبب الخروج بدين/), { target: { value: "يسدد غدًا" } });
   expect(within(dialog).getByRole("button", { name: "تسجيل الخروج بدين" })).toBeEnabled();
 });
+
+test("«عكس» a room charge asks for the manager when the server requires it", async () => {
+  const bodies: unknown[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: Request) => {
+      const path = new URL(input.url).pathname;
+      if (path === "/api/v1/folios/f1/lines/l1/reverse") {
+        bodies.push(await input.clone().json());
+        const first = bodies.length === 1;
+        return new Response(JSON.stringify(first ? { code: "override_required", detail: "يحتاج موافقة المدير." } : FOLIO), {
+          status: first ? 403 : 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      const body = path === "/api/v1/stays/s1" ? STAY : path === "/api/v1/folios/f1" ? FOLIO : { role: "reception" };
+      return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+    }),
+  );
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter initialEntries={["/stays/s1"]}>
+        <Routes>
+          <Route path="/stays/:id" element={<StayDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+  await screen.findByText("INV-000318");
+  expect(screen.getByText("معكوس")).toBeInTheDocument(); // the reversed payment
+  const reverse = screen.getAllByRole("button", { name: "عكس" });
+  expect(reverse).toHaveLength(1); // only the room charge: reversals and reversed entries have none
+  fireEvent.click(reverse[0]);
+  const dialog = screen.getByRole("dialog");
+  fireEvent.change(within(dialog).getByLabelText(/سبب العكس/), { target: { value: "خطأ في السعر" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "عكس" }));
+  const password = await within(dialog).findByLabelText(/كلمة مرور المدير/);
+  expect(within(dialog).getByRole("button", { name: "عكس" })).toBeDisabled();
+  fireEvent.change(password, { target: { value: "pw" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "عكس" }));
+  await vi.waitFor(() => expect(bodies).toHaveLength(2));
+  expect(bodies).toEqual([
+    { reason: "خطأ في السعر", manager_password: "" },
+    { reason: "خطأ في السعر", manager_password: "pw" },
+  ]);
+  await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull()); // closed after the reversal
+});
+
+test("«ردّ مبلغ» appears only when the guest has credit", async () => {
+  const credit = { ...FOLIO, totals: { ...FOLIO.totals, paid: 30_000_000, balance: -1_500_000 } };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: Request) => {
+      const path = new URL(input.url).pathname;
+      const body = path === "/api/v1/stays/s1" ? STAY : path === "/api/v1/folios/f1" ? credit : { role: "reception" };
+      return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+    }),
+  );
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter initialEntries={["/stays/s1"]}>
+        <Routes>
+          <Route path="/stays/:id" element={<StayDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+  await screen.findByText("INV-000318");
+  fireEvent.click(screen.getByRole("button", { name: "ردّ مبلغ" }));
+  const dialog = screen.getByRole("dialog");
+  expect(within(dialog).getByText("رصيد النزيل: 15,000 ج.س")).toBeInTheDocument();
+  const save = within(dialog).getByRole("button", { name: "تسجيل الردّ" });
+  expect(save).toBeDisabled(); // a reason is required
+  fireEvent.change(within(dialog).getByLabelText(/سبب الردّ/), { target: { value: "مغادرة مبكرة" } });
+  expect(save).toBeEnabled();
+});

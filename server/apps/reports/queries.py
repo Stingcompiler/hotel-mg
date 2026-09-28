@@ -370,7 +370,10 @@ def _ending_soon_count() -> int:
 @report("ending_soon", "القريبة من الانتهاء والمتجاوزة", default_days=0, badge=_ending_soon_count)
 def ending_soon(params: Params) -> Report:
     today = timezone.localdate()
-    within = int(params.get("days", 3))
+    try:
+        within = int(params.get("days", 3))
+    except (TypeError, ValueError):
+        raise ApiError("validation_error", 400, detail="عدد الأيام يجب أن يكون رقمًا.") from None
     stays = [r for r in _in_house() if (stay_rules.last_night(r.check_out_date) - today).days <= within]
     balances = balances_by_reservation([r.pk for r in stays])
     rows = []
@@ -422,6 +425,8 @@ def _debts():
         if totals.balance > 0 and folio.reservation.status in (
             ReservationStatus.CHECKED_IN,
             ReservationStatus.CHECKED_OUT,
+            ReservationStatus.CANCELLED,  # nights used before cancelling still owed (review 2026-09-28, BIZ-6)
+            ReservationStatus.NO_SHOW,
         ):
             out.append((folio, totals))
     return out
@@ -835,6 +840,29 @@ def adjustments(params: Params) -> Report:
                 "reason": snap.get("override_reason", ""),
             }
         )
+    # Extensions priced by hand (review 2026-09-28, BIZ-3): the room line «تمديد … حتى dd/mm» dates each one.
+    for line in FolioLine.objects.filter(
+        _in_period("posted_at", params), kind="room", description__startswith="تمديد"
+    ).select_related("folio__reservation__room", "folio__reservation__guest", "created_by"):
+        r = line.folio.reservation
+        for e in r.rate_snapshot.get("extensions", []):
+            to = date.fromisoformat(e["to"])
+            if (
+                e.get("total") == e.get("base_total")
+                or f"حتى {stay_rules.last_night(to):%d/%m}" not in line.description
+            ):
+                continue
+            rows.append(
+                {
+                    "at": line.posted_at,
+                    "type": "سعر تمديد معدَّل",
+                    "text": f"{r.guest.full_name} — بدل {e['base_total'] // 100:,}",
+                    "room": room_of(r),
+                    "amount": e["total"] - e["base_total"],
+                    "by": _by(line),
+                    "reason": e.get("override_reason", ""),
+                }
+            )
     rows.sort(key=lambda r: r["at"])
     return Report(
         "adjustments",
@@ -946,7 +974,7 @@ def alert_response(params: Params) -> Report:
                 "final": final.get_action_display() if final else task.get_status_display(),
                 "by": (final or first).created_by.full_name if (final or first) and (final or first).created_by else "",
                 "neglected_shift": task.shift.created_by.full_name
-                if task.status == "neglected" and task.shift_id and task.shift.created_by_id
+                if task.neglected_at and task.shift_id and task.shift.created_by_id  # BIZ-9: even once superseded
                 else "",
             }
         )

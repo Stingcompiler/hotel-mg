@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.fields import MoneyMinorField
+from apps.core.serializers import VersionRequiredMixin
 from apps.stays.serializers import AFTER_ROOM_STATUS, BOOKING_KINDS
 
 from .models import AlertRule, TaskAction, Toast, TriggerKind
@@ -70,7 +71,7 @@ class StayActionParamsSerializer(serializers.Serializer):
     duration_kind = serializers.ChoiceField(choices=BOOKING_KINDS, required=False)
     count = serializers.IntegerField(min_value=1, max_value=366, required=False)
     option_key = serializers.CharField(required=False, allow_null=True)
-    final_total = MoneyMinorField(required=False, allow_null=True, min_value=0)
+    final_total = MoneyMinorField(required=False, allow_null=True, min_value=1)
     override_reason = serializers.CharField(max_length=300, required=False, allow_blank=True)
     room_status = serializers.ChoiceField(choices=AFTER_ROOM_STATUS, required=False)
     maintenance_reason = serializers.CharField(max_length=200, required=False, allow_blank=True)
@@ -141,7 +142,7 @@ class AlertRuleSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "version"]
 
 
-class AlertRuleUpdateSerializer(AlertRuleSerializer):
+class AlertRuleUpdateSerializer(VersionRequiredMixin, AlertRuleSerializer):
     version = serializers.IntegerField(min_value=1)
 
     class Meta(AlertRuleSerializer.Meta):

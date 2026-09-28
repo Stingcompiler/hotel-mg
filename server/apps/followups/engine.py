@@ -17,7 +17,6 @@ from django.utils import timezone
 
 from apps.billing.services import FolioTotals
 from apps.cash.models import Shift
-from apps.cash.services import current_shift
 from apps.core.clock import observe_clock
 from apps.rooms.models import Room, RoomStatus
 from apps.stays import rules as stay_rules
@@ -222,13 +221,17 @@ def _wake(now: datetime) -> int:
 
 
 def _escalate(now: datetime) -> int:
-    escalated, shift = 0, current_shift()
+    escalated, shifts = 0, None
     for task in FollowupTask.objects.filter(status="open").select_related("rule"):
-        if rules.should_escalate(task.status, task.due_at, task.rule.escalate_after_hours, now):
+        if rules.should_escalate(task.status, task.due_at, task.rule.escalate_after_hours, now, task.created_at):
             task.status = FollowupTask.Status.NEGLECTED
             task.neglected_at = now
             if task.shift_id is None:
-                task.shift = shift  # «مُهمَلة — وردية: أحمد»: the shift responsible, not whoever is here now
+                # «مُهمَلة — وردية: أحمد»: the shift the alert fell due in, the same rule as the owner's
+                # staff table (rules.responsible_shift), not whoever is here now.
+                if shifts is None:
+                    shifts = list(Shift.objects.order_by("opened_at").values_list("pk", "opened_at", "closed_at"))
+                task.shift_id = rules.responsible_shift(shifts, task.due_at)
             task.save(update_fields=["status", "neglected_at", "shift"])
             escalated += 1
     return escalated

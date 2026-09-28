@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.fields import MoneyMinorField
+from apps.core.serializers import VersionRequiredMixin
 
 from .models import Room, RoomStatus, RoomStatusHistory, RoomType
 
@@ -35,7 +36,7 @@ class RoomTypeSerializer(serializers.ModelSerializer):
         return value
 
 
-class RoomTypeUpdateSerializer(RoomTypeSerializer):
+class RoomTypeUpdateSerializer(VersionRequiredMixin, RoomTypeSerializer):
     version = serializers.IntegerField(min_value=1)
 
     class Meta(RoomTypeSerializer.Meta):
@@ -83,7 +84,7 @@ class RoomCreateSerializer(RoomSerializer):
         read_only_fields = []
 
 
-class RoomUpdateSerializer(RoomSerializer):
+class RoomUpdateSerializer(VersionRequiredMixin, RoomSerializer):
     version = serializers.IntegerField(min_value=1)
 
     class Meta(RoomSerializer.Meta):

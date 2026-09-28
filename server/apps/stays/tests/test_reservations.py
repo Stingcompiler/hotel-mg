@@ -70,7 +70,7 @@ class TestCreate:
         assert res.json()["code"] == "pricing_choice_required"
         assert res.json()["options"] == ["m0w1d3", "m0w0d10"]
 
-    def test_price_override_needs_reason(self, reception_api, guest, single):
+    def test_price_override_needs_reason(self, reception_api, guest, single, rooms):
         res = book(reception_api, guest, single, count=10, option_key="m0w1d3", final_total=10_500_000)
         assert res.json()["code"] == "reason_required"
         res = book(
@@ -87,7 +87,7 @@ class TestCreate:
         assert (snap["base_total"], snap["override_total"]) == (11_300_000, 10_500_000)
         assert res.json()["total"] == 10_500_000
 
-    def test_price_edits_later_do_not_touch_booking(self, reception_api, guest, single):
+    def test_price_edits_later_do_not_touch_booking(self, reception_api, guest, single, rooms):
         rid = book(reception_api, guest, single).json()["id"]
         single.nightly_price = 9_900_000
         single.save()
@@ -161,7 +161,7 @@ class TestLifecycle:
         res = reception_api.post(f"/api/v1/reservations/{rid}/cancel", {"reason": "مرة أخرى"}, format="json")
         assert res.json()["code"] == "invalid_reservation_status"
 
-    def test_no_show_only_from_arrival_day(self, reception_api, guest, single):
+    def test_no_show_only_from_arrival_day(self, reception_api, guest, single, rooms):
         rid = book(reception_api, guest, single).json()["id"]  # arrives tomorrow
         assert reception_api.post(f"/api/v1/reservations/{rid}/no-show").status_code == 409
         today_id = book(reception_api, guest, single, check_in_date="2026-09-26").json()["id"]

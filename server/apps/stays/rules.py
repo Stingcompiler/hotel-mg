@@ -4,6 +4,7 @@ Dates are hotel-local calendar dates. ``check_out_date`` is exclusive: a stay of
 has check_out_date = D + N and ends at the end of D + N - 1.
 """
 
+import re
 from dataclasses import dataclass
 from datetime import date, timedelta
 
@@ -81,6 +82,20 @@ def options_for(kind: str, count: int) -> list[Option]:
     return result
 
 
+_OPTION_KEY = re.compile(r"m(\d+)w(\d+)d(\d+)")
+
+
+def parse_option_key(key: str) -> Option | None:
+    """«m1w0d3» → Option(1, 0, 3); None for anything else (older snapshots)."""
+    match = _OPTION_KEY.fullmatch(key or "")
+    return Option(*(int(g) for g in match.groups())) if match else None
+
+
+def combine(*options: Option) -> Option:
+    """The whole stay as one option: the booking plus every extension (for pricing a room change)."""
+    return Option(sum(o.monthly for o in options), sum(o.weekly for o in options), sum(o.daily for o in options))
+
+
 def price(option: Option, prices: dict[str, int]) -> int:
     """Total in minor units. ``prices`` has nightly/weekly/monthly in minor units."""
     return option.monthly * prices["monthly"] + option.weekly * prices["weekly"] + option.daily * prices["nightly"]
@@ -132,6 +147,15 @@ def blocking_until(status: str, check_out: date, today: date) -> date:
     if status == "checked_in":
         return max(check_out, today + timedelta(days=1))
     return check_out
+
+
+def peak_overlap(ranges: list[tuple[date, date]], check_in: date, check_out: date) -> int:
+    """Most of ``ranges`` ([in, out)) that share one night of [check_in, check_out) — the type's busiest night."""
+    peak, day = 0, check_in
+    while day < check_out:
+        peak = max(peak, sum(1 for a, b in ranges if a <= day < b))
+        day += timedelta(days=1)
+    return peak
 
 
 def override_needs_reason(base_total: int, final_total: int) -> bool:

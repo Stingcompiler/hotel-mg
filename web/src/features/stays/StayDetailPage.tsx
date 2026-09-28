@@ -1,4 +1,4 @@
-import { CalendarPlus, ChevronRight, DoorOpen, LogOut, Plus, Printer, Undo2, Users, Wallet } from "lucide-react";
+import { CalendarPlus, ChevronRight, DoorOpen, HandCoins, LogOut, Plus, Printer, Undo2, Users, Wallet } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
@@ -19,12 +19,14 @@ import { CancelStayModal } from "./CancelStayModal";
 import { ChangeRoomModal } from "./ChangeRoomModal";
 import { CheckoutModal } from "./CheckoutModal";
 import { ExtendModal } from "./ExtendModal";
+import { RefundModal, ReverseModal } from "./FolioActionModals";
 import { PaymentModal } from "./PaymentModal";
 import { useFolio, useRefreshStay, useStay } from "./queries";
 
-type Ledger = components["schemas"]["LedgerEntry"][];
+type Entry = components["schemas"]["LedgerEntry"];
+type Ledger = Entry[];
 type Tab = "invoice" | "payments" | "companions" | "notes" | "log";
-type Dialog = null | "payment" | "checkout" | "extend" | "changeRoom" | "cancel";
+type Dialog = null | "payment" | "checkout" | "extend" | "changeRoom" | "cancel" | "refund";
 
 const money = (v: number) => formatMoney(v);
 const when = (iso: string) => (
@@ -45,6 +47,7 @@ export function StayDetailPage() {
   const refresh = useRefreshStay(id, stay?.reservation.folio);
   const [tab, setTab] = useState<Tab>("invoice");
   const [dialog, setDialog] = useState<Dialog>(null);
+  const [reversing, setReversing] = useState<Entry | null>(null);
 
   // Opened from the room drawer with ?action=extend|checkout.
   useEffect(() => {
@@ -68,8 +71,12 @@ export function StayDetailPage() {
   const payments = ledger.filter((e) => e.type === "payment");
   const done = () => {
     setDialog(null);
+    setReversing(null);
     refresh();
   };
+  // Entries that already have a counter-entry: «معكوس», no second reversal.
+  const reversed = new Set(ledger.map((e) => e.reverses).filter(Boolean));
+  const onReverse = writable ? setReversing : undefined;
 
   const d = stay.days_left;
   const endsText =
@@ -163,6 +170,12 @@ export function StayDetailPage() {
           <LogOut className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
           {t("stay.checkout")}
         </button>
+        {totals.balance < 0 && (
+          <button type="button" disabled={offline} onClick={() => setDialog("refund")} className={buttons.secondary}>
+            <HandCoins className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
+            {t("folioAction.refund")}
+          </button>
+        )}
         <div className="flex-1" />
         {offline ? (
           <span className="text-body text-text-secondary">{t("stay.viewOnly")}</span>
@@ -185,8 +198,8 @@ export function StayDetailPage() {
             </button>
           }
         />
-        {tab === "invoice" && <InvoiceTab ledger={ledger} balance={totals.balance} />}
-        {tab === "payments" && <PaymentsTab ledger={payments} />}
+        {tab === "invoice" && <InvoiceTab ledger={ledger} balance={totals.balance} reversed={reversed} onReverse={onReverse} />}
+        {tab === "payments" && <PaymentsTab ledger={payments} reversed={reversed} onReverse={onReverse} />}
         {tab === "companions" && <CompanionsTab companions={stay.guest.companions} />}
         {tab === "notes" && (
           <NotesTab
@@ -203,6 +216,10 @@ export function StayDetailPage() {
       {dialog === "payment" && (
         <PaymentModal folioId={folio.id} room={folio.room_number} balance={totals.balance} onClose={() => setDialog(null)} onDone={done} />
       )}
+      {dialog === "refund" && (
+        <RefundModal folioId={folio.id} room={folio.room_number} credit={-totals.balance} onClose={() => setDialog(null)} onDone={done} />
+      )}
+      {reversing && <ReverseModal folioId={folio.id} entry={reversing} onClose={() => setReversing(null)} onDone={done} />}
       {dialog === "checkout" && (
         <CheckoutModal
           stayId={stay.id}
@@ -261,10 +278,30 @@ export function StayDetailPage() {
   );
 }
 
-const GRID = "grid grid-cols-[180px_1fr_160px_160px_160px_160px] items-center gap-4 px-4";
+const GRID = "grid grid-cols-[180px_1fr_160px_160px_160px_160px_80px] items-center gap-4 px-4";
 
 /** Ledger: reversal rows in danger with ↩ and a link to the original entry; nothing is edited or deleted. */
-function InvoiceTab({ ledger, balance }: { ledger: Ledger; balance: number }) {
+type ReverseProps = { reversed: Set<string | null>; onReverse?: (e: Entry) => void };
+
+/** «عكس» on an entry that is neither a reversal nor already reversed; «معكوس» once it is. */
+function ReverseCell({ entry, reversed, onReverse }: ReverseProps & { entry: Entry }) {
+  if (entry.reverses) return <div />;
+  if (reversed.has(entry.id)) return <div className="text-label text-text-disabled">{t("folioAction.reversed")}</div>;
+  if (!onReverse) return <div />;
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => onReverse(entry)}
+        className="h-9 rounded-control border-0 bg-transparent px-2 font-sans text-label font-medium text-danger hover:bg-danger-soft"
+      >
+        {t("folioAction.reverse")}
+      </button>
+    </div>
+  );
+}
+
+function InvoiceTab({ ledger, balance, reversed, onReverse }: { ledger: Ledger; balance: number } & ReverseProps) {
   const index = new Map(ledger.map((e, i) => [e.id, i + 1]));
   const debit = ledger.reduce((s, e) => s + e.debit, 0);
   const credit = ledger.reduce((s, e) => s + e.credit, 0);
@@ -277,6 +314,7 @@ function InvoiceTab({ ledger, balance }: { ledger: Ledger; balance: number }) {
         <div className="text-end">{t("stay.colCredit")}</div>
         <div className="text-end">{t("stay.colBalance")}</div>
         <div>{t("stay.colBy")}</div>
+        <div />
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
         {ledger.map((e) => {
@@ -310,6 +348,7 @@ function InvoiceTab({ ledger, balance }: { ledger: Ledger; balance: number }) {
               <div className={`text-end ${e.credit ? "font-semibold" : ""}`}>{e.credit ? money(e.credit) : "—"}</div>
               <div className="text-end font-semibold">{money(e.balance)}</div>
               <div className="text-text-secondary">{e.by}</div>
+              <ReverseCell entry={e} reversed={reversed} onReverse={onReverse} />
             </div>
           );
         })}
@@ -325,14 +364,15 @@ function InvoiceTab({ ledger, balance }: { ledger: Ledger; balance: number }) {
         <div className="text-label font-normal text-text-secondary">
           {ledger.length === 1 ? t("count.entries1") : t("count.entries", { n: digits(String(ledger.length)) })}
         </div>
+        <div />
       </div>
     </>
   );
 }
 
-const PAY_GRID = "grid grid-cols-[180px_1fr_160px_200px_160px_110px] items-center gap-4 px-4";
+const PAY_GRID = "grid grid-cols-[180px_1fr_160px_200px_160px_110px_80px] items-center gap-4 px-4";
 
-function PaymentsTab({ ledger }: { ledger: Ledger }) {
+function PaymentsTab({ ledger, reversed, onReverse }: { ledger: Ledger } & ReverseProps) {
   if (!ledger.length) return <Empty icon={<Wallet className="h-10 w-10 text-text-disabled" strokeWidth={1.75} aria-hidden />} text={t("stay.noPayments")} />;
   return (
     <>
@@ -342,6 +382,7 @@ function PaymentsTab({ ledger }: { ledger: Ledger }) {
         <div className="text-end">{t("stay.colAmount")}</div>
         <div>{t("stay.colReference")}</div>
         <div>{t("stay.colBy")}</div>
+        <div />
         <div />
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
@@ -366,6 +407,7 @@ function PaymentsTab({ ledger }: { ledger: Ledger }) {
                 {t("print.printReceipt")}
               </button>
             </div>
+            <ReverseCell entry={e} reversed={reversed} onReverse={onReverse} />
           </div>
         ))}
       </div>

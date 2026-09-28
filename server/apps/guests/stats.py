@@ -8,29 +8,28 @@ from apps.stays import rules as stay_rules
 from apps.stays.models import Reservation, ReservationStatus
 
 STAYED = (ReservationStatus.CHECKED_IN, ReservationStatus.CHECKED_OUT)
-
-
-def _stays(guest_ids=None):
-    qs = Reservation.objects.filter(status__in=STAYED).select_related("room")
-    return qs if guest_ids is None else qs.filter(guest_id__in=guest_ids)
+# A cancelled stay or a no-show can still owe (nights used, charges): it counts as a debt (review 2026-09-28, BIZ-6).
+MAY_OWE = (*STAYED, ReservationStatus.CANCELLED, ReservationStatus.NO_SHOW)
 
 
 def for_guests(guest_ids) -> dict:
     """guest id → {stays_count, last_stay, debt, in_house}. Two aggregate queries plus one list query."""
-    stays = list(_stays(guest_ids))
-    balances = balances_by_reservation([r.pk for r in stays])
+    owing = list(Reservation.objects.filter(status__in=MAY_OWE, guest_id__in=guest_ids).select_related("room"))
+    balances = balances_by_reservation([r.pk for r in owing])
     out = {gid: {"stays_count": 0, "last_stay": None, "debt": 0, "in_house": False} for gid in guest_ids}
-    for r in sorted(stays, key=lambda r: r.check_in_date):
+    for r in sorted(owing, key=lambda r: r.check_in_date):
         row = out[r.guest_id]
+        row["debt"] += max(balances[r.pk], 0)
+        if r.status not in STAYED:
+            continue
         row["stays_count"] += 1
         row["last_stay"] = {"reservation_id": r.pk, "check_in_date": r.check_in_date, "room": r.room.number}
-        row["debt"] += max(balances[r.pk], 0)
         row["in_house"] = row["in_house"] or r.status == ReservationStatus.CHECKED_IN
     return out
 
 
 def debtor_ids() -> set:
-    stays = list(_stays().values_list("pk", "guest_id"))
+    stays = list(Reservation.objects.filter(status__in=MAY_OWE).values_list("pk", "guest_id"))
     balances = balances_by_reservation([pk for pk, _ in stays])
     return {gid for pk, gid in stays if balances[pk] > 0}
 
