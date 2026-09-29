@@ -132,6 +132,18 @@ class StatementTilesSerializer(serializers.Serializer):
     expected = MoneyMinorField()
 
 
+class StatementCurrencySerializer(serializers.Serializer):
+    currency = Text()
+    symbol = Text()
+    opening = serializers.IntegerField(help_text="Its minor units.")
+    received = serializers.IntegerField(help_text="Cash received net of refunds, its minor units.")
+    expected = serializers.IntegerField()
+    counted = serializers.IntegerField(allow_null=True)
+    difference = serializers.IntegerField(allow_null=True)
+    handed_over = serializers.IntegerField()
+    base = MoneyMinorField(help_text="Pounds value of what was received, at the rates used.")
+
+
 class ShiftStatementDocumentSerializer(serializers.Serializer):
     hotel = HotelHeaderSerializer()
     shift = StatementShiftSerializer()
@@ -142,4 +154,9 @@ class ShiftStatementDocumentSerializer(serializers.Serializer):
     counted = MoneyMinorField(allow_null=True)
     difference = MoneyMinorField(allow_null=True)
     difference_reason = Text()
+    handed_over = MoneyMinorField(help_text="Pounds handed to the owner at close.")
+    left_in_drawer = MoneyMinorField(allow_null=True)
+    opening_expected = MoneyMinorField(allow_null=True, help_text="Left by the previous shift.")
+    opening_reason = Text()
+    currencies = StatementCurrencySerializer(many=True, help_text="One line per foreign currency (A-9, D-1).")
     formula = Text()

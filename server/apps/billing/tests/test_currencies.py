@@ -152,7 +152,7 @@ def test_inactive_or_unknown_currency_is_refused(owner_api, reception_api, guest
 
 
 def test_dollars_are_refunded_counted_handed_over_and_carried_to_the_next_shift(
-    reception_api, guest, double, rooms, usd
+    owner_api, reception_api, guest, double, rooms, usd
 ):
     """Review 2026-09-29, A-6/A-7: the dollar drawer is refunded from, counted at close, handed over, and the next
     opening is checked against what was left."""
@@ -193,3 +193,20 @@ def test_dollars_are_refunded_counted_handed_over_and_carried_to_the_next_shift(
     assert res.status_code == 201 and res.json()["opening_expected"] == 600_000
     usd_row = reception_api.get("/api/v1/shifts/current").json()["totals"]["foreign"][0]
     assert (usd_row["opening"], usd_row["expected"]) == (5_000, 5_000)
+    tiles = owner_api.get("/api/v1/reports/revenue").json()["meta"]["tiles"]
+    assert {"label": "المحصّل دولار أمريكي", "value": "160 $", "type": "text"} in tiles  # A-8: in its currency
+    statement = reception_api.get(f"/api/v1/shifts/{shift['id']}/statement").json()
+    assert statement["currencies"] == [
+        {
+            "currency": "USD",
+            "symbol": "$",
+            "opening": 0,
+            "received": 16_000,
+            "expected": 16_000,
+            "counted": 15_000,
+            "difference": -1_000,
+            "handed_over": 10_000,
+            "base": 40_000_000,
+        }
+    ]  # A-9 / D-1: the dollars have their own line on the printed statement
+    assert (statement["handed_over"], statement["left_in_drawer"]) == (400_000, 600_000)
