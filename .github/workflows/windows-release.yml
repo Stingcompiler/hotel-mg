@@ -237,8 +237,15 @@ jobs:
             # database updated by the installer, the previous server folder gone, the service answering (E-4…E-7).
             $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
             if ($p.ExitCode -ne 0) { Fail "the update install exited $($p.ExitCode)" }
-            $pre = Get-ChildItem "$env:ProgramData\SkyTowers\backups" -Directory -Filter "pre-upgrade-*" -ErrorAction SilentlyContinue
-            if (-not $pre -or -not (Test-Path "$($pre[0].FullName)\hotel.db")) { Fail "no pre-upgrade copy of the database after an update" }
+            $backups = "$env:ProgramData\SkyTowers\backups"
+            $pre = $null; $why = ""
+            try { $pre = @(Get-ChildItem -LiteralPath $backups -Directory -Filter "pre-upgrade-*" -Force -ErrorAction Stop) } catch { $why = $_.Exception.Message }
+            if (-not $pre -or -not (Test-Path "$($pre[0].FullName)\hotel.db")) {
+              $acl = icacls "$env:ProgramData\SkyTowers" 2>&1 | Out-String
+              $label = whoami /groups 2>&1 | Select-String "Label|S-1-5-32-544" | Out-String
+              $listing = cmd /c dir /s /b "$env:ProgramData\SkyTowers" 2>&1 | Select-Object -First 40 | Out-String
+              Fail "no pre-upgrade copy of the database after an update ($why)`n--- icacls`n$acl`n--- whoami`n$label`n--- dir`n$listing"
+            }
             if (Test-Path "$installed\server.prev") { Fail "server.prev left behind after a successful update" }
             $status = $null
             foreach ($i in 1..30) {
