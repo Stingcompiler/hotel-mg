@@ -4,6 +4,7 @@ skytowers-server.exe run                          # serve in this console (debug
 skytowers-server.exe init --role reception        # installer: write config.json once
 skytowers-server.exe init --role reception --force # switch this PC's role (config.json rewritten, data kept)
 skytowers-server.exe manage <command> [args]      # Django management (migrate, backup_now, …)
+skytowers-server.exe upgrade-db                   # installer: update the database now (0 ok, 4 newer, 3 failed)
 skytowers-server.exe free-port                    # installer: end a foreign process holding 127.0.0.1:8471
 skytowers-server.exe --startup auto install       # Windows service commands (pywin32)
 skytowers-server.exe                              # started by the Service Control Manager
@@ -22,6 +23,32 @@ def _django_manage(args: list[str]) -> None:
     from django.core.management import execute_from_command_line
 
     execute_from_command_line(["skytowers-server", *args])
+
+
+def upgrade_db() -> int:
+    """The installer updates the database itself, so a failure is seen and undone there instead of a service
+    restarting for ever (review 2026-09-29, E-4). 4: the database belongs to a newer version (E-5)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from config import runtime
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"config.settings.{runtime.load().role}")
+    import django
+
+    django.setup()
+    from django.core.management import call_command
+
+    from service import run_waitress
+
+    newer = run_waitress.newer_database()
+    if newer:
+        print("the database belongs to a newer Sky Towers: " + ", ".join(newer))
+        return 4
+    try:
+        call_command("migrate", interactive=False, verbosity=1)
+    except Exception as exc:  # noqa: BLE001 — any failure is reported to the installer by the exit code
+        print(f"database update failed: {exc!r}")
+        return 3
+    return 0
 
 
 def _utf8_console() -> None:
@@ -51,6 +78,8 @@ def main(argv: list[str] | None = None) -> int:
     if command == "manage":
         _django_manage(argv[1:])
         return 0
+    if command == "upgrade-db":
+        return upgrade_db()
     if command == "free-port":
         from service import port, run_waitress
 

@@ -48,8 +48,32 @@ PCs installed as owner PCs before 1.1 keep working: a key pasted in الإعدا
 قديم») still receives every backup.
 ### Updates
 
-Run a newer installer over the old one. It stops the service, takes a pre-upgrade backup, installs, and the
-service migrates the database on start. Uninstalling never deletes `%ProgramData%\SkyTowers`.
+Run a newer installer over the old one (1.1.9 and later, review 2026-09-29 E-4…E-7):
+
+1. It stops the service and copies `data\hotel.db*` to `backups\pre-upgrade-<new version>-<YYYYMMDD-HHMMSS>` (the
+   newest 3 such folders are kept). A failed copy (full disk) stops the installer before anything changed.
+2. The previous `server` folder is renamed `server.prev`, the new files are written, and the installer runs
+   `skytowers-server.exe upgrade-db` (exit 0 updated, 4 the database belongs to a newer version, 3 failed).
+3. On failure it puts the pre-upgrade database files and `server.prev` back, starts the service and shows an Arabic
+   message; the hotel keeps working on the previous version. On success `server.prev` is removed.
+4. It starts the service and waits (up to 2 minutes) for `/api/v1/system/status`; if the server does not answer it
+   says so. An install that stops half way (`.onInstFailed`) restores `server.prev` and starts the service.
+
+Installing an older version over a newer one is refused (`allowDowngrades: false`), and the service itself refuses to
+start (exit 4, logged) on a database with migrations it does not know. Uninstalling never deletes
+`%ProgramData%\SkyTowers`; it removes the service and the Defender exclusions.
+
+**Manual rollback** (only if the installer's own rollback could not run): stop the service (`sc stop SkyTowersServer`),
+delete `data\hotel.db-wal` and `data\hotel.db-shm`, copy the files of the newest `backups\pre-upgrade-…` folder into
+`data\`, and run the previous version's installer.
+
+### Code signing
+
+The installer is unsigned, so SmartScreen shows «Windows protected your PC» (More info → Run anyway). The release
+workflow signs the installer by itself once the repository has two secrets: `WINDOWS_CERT_PFX` (the `.pfx`
+certificate, base64) and `WINDOWS_CERT_PASSWORD`. Options: an OV code-signing certificate (the warning fades as
+downloads build reputation), an EV certificate (no warning from the first download), or Azure Trusted Signing
+(monthly fee; needs a sign command instead of the `.pfx` step).
 
 ### Where things are
 

@@ -197,7 +197,8 @@ def movements(shift: Shift) -> list[dict]:
                 "ref_id": str(p.pk),
             }
         )
-    return sorted(rows, key=lambda r: r["at"], reverse=True)
+    # Newest first; rows of the same instant in a fixed order, the opening balance last (review 2026-09-29, QA-2).
+    return sorted(rows, key=lambda r: (r["at"], r["kind"] != "open", r["ref_id"]), reverse=True)
 
 
 def _next_expense_number() -> int:

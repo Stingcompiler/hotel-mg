@@ -25,5 +25,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test-setup.ts"],
+    // Page tests render whole screens; a busy CI runner needs more than the 5 s default (review 2026-09-29, QA-2).
+    testTimeout: 20000,
   },
 });

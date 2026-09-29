@@ -2,6 +2,7 @@
 
 from django.core.exceptions import ImproperlyConfigured
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
+from django.db import OperationalError
 from django.http import Http404, HttpResponseNotFound, JsonResponse
 from rest_framework import exceptions, status
 from rest_framework.views import exception_handler
@@ -61,6 +62,9 @@ MESSAGES = {
     "reference_required": "المرجع مطلوب لغير النقدي (رقم العملية).",
     "refund_exceeds_credit": "مبلغ الردّ أكبر من رصيد النزيل.",
     "shift_already_open": "توجد وردية مفتوحة على هذا الجهاز.",
+    "disk_full": (
+        "القرص ممتلئ ولم يُحفظ الإجراء. أفرغ مساحة على القرص (أو انقل النسخ الاحتياطية القديمة) ثم أعد المحاولة."
+    ),
     "error": "حدث خطأ غير متوقع.",
 }
 
@@ -102,6 +106,11 @@ def api_not_found(request, exception=None):
 def api_exception_handler(exc, context):
     response = exception_handler(exc, context)
     if response is None:
+        if isinstance(exc, OperationalError) and "disk is full" in str(exc):
+            # SQLite «database or disk is full» (review 2026-09-29, E-12).
+            from rest_framework.response import Response
+
+            return Response(error_body("disk_full"), status=status.HTTP_507_INSUFFICIENT_STORAGE)
         if isinstance(exc, ImproperlyConfigured) and "hotel_id" in str(exc):
             # An owner PC with no hotel yet asked to write hotel data (e.g. a login event): a clear 409, not a 500.
             from rest_framework.response import Response
