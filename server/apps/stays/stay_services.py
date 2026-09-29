@@ -26,6 +26,7 @@ from .models import Reservation, ReservationStatus, Stay, StaySegment
 from .services import (
     approve_price,
     available_rooms,
+    check_type_capacity,
     create_reservation,
     lock_room_for,
     prices_of,
@@ -198,6 +199,7 @@ def extend(
         raise ApiError("reason_required", 400, detail="سبب تعديل السعر مطلوب.")
     approver = approve_price(option.total, final_total, override_password, override_reason)
     lock_room_for(reservation.room, reservation.check_out_date, q.check_out_date, exclude_pk=reservation.pk)
+    check_type_capacity(reservation.room_type, reservation.check_out_date, q.check_out_date, exclude_pk=reservation.pk)
 
     before = snapshot(reservation)
     old_out = reservation.check_out_date
@@ -295,6 +297,8 @@ def change_room(
         raise ApiError("room_unavailable", 409, detail="الغرفة الجديدة هي الغرفة الحالية.")
     end = max(reservation.check_out_date, today() + timedelta(days=1))
     new_room = lock_room_for(room, today(), end, exclude_pk=reservation.pk)
+    if new_room.room_type_id != reservation.room_type_id:
+        check_type_capacity(new_room.room_type, today(), end, exclude_pk=reservation.pk)
     if new_room.status != RoomStatus.READY:
         raise ApiError("room_not_ready", 409, detail=f"الغرفة {new_room.number} «{RoomStatus(new_room.status).label}».")
     difference = change_room_difference(stay, new_room.room_type)
@@ -416,6 +420,15 @@ def checkout(
     return stay
 
 
+def services_total(folio) -> int:
+    """Services on the folio net of their reversals: they stay charged when a stay is cancelled (BIZ-5)."""
+    return sum(
+        folio.lines.filter(Q(kind="service") | Q(kind="reversal", reverses__kind="service")).values_list(
+            "amount", flat=True
+        )
+    )
+
+
 def cancel_options(stay: Stay) -> tuple[int, list]:
     """Ways to settle the nights already used, priced at the booking's prices (V2 artboard 6.5 F)."""
     reservation = stay.reservation
@@ -436,6 +449,7 @@ def cancel_stay(
     override_password: str,
     override_reason: str = "",
     refund_method: str = "cash",
+    refund_reference: str = "",
     version: int | None = None,
 ) -> Stay:
     """End a stay early as «ملغاة»: nothing is deleted; the new total covers the nights used.
@@ -461,12 +475,8 @@ def cancel_stay(
     folio = Folio.objects.select_for_update().get(reservation=reservation)
     totals = billing.FolioTotals.of(folio)
     # Services net of their reversals: a reversed laundry line is not charged again (review 2026-09-28, BIZ-5).
-    services_total = sum(
-        folio.lines.filter(Q(kind="service") | Q(kind="reversal", reverses__kind="service")).values_list(
-            "amount", flat=True
-        )
-    )
-    settlement_line = new_total - (totals.total - services_total)
+    services = services_total(folio)
+    settlement_line = new_total - (totals.total - services)
     if settlement_line:
         billing.post_line(
             actor,
@@ -476,10 +486,16 @@ def cancel_stay(
             amount=settlement_line,
             reason=reason,
         )
-    refund = billing_rules.refund_due(new_total + services_total, totals.paid)
+    refund = billing_rules.refund_due(new_total + services, totals.paid)
     if refund:
         billing.take_payment(
-            actor, folio, amount=-refund, method=refund_method, kind="refund", reason="ردّ عند إلغاء الإقامة"
+            actor,
+            folio,
+            amount=-refund,
+            method=refund_method,
+            reference=refund_reference,
+            kind="refund",
+            reason="ردّ عند إلغاء الإقامة",
         )
     reservation.rate_snapshot["cancellation"] = {
         "nights_used": used,

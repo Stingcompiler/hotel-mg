@@ -695,13 +695,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/ExpenseReversalRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/ExpenseReversalRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/ExpenseReversalRequest'
         required: true
       security:
       - tokenAuth: []
@@ -3862,6 +3862,12 @@ components:
           type: integer
         current_total:
           type: integer
+        services_total:
+          type: integer
+          description: 'Services (net of reversals): charged on top of the new total.'
+        paid:
+          type: integer
+          description: Paid so far; refund = paid − (new total + services) when positive.
         options:
           type: array
           items:
@@ -3869,6 +3875,8 @@ components:
       required:
       - nights_used
       - current_total
+      - services_total
+      - paid
       - options
     CancelReservationRequest:
       type: object
@@ -3905,6 +3913,20 @@ components:
           type: string
           default: ''
           maxLength: 300
+        refund_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          default: cash
+          description: |-
+            How any excess is paid back.
+
+            * `cash` - نقدي
+            * `bankak` - بنكك
+            * `transfer` - تحويل
+        refund_reference:
+          type: string
+          default: ''
+          maxLength: 60
         version:
           type: integer
           minimum: 1
@@ -4439,6 +4461,21 @@ components:
       - amount_in_words
       - method
       - by
+    ExpenseReversalRequest:
+      type: object
+      description: '«عكس مصروف»: a reason; the manager''s password when it is someone
+        else''s expense or from a closed shift.'
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+        manager_password:
+          type: string
+          default: ''
+          maxLength: 128
+      required:
+      - reason
     ExpenseSummary:
       type: object
       properties:
@@ -6478,16 +6515,6 @@ components:
       - count
       - duration_kind
       - room_type
-    ReasonRequest:
-      type: object
-      description: Body of reversal/cancel actions that only need a reason.
-      properties:
-        reason:
-          type: string
-          minLength: 1
-          maxLength: 300
-      required:
-      - reason
     RecoverPasswordRequest:
       type: object
       properties:

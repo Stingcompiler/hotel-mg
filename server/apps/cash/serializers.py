@@ -168,3 +168,12 @@ class ExpenseSummarySerializer(serializers.Serializer):
 
 class UploadSerializer(serializers.Serializer):
     file = serializers.FileField()
+
+
+class ExpenseReversalSerializer(serializers.Serializer):
+    """«عكس مصروف»: a reason; the manager's password when it is someone else's expense or from a closed shift."""
+
+    reason = serializers.CharField(max_length=300)
+    manager_password = serializers.CharField(
+        max_length=128, required=False, allow_blank=True, default="", style={"input_type": "password"}
+    )

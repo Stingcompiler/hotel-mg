@@ -454,6 +454,12 @@ def debts(params: Params) -> Report:
                 reason = f"متجاوزة منذ {arabic.days(left)}" if left < 0 else f"تنتهي بعد {arabic.days(left)}"
                 if left < 0:
                     age = f"{arabic.days(left)} (جارية)"
+            elif stay is None or stay.checked_out_at is None:
+                # Cancelled or no-show before check-in, still owing (e.g. a service line): no stay to date it by
+                # (review 2026-09-29, A-1 — this was a 500 on the report and the owner dashboard).
+                age_days = (today - timezone.localtime(r.updated_at).date()).days
+                age = arabic.days(age_days)
+                reason = f"حجز {r.get_status_display()} بدين"
             else:
                 age_days = (today - timezone.localtime(stay.checked_out_at).date()).days
                 age = arabic.days(age_days)
@@ -486,7 +492,7 @@ def debts(params: Params) -> Report:
                 rows.append(
                     {
                         "guest": r.guest.full_name,
-                        "room": r.room.number,
+                        "room": r.room.number if r.room_id else "—",
                         "range": _range_text(r),
                         "total": totals.total,
                         "paid": totals.paid,
@@ -563,21 +569,23 @@ def revenue(params: Params) -> Report:
     room_type, method = _room_type(params), _method(params)
     scope = Q(folio__reservation__room_type=room_type) if room_type else Q()
     lines = defaultdict(lambda: defaultdict(int))
-    for d, kind, s in (
+    for d, kind, reversed_kind, s in (
         FolioLine.objects.filter(_in_period("posted_at", params), scope)
         .annotate(d=TruncDate("posted_at"))
-        .values_list("d", "kind")
+        .values_list("d", "kind", "reverses__kind")
         .annotate(s=Sum("amount"))
     ):
-        lines[d][kind] += s
+        # A reversed discount is no discount (review 2026-09-29, A-16, as FolioTotals since BIZ-7).
+        lines[d]["discount" if "discount" in (kind, reversed_kind) else kind] += s
     paid = defaultdict(lambda: defaultdict(int))
-    for d, pay_method, s in (
+    for d, pay_method, currency, s in (
         Payment.objects.filter(_in_period("received_at", params), scope, **({"method": method} if method else {}))
         .annotate(d=TruncDate("received_at"))
-        .values_list("d", "method")
+        .values_list("d", "method", "currency")
         .annotate(s=Sum("amount"))
     ):
-        paid[d][pay_method] += s
+        # Money in other currencies has its own column (its pound value) so «نقدي» matches the shifts (A-8).
+        paid[d]["foreign" if currency else pay_method] += s
     rows = []
     for day in _days(params):
         k, p = lines[day], paid[day]
@@ -591,12 +599,13 @@ def revenue(params: Params) -> Report:
                 "cash": p["cash"],
                 "bankak": p["bankak"],
                 "transfer": p["transfer"],
-                "collected": p["cash"] + p["bankak"] + p["transfer"],
+                "foreign": p["foreign"],
+                "collected": p["cash"] + p["bankak"] + p["transfer"] + p["foreign"],
             }
         )
     totals = {
         key: sum(r[key] for r in rows)
-        for key in ("charges", "discounts", "revenue", "cash", "bankak", "transfer", "collected")
+        for key in ("charges", "discounts", "revenue", "cash", "bankak", "transfer", "foreign", "collected")
     }
     return Report(
         "revenue",
@@ -609,6 +618,7 @@ def revenue(params: Params) -> Report:
             Column("cash", "نقدي", "money"),
             Column("bankak", "بنكك", "money"),
             Column("transfer", "تحويل", "money"),
+            Column("foreign", "عملات أخرى (بالجنيه)", "money"),
             Column("collected", "المحصّل", "money"),
         ],
         rows,
@@ -769,6 +779,13 @@ def adjustments(params: Params) -> Report:
                 "reason": line.reason,
             }
         )
+    # Discounts net of their reversals for the tile (A-16).
+    net_discounts = (
+        FolioLine.objects.filter(
+            _in_period("posted_at", params), Q(kind="discount") | Q(kind="reversal", reverses__kind="discount")
+        ).aggregate(s=Sum("amount"))["s"]
+        or 0
+    )
     for p in Payment.objects.filter(_in_period("received_at", params), kind__in=["reversal", "refund"]).select_related(
         "folio__reservation__room", "created_by"
     ):
@@ -879,7 +896,7 @@ def adjustments(params: Params) -> Report:
         rows,
         (params.date_from, params.date_to),
         tiles=[
-            {"label": "الخصومات", "value": -sum(r["amount"] or 0 for r in rows if r["type"] == "خصم"), "type": "money"},
+            {"label": "الخصومات", "value": -net_discounts, "type": "money"},
             {"label": "العكوس", "value": sum(r["type"].startswith("عكس") for r in rows), "type": "int"},
             {"label": "الإلغاءات", "value": sum(r["type"] in ("ملغى", "لم يحضر") for r in rows), "type": "int"},
         ],

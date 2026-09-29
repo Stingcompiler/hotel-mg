@@ -1956,6 +1956,10 @@ export interface components {
         CancelOptions: {
             nights_used: number;
             current_total: number;
+            /** @description Services (net of reversals): charged on top of the new total. */
+            services_total: number;
+            /** @description Paid so far; refund = paid − (new total + services) when positive. */
+            paid: number;
             options: components["schemas"]["CancelOption"][];
         };
         CancelReservationRequest: {
@@ -1969,6 +1973,17 @@ export interface components {
             override_password: string;
             /** @default  */
             override_reason?: string;
+            /**
+             * @description How any excess is paid back.
+             *
+             *     * `cash` - نقدي
+             *     * `bankak` - بنكك
+             *     * `transfer` - تحويل
+             * @default cash
+             */
+            refund_method?: components["schemas"]["PaymentMethodEnum"];
+            /** @default  */
+            refund_reference?: string;
             version?: number;
         };
         Candidate: {
@@ -2190,6 +2205,12 @@ export interface components {
             amount_in_words: string;
             method: string;
             by: string;
+        };
+        /** @description «عكس مصروف»: a reason; the manager's password when it is someone else's expense or from a closed shift. */
+        ExpenseReversalRequest: {
+            reason: string;
+            /** @default  */
+            manager_password?: string;
         };
         ExpenseSummary: {
             shift_total: number;
@@ -3094,10 +3115,6 @@ export interface components {
             check_in_date: string;
             duration_kind: components["schemas"]["BookingDurationKindEnum"];
             count: number;
-        };
-        /** @description Body of reversal/cancel actions that only need a reason. */
-        ReasonRequest: {
-            reason: string;
         };
         RecoverPasswordRequest: {
             username: string;
@@ -4481,9 +4498,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ReasonRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["ReasonRequest"];
-                "multipart/form-data": components["schemas"]["ReasonRequest"];
+                "application/json": components["schemas"]["ExpenseReversalRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExpenseReversalRequest"];
+                "multipart/form-data": components["schemas"]["ExpenseReversalRequest"];
             };
         };
         responses: {

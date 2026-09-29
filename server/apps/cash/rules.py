@@ -29,3 +29,14 @@ def totals_by_method(rows) -> dict[str, int]:
         totals[method] += amount
     totals["total"] = totals["cash"] + totals["bankak"] + totals["transfer"]
     return totals
+
+
+def expense_reversal_needs_manager(own_expense_this_shift: bool, actor_is_manager: bool, approved: bool) -> bool:
+    """Like payments (SEC-1): staff may undo their own expense in their open shift; anyone else's, or one from a closed
+    shift, needs a manager (review 2026-09-29, A-14)."""
+    return not own_expense_this_shift and not actor_is_manager and not approved
+
+
+def reference_required(method: str) -> bool:
+    """Bankak and transfers carry the transaction number, for expenses as for payments (A-15)."""
+    return method != "cash"

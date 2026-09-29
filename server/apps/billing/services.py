@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from apps.accounts import rules as account_rules
@@ -121,19 +121,33 @@ def post_line(
     return line
 
 
+def stay_base(reservation) -> int:
+    """The stay at list price: the booking, every extension and every room-change difference (rate snapshot)."""
+    rate = reservation.rate_snapshot or {}
+    base = rate.get("base_total") or 0
+    base += sum(e.get("base_total") or 0 for e in rate.get("extensions", []))
+    base += sum(c.get("difference") or 0 for c in rate.get("room_changes", []))
+    return base
+
+
 def check_discount(folio: Folio, discount: int, *, approver=None) -> None:
-    """Discounts above the hotel's limit need a manager (password override or a manager at the desk)."""
-    room_charges = folio.lines.filter(kind="room").aggregate(s=Sum("amount"))["s"] or 0
-    already = -(folio.lines.filter(kind="discount").aggregate(s=Sum("amount"))["s"] or 0)
+    """Discounts need a manager beyond the hotel's limit, counted over everything already taken off the stay, and
+    always on a closed folio (a discount there only makes credit to pay out — review 2026-09-29, A-2, A-4)."""
+    if approver is not None:
+        return
+    if folio.status == Folio.Status.CLOSED:
+        raise ApiError("override_required", 403, detail="الخصم على فاتورة مغلقة يحتاج موافقة المدير.")
+    services = Q(kind="service") | Q(kind="reversal", reverses__kind="service")
+    net = folio.lines.exclude(services).aggregate(s=Sum("amount"))["s"] or 0
     limit = HotelSettings.load().max_discount_percent
-    if approver is None and not rules.discount_within_limit(already + discount, room_charges, limit):
+    if rules.discount_needs_manager(stay_base(folio.reservation), net, discount, limit):
         raise ApiError("override_required", 403, detail=f"الخصم أكبر من {limit}٪ من قيمة الإقامة ويحتاج موافقة المدير.")
 
 
 @transaction.atomic
 def add_line(actor, folio_id, *, kind: str, description: str, amount: int, reason: str = "", approver=None):
     """Staff-entered service charge or discount (spec: discounts need a reason)."""
-    folio = Folio.objects.select_for_update().get(pk=folio_id)
+    folio = Folio.objects.select_for_update().select_related("reservation").get(pk=folio_id)
     if kind == "discount":
         if not reason.strip():
             raise ApiError("reason_required", 400, detail="سبب الخصم مطلوب عند إدخال أي خصم.")

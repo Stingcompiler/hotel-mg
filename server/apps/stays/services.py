@@ -115,15 +115,16 @@ def available_rooms(room_type: RoomType | None, check_in: date, check_out: date)
     return qs.select_related("room_type").order_by("number")
 
 
-def check_type_capacity(room_type: RoomType, check_in: date, check_out: date) -> None:
+def check_type_capacity(room_type: RoomType, check_in: date, check_out: date, *, exclude_pk=None) -> None:
     """Refuse a booking of ``room_type`` when every in-service room of the type is already taken on some night,
-    counting bookings that have no room yet (review 2026-09-28, BIZ-8)."""
+    counting bookings that have no room yet (review 2026-09-28, BIZ-8). Extensions and room changes check too,
+    leaving out the stay being changed (review 2026-09-29, A-3)."""
     RoomType.objects.select_for_update().filter(pk=room_type.pk).first()  # serialise bookings of one type
     on_day = today()
-    held = [
-        (r.check_in_date, rules.blocking_until(r.status, r.check_out_date, on_day))
-        for r in blocking_reservations(check_in, check_out, on_day=on_day).filter(room_type=room_type)
-    ]
+    blocking = blocking_reservations(check_in, check_out, on_day=on_day).filter(room_type=room_type)
+    if exclude_pk:
+        blocking = blocking.exclude(pk=exclude_pk)
+    held = [(r.check_in_date, rules.blocking_until(r.status, r.check_out_date, on_day)) for r in blocking]
     capacity = Room.objects.filter(room_type=room_type, in_service=True).count()
     if rules.peak_overlap(held, check_in, check_out) >= capacity:
         raise ApiError(

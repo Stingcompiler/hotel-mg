@@ -21,6 +21,11 @@ from .framework import Params
 from .queries import _debts, _in_house, _in_period, _maintenance_rooms_by_night, _occupied_rooms_by_night
 
 
+def _room_number(reservation) -> str:
+    """A cancelled or no-show booking may owe money without ever having had a room (A-1)."""
+    return reservation.room.number if reservation.room_id else "—"
+
+
 def _sum(qs, field="amount") -> int:
     return qs.aggregate(s=Sum(field))["s"] or 0
 
@@ -96,7 +101,7 @@ def _attention(today: date, debt_limit: int, month: Params) -> list[dict]:
                     "kind": "debt",
                     "label": "دين",
                     "report": "debts",
-                    "text": f"دين فوق الحد ({rules.pounds_text(debt_limit)}): غرفة {r.room.number} · "
+                    "text": f"دين فوق الحد ({rules.pounds_text(debt_limit)}): غرفة {_room_number(r)} · "
                     f"{rules.pounds_text(totals.balance)} ج.س",
                 }
             )
@@ -204,7 +209,9 @@ def owner_dashboard(period: str = "month") -> dict:
         "debts": {
             "value": sum(t.balance for _, t in debts),
             "count": len(debts),
-            "largest": {"room": largest[0].reservation.room.number, "amount": largest[1].balance} if largest else None,
+            "largest": (
+                {"room": _room_number(largest[0].reservation), "amount": largest[1].balance} if largest else None
+            ),
         },
         "neglected_alerts": {
             "value": neglected.count(),

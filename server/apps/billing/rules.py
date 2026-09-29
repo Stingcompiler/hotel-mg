@@ -18,6 +18,17 @@ def discount_within_limit(discount: int, charges: int, max_percent: int) -> bool
     return discount * 100 <= charges * max_percent
 
 
+def discount_needs_manager(base: int, net_charges: int, discount: int, max_percent: int) -> bool:
+    """One limit for what the guest pays for the stay (review 2026-09-29, A-2, A-4).
+
+    ``base`` is the stay at list price (booking, extensions, room changes); ``net_charges`` what the folio charges for
+    it now (after price cuts, earlier discounts, settlements and reversals, services excluded). Everything already
+    taken off plus this discount must stay within the limit, or a manager approves.
+    """
+    already = max(base - net_charges, 0)
+    return not discount_within_limit(already + discount, base, max_percent)
+
+
 MANAGER_REVERSAL_KINDS = frozenset({"room", "discount", "adjustment"})
 
 
