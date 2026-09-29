@@ -380,6 +380,18 @@ def import_backup(
             )
             if older and not allow_older:
                 raise ImportRejected("هذا الملف أقدم من البيانات الحالية.", checks)
+            device = str(manifest.get("device") or "")[:64]
+            data_as_of = datetime.fromisoformat(manifest["created_at"])
+            if last and rules.two_devices(last.device, last.data_as_of, device, data_as_of):
+                checks.append(
+                    rules.check(
+                        "device",
+                        "جهاز الاستقبال",
+                        f"النسخة من «{device}» وآخر نسخة من «{last.device}». يعمل الفندق بجهاز استقبال واحد: إن كان "
+                        "الجهازان يعملان معًا فبياناتهما منفصلة ولن تجتمع — أوقف أحدهما.",
+                        "warn",
+                    )
+                )
 
             counts: dict = {}
             merge_models = [django_apps.get_model(name) for name, _ in MERGE_ORDER]
@@ -394,8 +406,9 @@ def import_backup(
                     hotel_id=theirs,
                     source=source,
                     file_name=file_name[:200],
+                    device=device,
                     backup_seq=manifest["seq"],
-                    data_as_of=datetime.fromisoformat(manifest["created_at"]),
+                    data_as_of=data_as_of,
                     status=ImportRun.Status.OK,
                     counts=counts,
                     checks=checks,

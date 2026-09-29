@@ -21,8 +21,10 @@
   }
 }
 
+/* «80mm auto» is not a valid size: Chromium fell back to Letter. The roll's width with an A4 length; the printer cuts
+   after the content (review 2026-09-28, UI-6). */
 @page thermal {
-  size: 80mm auto;
+  size: 80mm 297mm;
   margin: 0;
 }
 

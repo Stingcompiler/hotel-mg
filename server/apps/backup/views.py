@@ -19,7 +19,7 @@ from apps.accounts.services import require_confirmation
 from apps.audit import services as audit
 from apps.core.errors import ApiError
 
-from . import adopt, drive, export, keys, merge, rules, services
+from . import adopt, drive, export, keys, merge, rules, services, usb
 from .models import BackupRun, ImportRun
 from .serializers import (
     AdoptRequestSerializer,
@@ -35,6 +35,9 @@ from .serializers import (
     ImportRunSerializer,
     OwnerStatusSerializer,
     SyncResultSerializer,
+    UsbCopyRequestSerializer,
+    UsbCopyResultSerializer,
+    UsbDriveSerializer,
 )
 
 
@@ -55,6 +58,38 @@ class BackupRunView(APIView):
                 after={"status": run.status, "seq": run.seq, "path": run.path, "message": run.message},
             )
         return Response(BackupRunSerializer(run).data, status=status.HTTP_201_CREATED)
+
+
+class UsbDrivesView(APIView):
+    """«حفظ على فلاشة»: the USB sticks this PC sees (review 2026-09-29, E-16)."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=UsbDriveSerializer(many=True))
+    def get(self, request):
+        return Response(UsbDriveSerializer(usb.removable_drives(), many=True).data)
+
+
+class UsbCopyView(APIView):
+    """Copy the newest backup (and the newest full one) to ``<drive>\\SkyTowers``. The files stay encrypted."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=UsbCopyRequestSerializer, responses=UsbCopyResultSerializer)
+    def post(self, request):
+        data = UsbCopyRequestSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        drive = data.validated_data["drive"]
+        copied = usb.copy_latest(drive)
+        with transaction.atomic():
+            audit.record(
+                actor=request.user,
+                action="backup.usb",
+                entity="backup",
+                after={"drive": drive, "files": [p.name for p in copied]},
+            )
+        folder = str(Path(drive) / usb.FOLDER)
+        return Response(UsbCopyResultSerializer({"folder": folder, "files": [p.name for p in copied]}).data)
 
 
 class BackupRunListView(ListAPIView):

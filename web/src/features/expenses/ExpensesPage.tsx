@@ -17,6 +17,7 @@ import { digits } from "@/i18n/digits";
 import { formatMoney, parseMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { notice } from "@/lib/notices";
+import { useSingleFlight } from "@/lib/useSingleFlight";
 
 type Expense = components["schemas"]["Expense"];
 type Category = components["schemas"]["ExpenseCategoryEnum"];
@@ -154,6 +155,7 @@ function QuickExpense({ threshold, onSaved, onNeedsReceipt }: { threshold: numbe
   const [error, setError] = useState<string | null>(null);
   const minor = parseMoney(amount);
   const needsReceipt = minor !== null && minor > threshold;
+  const once = useSingleFlight();
   const save = useMutation({
     mutationFn: () => data(api.POST("/api/v1/expenses/", { body: { category, amount: minor!, note: note.trim(), method: "cash", reference: "", room: null } })),
     onSuccess: () => {
@@ -170,7 +172,7 @@ function QuickExpense({ threshold, onSaved, onNeedsReceipt }: { threshold: numbe
     if (!note.trim()) return setError(t("expenses.errNote"));
     if (needsReceipt) return onNeedsReceipt();
     setError(null);
-    save.mutate();
+    void once(() => save.mutateAsync().catch(() => undefined));
   };
   return (
     <section className="flex flex-col gap-2 rounded-card border border-border bg-bg-surface px-4 py-3">
@@ -388,6 +390,7 @@ function NewExpenseDrawer({ threshold, onClose, onDone }: { threshold: number; o
   const [error, setError] = useState<string | null>(null);
   const minor = parseMoney(amount);
   const needsReceipt = minor !== null && minor > threshold;
+  const once = useSingleFlight();
 
   const save = useMutation({
     mutationFn: async (print: boolean) => {
@@ -407,7 +410,7 @@ function NewExpenseDrawer({ threshold, onClose, onDone }: { threshold: number; o
     if (method !== "cash" && !reference.trim()) return setError(t("expenses.errReference"));
     if (needsReceipt && !file) return setError(t("expenses.errReceipt"));
     setError(null);
-    save.mutate(print);
+    void once(() => save.mutateAsync(print).catch(() => undefined));
   };
 
   return (

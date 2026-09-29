@@ -10,6 +10,7 @@ import { digits } from "@/i18n/digits";
 import { formatMoney, parseMoney, toBase } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { notice } from "@/lib/notices";
+import { useSingleFlight } from "@/lib/useSingleFlight";
 
 type Entry = components["schemas"]["LedgerEntry"];
 type Method = "cash" | "bankak" | "transfer";
@@ -96,7 +97,9 @@ export function RefundModal({ folioId, room, credit, onClose, onDone }: { folioI
   const tooMuch = base !== null && base > credit;
   const ready = minor !== null && minor > 0 && !tooMuch && !!reason.trim() && (method === "cash" || !!reference.trim()) && !busy;
 
-  const save = async () => {
+  const once = useSingleFlight();
+  const save = () => once(saveNow);
+  const saveNow = async () => {
     if (!ready) return;
     setBusy(true);
     setError(null);

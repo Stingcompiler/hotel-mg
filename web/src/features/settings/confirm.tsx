@@ -4,6 +4,7 @@ import { api, ApiError, data } from "@/api/client";
 import { ErrorBanner, Field, TextInput } from "@/components/ui/form";
 import { buttons, Modal } from "@/components/ui/Modal";
 import { t } from "@/i18n/t";
+import { useSingleFlight } from "@/lib/useSingleFlight";
 
 type Headers = { "X-Confirm-Token"?: string };
 
@@ -64,7 +65,9 @@ function ConfirmModal({ action, onCancel, onToken }: { action: string; onCancel:
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const submit = async () => {
+  const once = useSingleFlight();
+  const submit = () => once(submitNow);
+  const submitNow = async () => {
     if (!password || busy) return;
     setBusy(true);
     setError(null);
