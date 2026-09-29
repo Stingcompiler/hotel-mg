@@ -7,6 +7,7 @@ has check_out_date = D + N and ends at the end of D + N - 1.
 import re
 from dataclasses import dataclass
 from datetime import date, timedelta
+from fractions import Fraction
 
 NIGHTS_PER_UNIT = {"daily": 1, "weekly": 7, "monthly": 30}
 UNIT_ORDER = ("monthly", "weekly", "daily")
@@ -195,6 +196,43 @@ def room_change_difference(old_total: int, new_total: int, remaining: int, night
     if nights <= 0 or remaining <= 0:
         return 0
     return round_div((new_total - old_total) * remaining, nights * 100) * 100
+
+
+def charge_blocks(check_in: date, check_out: date, total: int, snapshot: dict) -> list[tuple[date, date, int]]:
+    """The stay's room charges as blocks of nights with the price agreed for each: the booking, every extension,
+    every room change's difference (from its day to the departure). ``total`` is the reservation's room total."""
+    extensions = snapshot.get("extensions", [])
+    changes = snapshot.get("room_changes", [])
+    booked_out = date.fromisoformat(extensions[0]["from"]) if extensions else check_out
+    booking = total - sum(e["total"] for e in extensions) - sum(c["difference"] for c in changes)
+    blocks = [(check_in, booked_out, booking)]
+    blocks += [(date.fromisoformat(e["from"]), date.fromisoformat(e["to"]), e["total"]) for e in extensions]
+    blocks += [
+        (
+            date.fromisoformat(c["date"]),
+            date.fromisoformat(c["until"]) if c.get("until") else check_out,
+            c["difference"],
+        )
+        for c in changes
+    ]
+    return blocks
+
+
+def used_room_charge(blocks: list[tuple[date, date, int]], used_until: date, room_charges: int) -> int:
+    """Room charges for the nights before ``used_until``, at the prices paid (owner decision 4, review 2026-09-29).
+
+    Each block counts for the share of its nights that were used; the result is scaled to the folio's room charges
+    now (discounts, agreed prices and adjustments included) so it never exceeds them (A-5)."""
+    full = sum(amount for _, _, amount in blocks)
+    if full <= 0 or room_charges <= 0:
+        return 0
+    used = Fraction(0)
+    for start, end, amount in blocks:
+        nights = (end - start).days
+        if nights > 0:
+            used += Fraction(amount * min(max((used_until - start).days, 0), nights), nights)
+    share = used * room_charges / full
+    return min(max(round_div(share.numerator, share.denominator), 0), room_charges)
 
 
 def after_room_statuses(choice: str) -> list[str]:

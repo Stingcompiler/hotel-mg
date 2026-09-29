@@ -295,6 +295,9 @@ def change_room(
     reservation = stay.reservation
     if room.pk == reservation.room_id:
         raise ApiError("room_unavailable", 409, detail="الغرفة الجديدة هي الغرفة الحالية.")
+    if reservation.check_out_date <= today() and room.room_type_id != reservation.room_type_id:
+        # No booked night is left to price the difference on: the move would be free (review 2026-09-29, A-17).
+        raise ApiError("stay_overdue", 409)
     end = max(reservation.check_out_date, today() + timedelta(days=1))
     new_room = lock_room_for(room, today(), end, exclude_pk=reservation.pk)
     if new_room.room_type_id != reservation.room_type_id:
@@ -327,6 +330,7 @@ def change_room(
     reservation.rate_snapshot.setdefault("room_changes", []).append(
         {
             "date": today().isoformat(),
+            "until": end.isoformat(),  # the nights the difference was priced for (early departure, A-5)
             "from": old_room.number,
             "to": new_room.number,
             "difference": difference,
@@ -379,16 +383,21 @@ def checkout(
     maintenance_reason: str = "",
     override_password: str = "",
     override_reason: str = "",
+    refund_method: str = "cash",
+    refund_reference: str = "",
     version: int | None = None,
 ) -> Stay:
     """Record departure; the room needs cleaning (or maintenance).
 
-    With a balance ≠ 0 the manager must override with password and reason (spec §6.4, artboard 6.5 C);
-    what is left stays on the closed folio as a debt (or credit) for the debt report.
+    Leaving before the booked departure settles the room charges to the nights used at the prices paid and refunds
+    the rest from the open shift (owner decision 4, review 2026-09-29). With a balance ≠ 0 after that the manager
+    must override with password and reason (spec §6.4, artboard 6.5 C); what is left stays on the closed folio as a
+    debt (or credit) for the debt report.
     """
     stay = _stay_for_update(stay_id, version)
     before = snapshot(stay.reservation)
     folio = Folio.objects.select_for_update().get(reservation=stay.reservation)
+    early = _settle_early_departure(actor, stay, folio, refund_method, refund_reference)
     balance = billing.FolioTotals.of(folio).balance
     if balance != 0:
         if not override_password:
@@ -414,10 +423,42 @@ def checkout(
         after={
             **snapshot(stay.reservation),
             "balance_at_checkout": balance,
+            "early_departure": early,
             "override_by": str(stay.override_by_id) if stay.override_by_id else None,
         },
     )
     return stay
+
+
+def _settle_early_departure(actor, stay: Stay, folio: Folio, refund_method: str, refund_reference: str) -> dict | None:
+    quote = early_departure(stay)
+    if quote is None:
+        return None
+    reservation = stay.reservation
+    if settle := quote["new_room_charges"] - quote["room_charges"]:
+        billing.post_line(
+            actor,
+            folio,
+            kind="adjustment",
+            description=f"مغادرة مبكرة — {rules.count_label('daily', quote['nights_used'])} من "
+            f"{rules.count_label('daily', quote['nights_booked'])} بالسعر المدفوع",
+            amount=settle,
+            reason="مغادرة مبكرة",
+        )
+    if quote["refund"]:
+        billing.take_payment(
+            actor,
+            folio,
+            amount=-quote["refund"],
+            method=refund_method,
+            reference=refund_reference,
+            kind="refund",
+            reason="ردّ الليالي غير المستهلكة عند المغادرة المبكرة",
+        )
+    reservation.rate_snapshot["early_departure"] = {k: quote[k] for k in ("nights_used", "nights_booked", "refund")}
+    reservation.rate_snapshot["early_departure"]["previous_total"] = quote["room_charges"]
+    reservation.total = reservation.total + settle
+    return quote
 
 
 def services_total(folio) -> int:
@@ -429,13 +470,65 @@ def services_total(folio) -> int:
     )
 
 
-def cancel_options(stay: Stay) -> tuple[int, list]:
-    """Ways to settle the nights already used, priced at the booking's prices (V2 artboard 6.5 F)."""
+@dataclass(frozen=True)
+class UsedNights:
+    """The nights used so far, priced at what was paid (owner decision 4, review 2026-09-29 A-5)."""
+
+    used: int  # nights used (at least one)
+    early: bool  # the booking runs past them
+    room_charges: int  # room charges on the folio now: booking, extensions, changes, discounts, adjustments
+    services: int  # services net of reversals: charged in full
+    paid: int
+    charge: int  # room charges for the nights used, at the prices paid
+
+
+def used_nights(stay: Stay, folio: Folio) -> UsedNights:
     reservation = stay.reservation
     used = rules.consumed_nights(reservation.check_in_date, today())
+    totals = billing.FolioTotals.of(folio)
+    services = services_total(folio)
+    room_charges = totals.total - services
+    blocks = rules.charge_blocks(
+        reservation.check_in_date, reservation.check_out_date, reservation.total, reservation.rate_snapshot
+    )
+    until = reservation.check_in_date + timedelta(days=used)
+    charge = rules.used_room_charge(blocks, until, room_charges)
+    return UsedNights(used, until < reservation.check_out_date, room_charges, services, totals.paid, charge)
+
+
+def cancel_options(stay: Stay) -> tuple[int, list[dict]]:
+    """Ways to settle the nights already used (V2 artboard 6.5 F): first at the prices paid, then the list prices of
+    the booking — never above the stay's room charges now (review 2026-09-29, A-5)."""
+    reservation = stay.reservation
+    u = used_nights(stay, billing.folio_of(reservation))
     prices = reservation.rate_snapshot.get("prices") or prices_of(reservation.room_type)
-    options = sorted(rules.options_for("daily", used), key=lambda o: rules.price(o, prices))
-    return used, [(o, rules.price(o, prices)) for o in options]
+    options = sorted(rules.options_for("daily", u.used), key=lambda o: rules.price(o, prices))
+    return u.used, [
+        {"key": "paid", "label": f"بالسعر المدفوع — {rules.count_label('daily', u.used)}", "total": u.charge},
+        *(
+            {"key": o.key, "label": rules.option_label(o), "total": min(rules.price(o, prices), u.room_charges)}
+            for o in options
+        ),
+    ]
+
+
+def early_departure(stay: Stay) -> dict | None:
+    """Leaving before the booked departure: the nights used at the prices paid and the rest refunded (owner decision 4,
+    review 2026-09-29). None when the guest leaves on the booked day or later."""
+    u = used_nights(stay, billing.folio_of(stay.reservation))
+    if not u.early:
+        return None
+    refund = billing_rules.refund_due(u.charge + u.services, u.paid)
+    return {
+        "nights_used": u.used,
+        "nights_booked": stay.reservation.nights,
+        "room_charges": u.room_charges,
+        "new_room_charges": u.charge,
+        "services": u.services,
+        "paid": u.paid,
+        "refund": refund,
+        "balance_after": u.charge + u.services - u.paid + refund,
+    }
 
 
 @transaction.atomic
@@ -462,7 +555,7 @@ def cancel_stay(
     stay = _stay_for_update(stay_id, version)
     approver = verify_manager_override(override_password, override_reason or reason)
     used, options = cancel_options(stay)
-    by_key = {o.key: total for o, total in options}
+    by_key = {o["key"]: o["total"] for o in options}
     if manual_total is not None:
         new_total, settlement = manual_total, "manual"
     elif option_key in by_key:
