@@ -269,6 +269,8 @@ class CancelOptionSerializer(serializers.Serializer):
 class CancelOptionsSerializer(serializers.Serializer):
     nights_used = serializers.IntegerField()
     current_total = MoneyMinorField()
+    services_total = MoneyMinorField(help_text="Services (net of reversals): charged on top of the new total.")
+    paid = MoneyMinorField(help_text="Paid so far; refund = paid − (new total + services) when positive.")
     options = CancelOptionSerializer(many=True)
 
 
@@ -278,6 +280,10 @@ class CancelStaySerializer(serializers.Serializer):
     manual_total = MoneyMinorField(required=False, allow_null=True, min_value=0)
     override_password = serializers.CharField(max_length=128, style={"input_type": "password"})
     override_reason = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
+    refund_method = serializers.ChoiceField(
+        choices=PaymentMethod.choices, default="cash", help_text="How any excess is paid back."
+    )
+    refund_reference = serializers.CharField(max_length=60, required=False, allow_blank=True, default="")
     version = serializers.IntegerField(min_value=1, required=False)
 
 

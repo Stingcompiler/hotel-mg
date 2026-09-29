@@ -213,6 +213,8 @@ def _next_expense_number() -> int:
 def create_expense(actor, *, category, amount: int, note: str, method: str, reference="", room=None) -> Expense:
     if amount <= 0:
         raise ApiError("validation_error", 400, detail="المبلغ يجب أن يكون أكبر من صفر.")
+    if rules.reference_required(method) and not reference.strip():
+        raise ApiError("reference_required", 400)
     shift = require_open_shift()
     expense = Expense.objects.create(
         number=_next_expense_number(),
@@ -237,14 +239,19 @@ def create_expense(actor, *, category, amount: int, note: str, method: str, refe
 
 
 @transaction.atomic
-def reverse_expense(actor, expense_id, *, reason: str) -> Expense:
+def reverse_expense(actor, expense_id, *, reason: str, approver=None) -> Expense:
     """Correct a mistaken expense with an opposite row in the current shift (never edit or delete)."""
+    from apps.accounts import rules as account_rules
+
     if not reason.strip():
         raise ApiError("reason_required", 400, detail="سبب العكس مطلوب.")
     original = Expense.objects.select_for_update().get(pk=expense_id)
     if original.reverses_id or Expense.objects.filter(reverses=original).exists():
         raise ApiError("already_reversed", 409)
     shift = require_open_shift()
+    own = original.created_by_id == actor.pk and original.shift_id == shift.pk
+    if rules.expense_reversal_needs_manager(own, account_rules.is_manager(actor.role), approver is not None):
+        raise ApiError("override_required", 403, detail="عكس مصروف سجّله غيرك أو من وردية سابقة يحتاج موافقة المدير.")
     reversal = Expense.objects.create(
         number=_next_expense_number(),
         shift=shift,

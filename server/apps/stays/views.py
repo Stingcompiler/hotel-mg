@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.billing.services import FolioTotals
 from apps.rooms.models import RoomType
 
 from . import rules, services, stay_services
@@ -272,12 +273,15 @@ class CancelStayView(APIView):
     def get(self, request, pk):
         """Settlement choices for the nights already used."""
         stay = get_object_or_404(_stays(), pk=pk)
+        folio = stay.reservation.folio
         used, options = stay_services.cancel_options(stay)
         return Response(
             CancelOptionsSerializer(
                 {
                     "nights_used": used,
                     "current_total": stay.reservation.total,
+                    "services_total": stay_services.services_total(folio),
+                    "paid": FolioTotals.of(folio).paid,
                     "options": [{"key": o.key, "label": rules.option_label(o), "total": total} for o, total in options],
                 }
             ).data

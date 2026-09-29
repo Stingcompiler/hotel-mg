@@ -3,7 +3,7 @@ import { TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { api, ApiError, data } from "@/api/client";
-import { ErrorBanner, Field, MoneyInput, TextInput } from "@/components/ui/form";
+import { ErrorBanner, Field, MoneyInput, Segmented, TextInput } from "@/components/ui/form";
 import { buttons } from "@/components/ui/Modal";
 import { nights } from "@/i18n/counts";
 import { formatDayMonth } from "@/i18n/dates";
@@ -42,6 +42,8 @@ export function CancelStayModal(props: Props) {
   const [manual, setManual] = useState("");
   const [reason, setReason] = useState("");
   const [password, setPassword] = useState("");
+  const [method, setMethod] = useState<"cash" | "bankak" | "transfer">("cash");
+  const [reference, setReference] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -56,8 +58,11 @@ export function CancelStayModal(props: Props) {
   const selected = key ?? o?.options[0]?.key ?? null;
   const manualMinor = key === "manual" ? parseMoney(manual) : null;
   const newTotal = key === "manual" ? manualMinor : o?.options.find((x) => x.key === selected)?.total ?? null;
-  const refund = newTotal === null ? 0 : paid - newTotal;
-  const can = newTotal !== null && !!reason.trim() && !!password && !busy;
+  // Services stay charged on top of the new total; the server's own figures (review 2026-09-29, A-11).
+  const paidSoFar = o?.paid ?? paid;
+  const refund = newTotal === null ? 0 : paidSoFar - (newTotal + (o?.services_total ?? 0));
+  const needsReference = refund > 0 && method !== "cash" && !reference.trim();
+  const can = newTotal !== null && !!reason.trim() && !!password && !needsReference && !busy;
 
   const submit = async () => {
     setBusy(true);
@@ -72,6 +77,8 @@ export function CancelStayModal(props: Props) {
             manual_total: key === "manual" ? manualMinor : null,
             override_password: password,
             override_reason: reason.trim(),
+            refund_method: method,
+            refund_reference: reference.trim(),
             version,
           },
         }),
@@ -142,7 +149,8 @@ export function CancelStayModal(props: Props) {
             </div>
             <div>
               <div className="text-label text-text-secondary">{t("cancelStay.paid")}</div>
-              <div className="text-section-title">{money(paid)}</div>
+              <div className="text-section-title">{money(paidSoFar)}</div>
+              {!!o?.services_total && <div className="text-label font-normal text-text-secondary">{t("cancelStay.services", { amount: formatMoney(o.services_total) })}</div>}
             </div>
             <div>
               <div className="text-label text-text-secondary">{refund >= 0 ? t("cancelStay.refund") : t("cancelStay.owed")}</div>
@@ -151,6 +159,24 @@ export function CancelStayModal(props: Props) {
             </div>
           </div>
 
+          {refund > 0 && (
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-label text-text-secondary">{t("cancelStay.refundMethod")}</span>
+                <Segmented
+                  label={t("cancelStay.refundMethod")}
+                  value={method}
+                  onChange={setMethod}
+                  options={(["cash", "bankak", "transfer"] as const).map((m) => ({ value: m, label: t(`payMethod.${m}`) }))}
+                />
+              </div>
+              {method !== "cash" && (
+                <Field label={t("payment.reference")} required className="w-48">
+                  <TextInput dir="ltr" value={reference} placeholder={t("payment.referenceHint")} onChange={(e) => setReference(e.target.value)} />
+                </Field>
+              )}
+            </div>
+          )}
           <Field label={t("cancelStay.reason")} required>
             <TextInput value={reason} onChange={(e) => setReason(e.target.value)} />
           </Field>

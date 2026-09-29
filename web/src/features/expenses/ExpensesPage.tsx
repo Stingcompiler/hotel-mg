@@ -520,11 +520,23 @@ function NewExpenseDrawer({ threshold, onClose, onDone }: { threshold: number; o
 
 function ReverseModal({ expense, onClose, onDone }: { expense: Expense; onClose: () => void; onDone: () => void }) {
   const [reason, setReason] = useState("");
+  const [password, setPassword] = useState("");
+  // Someone else's expense, or one from a closed shift, needs the manager (review 2026-09-29, A-14).
+  const [needsManager, setNeedsManager] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const reverse = useMutation({
-    mutationFn: () => data(api.POST("/api/v1/expenses/{id}/reverse", { params: { path: { id: expense.id } }, body: { reason: reason.trim() } })),
+    mutationFn: () =>
+      data(
+        api.POST("/api/v1/expenses/{id}/reverse", {
+          params: { path: { id: expense.id } },
+          body: { reason: reason.trim(), manager_password: needsManager ? password : "" },
+        }),
+      ),
     onSuccess: onDone,
-    onError: (e) => setError(e instanceof ApiError ? e.message : t("errors.error")),
+    onError: (e) => {
+      if (e instanceof ApiError && e.code === "override_required") setNeedsManager(true);
+      setError(e instanceof ApiError ? e.message : t("errors.error"));
+    },
   });
   return (
     <Modal
@@ -533,7 +545,7 @@ function ReverseModal({ expense, onClose, onDone }: { expense: Expense; onClose:
       width={480}
       footer={
         <>
-          <button type="button" disabled={!reason.trim() || reverse.isPending} onClick={() => reverse.mutate()} className={buttons.danger}>
+          <button type="button" disabled={!reason.trim() || (needsManager && !password) || reverse.isPending} onClick={() => reverse.mutate()} className={buttons.danger}>
             {t("expenses.reverseConfirm")}
           </button>
           <div className="flex-1" />
@@ -550,6 +562,11 @@ function ReverseModal({ expense, onClose, onDone }: { expense: Expense; onClose:
       <Field label={t("expenses.reverseReason")} required>
         <TextInput autoFocus value={reason} onChange={(e) => setReason(e.target.value)} />
       </Field>
+      {needsManager && (
+        <Field label={t("folioAction.managerPassword")} required>
+          <TextInput type="password" autoComplete="off" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
+        </Field>
+      )}
       {error && <ErrorBanner>{error}</ErrorBanner>}
     </Modal>
   );

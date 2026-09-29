@@ -14,7 +14,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.models import HotelSettings
-from apps.core.serializers import ReasonSerializer
 
 from . import services
 from .models import Expense, ExpenseAttachment, Shift
@@ -22,6 +21,7 @@ from .serializers import (
     CloseShiftSerializer,
     CurrentShiftSerializer,
     ExpenseCreateSerializer,
+    ExpenseReversalSerializer,
     ExpenseSerializer,
     ExpenseSummarySerializer,
     OpenShiftSerializer,
@@ -208,12 +208,16 @@ class ExpenseSummaryView(APIView):
 class ReverseExpenseView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(request=ReasonSerializer, responses={201: ExpenseSerializer})
+    @extend_schema(request=ExpenseReversalSerializer, responses={201: ExpenseSerializer})
     def post(self, request, pk):
+        from apps.accounts.services import verify_manager_override
+
         get_object_or_404(Expense, pk=pk)
-        data = ReasonSerializer(data=request.data)
+        data = ExpenseReversalSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        reversal = services.reverse_expense(request.user, pk, **data.validated_data)
+        reason, password = data.validated_data["reason"], data.validated_data["manager_password"]
+        approver = verify_manager_override(password, reason) if password else None
+        reversal = services.reverse_expense(request.user, pk, reason=reason, approver=approver)
         return Response(
             ExpenseSerializer(_expenses().get(pk=reversal.pk), context=_expense_context()).data,
             status=status.HTTP_201_CREATED,
