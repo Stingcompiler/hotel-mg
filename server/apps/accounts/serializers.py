@@ -31,6 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
             "locked_until",
             "default_password",
             "default_pin",
+            "email",
             "version",
             "created_at",
             "updated_at",
@@ -77,6 +78,7 @@ class UserCreateSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=Role.choices)
     pin = serializers.CharField(max_length=6, validators=[_validate_pin])
     password = serializers.CharField(max_length=128, required=False, allow_blank=False)
+    email = serializers.EmailField(required=False, allow_blank=True, default="", help_text="For «نسيت كلمة المرور؟».")
 
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
@@ -96,6 +98,13 @@ class UserUpdateSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=Role.choices, required=False)
     is_active = serializers.BooleanField(required=False)
     password = serializers.CharField(max_length=128, required=False, allow_blank=False)
+    email = serializers.EmailField(required=False, allow_blank=True, help_text="Empty removes it.")
+
+
+class RecoverPasswordSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=64)
+    email = serializers.EmailField()
+    password = serializers.CharField(max_length=128, style={"input_type": "password"}, help_text="The new password.")
 
 
 class ResetPinSerializer(serializers.Serializer):

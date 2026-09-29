@@ -20,7 +20,7 @@ from . import rules
 from .models import LoginEvent, Role, User
 
 CONFIRM_SALT = "skytowers.confirm"
-USER_FIELDS = ["username", "full_name", "role", "is_active", "is_staff", "failed_attempts", "locked_until"]
+USER_FIELDS = ["username", "full_name", "email", "role", "is_active", "is_staff", "failed_attempts", "locked_until"]
 
 
 @dataclass(frozen=True)
@@ -94,6 +94,36 @@ def login_with_password(username: str, password: str) -> LoginResult:
     if result.ok:
         # Accounts from before 1.1 get their backup key slot at their first password sign-in.
         _backup_slot(result.user, password, on_login=True)
+    return result
+
+
+@transaction.atomic
+def recover_password(username: str, email: str, password: str) -> LoginResult:
+    """«نسيت كلمة المرور؟» on the reception PC, offline (owner decision 2026-09-28): the email saved on the account
+    confirms who asks; nothing is sent anywhere. A wrong email counts as a failed sign-in (locked after 5, audited),
+    the new password signs every open session out and rewrites the backup key slot."""
+    if len(password) < 6:
+        raise ApiError("validation_error", 400, detail="كلمة المرور 6 أحرف على الأقل.")
+    wanted = email.strip().lower()
+    user = User.objects.select_for_update().filter(username=username.strip()).first()
+    result = _check_credential(user, lambda u: bool(u.email) and u.email.lower() == wanted, kind=None)
+    if not result.ok:
+        return result
+    before = audit.snapshot(user, USER_FIELDS)
+    user.set_password(password)
+    user.default_password = False
+    user.failed_attempts, user.locked_until = 0, None
+    user.save()
+    Token.objects.filter(user=user).delete()
+    _backup_slot(user, password)
+    audit.record(
+        actor=user,
+        action="user.recover_password",
+        entity="user",
+        entity_id=user.pk,
+        before=before,
+        after=audit.snapshot(user, USER_FIELDS),
+    )
     return result
 
 
@@ -185,7 +215,7 @@ def _ensure_can_manage(actor: User, target_role: str) -> None:
 
 
 @transaction.atomic
-def create_user(actor: User, *, username, full_name, role, pin, password=None) -> User:
+def create_user(actor: User, *, username, full_name, role, pin, password=None, email="") -> User:
     _ensure_can_manage(actor, role)
     user = User.objects.create_user(
         username,
@@ -193,6 +223,7 @@ def create_user(actor: User, *, username, full_name, role, pin, password=None) -
         role=role,
         pin=pin,
         password=password,
+        email=email.strip().lower(),
         is_staff=rules.is_manager(role),
         created_by=actor,
     )
@@ -259,6 +290,8 @@ def update_user(actor: User, user_id, *, version: int, **changes) -> User:
         raise ApiError("username_taken", 400)
     before = audit.snapshot(user, USER_FIELDS)
     password = changes.pop("password", None)
+    if "email" in changes:
+        changes["email"] = changes["email"].strip().lower()
     for field, value in changes.items():
         setattr(user, field, value)
     if password:

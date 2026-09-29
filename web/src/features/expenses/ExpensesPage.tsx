@@ -363,6 +363,18 @@ function AttachButton({ expense, disabled, onDone }: { expense: Expense; disable
   );
 }
 
+type RoomChoice = { id: string; number: string; name: string; floor: number; room_type_name: string };
+
+/** «مرتبط بغرفة»: rooms grouped by type («شقة», «جناح»…), each with its name and floor (owner request 2026-09-28). */
+export function roomGroups(rooms: RoomChoice[]): { type: string; rooms: { id: string; label: string }[] }[] {
+  return [...new Set(rooms.map((r) => r.room_type_name))].map((type) => ({
+    type,
+    rooms: rooms
+      .filter((r) => r.room_type_name === type)
+      .map((r) => ({ id: r.id, label: [digits(r.number), r.name, t("expenses.floorN", { n: digits(String(r.floor)) })].filter(Boolean).join(" · ") })),
+  }));
+}
+
 function NewExpenseDrawer({ threshold, onClose, onDone }: { threshold: number; onClose: () => void; onDone: () => void }) {
   const shift = useCurrentShift().data?.shift;
   const rooms = useRoomBoard().data?.rooms ?? [];
@@ -469,10 +481,14 @@ function NewExpenseDrawer({ threshold, onClose, onDone }: { threshold: number; o
       <Field label={<>{t("expenses.room")} <span className="text-text-disabled">{t("expenses.optional")}</span></>}>
         <Select value={room} onChange={(e) => setRoom(e.target.value)}>
           <option value="">{t("expenses.noRoom")}</option>
-          {rooms.map((r) => (
-            <option key={r.id} value={r.id}>
-              {digits(r.number)} — {t(`roomState.${r.display_status}`)}
-            </option>
+          {roomGroups(rooms).map((group) => (
+            <optgroup key={group.type} label={group.type}>
+              {group.rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </Select>
       </Field>

@@ -4,8 +4,13 @@ import { Link } from "react-router-dom";
 
 import { t } from "@/i18n/t";
 
-type Kind = "password" | "pin";
-const DISMISSED: Record<Kind, string> = { password: "skytowers.defaultPasswordLater", pin: "skytowers.defaultPinLater" };
+type Kind = "password" | "pin" | "email";
+const DISMISSED: Record<Kind, string> = {
+  password: "skytowers.defaultPasswordLater",
+  pin: "skytowers.defaultPinLater",
+  email: "skytowers.noEmailLater",
+};
+const TEXT: Record<Kind, string> = { password: "account.defaultPassword", pin: "account.defaultPin", email: "account.noEmail" };
 
 function dismissed(kind: Kind): boolean {
   try {
@@ -34,7 +39,7 @@ export function DefaultPasswordNotice({ kind = "password" }: { kind?: Kind }) {
   return (
     <div role="status" className="flex min-h-11 items-center gap-3 bg-warning-soft px-6 py-2 text-body font-medium text-warning-text">
       <KeyRound className="h-icon w-icon flex-none" strokeWidth={1.75} aria-hidden />
-      <span className="flex-1">{t(kind === "pin" ? "account.defaultPin" : "account.defaultPassword")}</span>
+      <span className="flex-1">{t(TEXT[kind])}</span>
       <Link to="/settings/users" className="font-semibold text-warning-text underline underline-offset-2">
         {t("account.changeNow")}
       </Link>

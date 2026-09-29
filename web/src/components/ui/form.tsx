@@ -98,7 +98,7 @@ export function groupThousands(el: HTMLInputElement) {
 
 /** Money typed in currency units («15,000»), shown with the «ج.س» suffix; the caller parses it.
  *  Wide enough for «100,000,000 ج.س» wherever it is placed (review 2026-09-28: fields too small for big amounts). */
-export function MoneyInput({ invalid, onChange, ...rest }: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
+export function MoneyInput({ invalid, onChange, suffix, ...rest }: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean; suffix?: string }) {
   return (
     <span
       className={`flex h-9 min-w-[10.5rem] items-center justify-between gap-2 rounded-control border px-3 focus-within:border-primary ${
@@ -114,7 +114,7 @@ export function MoneyInput({ invalid, onChange, ...rest }: InputHTMLAttributes<H
         }}
         className="h-full w-full min-w-0 border-0 bg-transparent p-0 font-sans text-body text-text-primary outline-none placeholder:text-text-disabled"
       />
-      <span className="flex-none text-body text-text-secondary">{t("money.currency")}</span>
+      <span className="flex-none text-body text-text-secondary">{suffix ?? t("money.currency")}</span>
     </span>
   );
 }

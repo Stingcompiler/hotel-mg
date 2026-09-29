@@ -2,8 +2,9 @@ from rest_framework import serializers
 
 from apps.cash.models import PaymentMethod
 from apps.core.fields import MoneyMinorField
+from apps.core.serializers import VersionRequiredMixin
 
-from .models import Folio, Payment
+from .models import Currency, Folio, Payment
 
 
 class FolioTotalsSerializer(serializers.Serializer):
@@ -89,12 +90,27 @@ class ReversalSerializer(serializers.Serializer):
 
 
 class PaymentCreateSerializer(serializers.Serializer):
+    amount = MoneyMinorField(min_value=1, required=False, help_text="Base currency; omit when paying in `currency`.")
+    method = serializers.ChoiceField(choices=PaymentMethod.choices)
+    reference = serializers.CharField(max_length=60, required=False, allow_blank=True, default="")
+    currency = serializers.CharField(max_length=3, required=False, allow_blank=True, default="", help_text="e.g. USD.")
+    foreign_amount = serializers.IntegerField(
+        min_value=1, required=False, allow_null=True, help_text="Minor units (cents) of `currency`."
+    )
+
+    def validate(self, attrs):
+        if attrs.get("currency"):
+            if not attrs.get("foreign_amount"):
+                raise serializers.ValidationError({"foreign_amount": ["أدخل المبلغ بالعملة المختارة."]})
+        elif not attrs.get("amount"):
+            raise serializers.ValidationError({"amount": ["هذا الحقل مطلوب."]})
+        return attrs
+
+
+class RefundSerializer(serializers.Serializer):
     amount = MoneyMinorField(min_value=1)
     method = serializers.ChoiceField(choices=PaymentMethod.choices)
     reference = serializers.CharField(max_length=60, required=False, allow_blank=True, default="")
-
-
-class RefundSerializer(PaymentCreateSerializer):
     reason = serializers.CharField(max_length=300)
 
 
@@ -119,4 +135,31 @@ class PaymentSerializer(serializers.ModelSerializer):
             "reason",
             "received_at",
             "by",
+            "currency",
+            "foreign_amount",
+            "rate",
         ]
+
+
+class CurrencySerializer(serializers.ModelSerializer):
+    rate = MoneyMinorField(help_text="Base-currency minor units for one whole unit.")
+
+    class Meta:
+        model = Currency
+        fields = ["id", "code", "name", "symbol", "rate", "is_active", "version", "updated_at"]
+        read_only_fields = fields
+
+
+class CurrencyCreateSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=3, help_text="ISO 4217, e.g. USD.")
+    name = serializers.CharField(max_length=40)
+    symbol = serializers.CharField(max_length=6, required=False, allow_blank=True, default="")
+    rate = MoneyMinorField(min_value=1)
+
+
+class CurrencyUpdateSerializer(VersionRequiredMixin, serializers.Serializer):
+    version = serializers.IntegerField(min_value=1)
+    name = serializers.CharField(max_length=40, required=False)
+    symbol = serializers.CharField(max_length=6, required=False, allow_blank=True)
+    rate = MoneyMinorField(min_value=1, required=False)
+    is_active = serializers.BooleanField(required=False)

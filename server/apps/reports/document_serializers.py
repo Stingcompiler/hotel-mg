@@ -93,6 +93,7 @@ class PaymentReceiptDocumentSerializer(serializers.Serializer):
     nights = serializers.IntegerField()
     amount = MoneyMinorField()
     amount_in_words = Text()
+    paid_in = Text(allow_null=True, help_text="«150 $ بسعر 2,500» when paid in another currency.")
     method = Text()
     reference = Text()
     stay_total = MoneyMinorField()

@@ -117,6 +117,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/recover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description «نسيت كلمة المرور؟»: username + the account's reference email + a new password (reception PC, offline). */
+        post: operations["auth_recover_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/setup": {
         parameters: {
             query?: never;
@@ -283,6 +300,40 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["backup_settings_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/currencies/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Everyone signed in reads the accepted currencies (payment dialogs); only the owner adds one. */
+        get: operations["currencies_list"];
+        put?: never;
+        /** @description Everyone signed in reads the accepted currencies (payment dialogs); only the owner adds one. */
+        post: operations["currencies_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/currencies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["currencies_partial_update"];
         trace?: never;
     };
     "/api/v1/expenses/": {
@@ -1479,6 +1530,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/alert-sound": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The alert sound: everyone signed in plays it (404: use the built-in tone); only the owner changes it. */
+        get: operations["system_alert_sound_retrieve"];
+        put?: never;
+        /** @description The alert sound: everyone signed in plays it (404: use the built-in tone); only the owner changes it. */
+        post: operations["system_alert_sound_create"];
+        /** @description The alert sound: everyone signed in plays it (404: use the built-in tone); only the owner changes it. */
+        delete: operations["system_alert_sound_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/clock/approve": {
         parameters: {
             query?: never;
@@ -1716,6 +1786,18 @@ export interface components {
             windows_notification?: boolean;
             is_active?: boolean;
         };
+        AlertSoundInfo: {
+            name: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        AlertSoundUploadRequest: {
+            /**
+             * Format: binary
+             * @description MP3, WAV or OGG up to 1 MB.
+             */
+            file: string;
+        };
         AssignRoomRequest: {
             version?: number;
             /** Format: uuid */
@@ -1784,6 +1866,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             number: string;
+            name: string;
             /** Format: int64 */
             floor: number;
             /** Format: uuid */
@@ -1968,6 +2051,28 @@ export interface components {
             upcoming: number;
             system: number;
         };
+        Currency: {
+            /** Format: uuid */
+            readonly id: string;
+            /** @description ISO 4217, e.g. USD. */
+            readonly code: string;
+            readonly name: string;
+            readonly symbol: string;
+            /** @description Base-currency minor units for one whole unit. */
+            rate: number;
+            readonly is_active: boolean;
+            readonly version: number;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        CurrencyCreateRequest: {
+            /** @description ISO 4217, e.g. USD. */
+            code: string;
+            name: string;
+            /** @default  */
+            symbol?: string;
+            rate: number;
+        };
         CurrentShift: {
             shift: components["schemas"]["Shift"] | null;
             totals: components["schemas"]["ShiftTotals"] | null;
@@ -2147,6 +2252,17 @@ export interface components {
             /** @description > 0 the guest owes; < 0 the hotel owes the guest. */
             balance: number;
         };
+        ForeignTotal: {
+            /** @description ISO code, e.g. USD. */
+            currency: string;
+            symbol: string;
+            /** @description Cash of this currency in the drawer, in its minor units (cents). */
+            cash: number;
+            /** @description Every method, in its minor units. */
+            total: number;
+            /** @description Base-currency equivalent at the rates used. */
+            base: number;
+        };
         Guest: {
             /** Format: uuid */
             readonly id: string;
@@ -2274,6 +2390,8 @@ export interface components {
             thermal_printer: string;
             /** Format: uuid */
             readonly hotel_id: string;
+            /** @description The owner's alert sound {name, updated_at}; null: the app's built-in tone. */
+            readonly alert_sound: components["schemas"]["AlertSoundInfo"] | null;
             readonly version: number;
             /** Format: date-time */
             readonly updated_at: string;
@@ -2716,6 +2834,17 @@ export interface components {
             second_dir?: string;
             version?: number;
         };
+        /**
+         * @description PATCH with partial=True skips required fields: refuse a missing ``version`` as 400, never a 500
+         *     (review 2026-09-28, BIZ-13).
+         */
+        PatchedCurrencyUpdateRequest: {
+            version?: number;
+            name?: string;
+            symbol?: string;
+            rate?: number;
+            is_active?: boolean;
+        };
         PatchedGuestUpdateRequest: {
             full_name?: string;
             phone?: string;
@@ -2772,6 +2901,7 @@ export interface components {
          */
         PatchedRoomUpdateRequest: {
             number?: string;
+            name?: string;
             /** Format: int64 */
             floor?: number;
             /** Format: uuid */
@@ -2788,6 +2918,8 @@ export interface components {
             role?: components["schemas"]["UserRoleEnum"];
             is_active?: boolean;
             password?: string;
+            /** @description Empty removes it. */
+            email?: string;
         };
         Payment: {
             /** Format: uuid */
@@ -2810,12 +2942,32 @@ export interface components {
             /** Format: date-time */
             received_at: string;
             readonly by: string;
+            /** @description Empty: the base currency; else ISO code (USD). */
+            currency: string;
+            /**
+             * Format: int64
+             * @description Signed minor units (cents) of currency.
+             */
+            foreign_amount: number | null;
+            /**
+             * Format: int64
+             * @description Base minor units per whole unit, at the time.
+             */
+            rate: number | null;
         };
         PaymentCreateRequest: {
-            amount: number;
+            /** @description Base currency; omit when paying in `currency`. */
+            amount?: number;
             method: components["schemas"]["PaymentMethodEnum"];
             /** @default  */
             reference?: string;
+            /**
+             * @description e.g. USD.
+             * @default
+             */
+            currency?: string;
+            /** @description Minor units (cents) of `currency`. */
+            foreign_amount?: number | null;
         };
         /**
          * @description * `deposit` - عربون
@@ -2848,6 +3000,8 @@ export interface components {
             nights: number;
             amount: number;
             amount_in_words: string;
+            /** @description «150 $ بسعر 2,500» when paid in another currency. */
+            paid_in: string | null;
             method: string;
             reference: string;
             stay_total: number;
@@ -2944,6 +3098,13 @@ export interface components {
         /** @description Body of reversal/cancel actions that only need a reason. */
         ReasonRequest: {
             reason: string;
+        };
+        RecoverPasswordRequest: {
+            username: string;
+            /** Format: email */
+            email: string;
+            /** @description The new password. */
+            password: string;
         };
         RefundRequest: {
             amount: number;
@@ -3061,6 +3222,13 @@ export interface components {
             /** @default  */
             deposit_reference?: string;
             /**
+             * @description Deposit in another currency (USD…).
+             * @default
+             */
+            deposit_currency?: string;
+            /** @description Minor units (cents) of `deposit_currency`. */
+            deposit_foreign_amount?: number | null;
+            /**
              * @description Only for a discount above the hotel's limit.
              * @default
              */
@@ -3098,6 +3266,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             number: string;
+            name: string;
             /** Format: int64 */
             floor: number;
             /** Format: uuid */
@@ -3130,6 +3299,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             number: string;
+            /** @description Optional room name; empty when not set. */
+            name: string;
             floor: number;
             /** Format: uuid */
             room_type: string;
@@ -3188,6 +3359,7 @@ export interface components {
         };
         RoomCreateRequest: {
             number: string;
+            name?: string;
             /** Format: int64 */
             floor: number;
             /** Format: uuid */
@@ -3325,10 +3497,13 @@ export interface components {
         };
         ShiftTotals: {
             opening: number;
+            /** @description Base-currency payments only. */
             receipts: components["schemas"]["MethodTotals"];
             expenses: components["schemas"]["MethodTotals"];
-            /** @description Opening + cash receipts − cash expenses. */
+            /** @description Opening + cash receipts − cash expenses (pounds in the drawer). */
             expected: number;
+            /** @description Received in other currencies; not part of «expected». */
+            foreign: components["schemas"]["ForeignTotal"][];
         };
         /**
          * @description * `drive` - Drive
@@ -3632,6 +3807,11 @@ export interface components {
             readonly default_password: boolean;
             /** @description The quick-login PIN is the well-known default (123456): anyone can pick the account and type it. */
             readonly default_pin: boolean;
+            /**
+             * Format: email
+             * @description Reference email: «نسيت كلمة المرور؟» on the reception PC asks for it (offline, nothing is sent).
+             */
+            readonly email: string;
             readonly version: number;
             /** Format: date-time */
             readonly created_at: string;
@@ -3644,6 +3824,8 @@ export interface components {
             role: components["schemas"]["UserRoleEnum"];
             pin: string;
             password?: string;
+            /** @description For «نسيت كلمة المرور؟». */
+            email?: string;
         };
         /**
          * @description * `owner` - المالك
@@ -3836,6 +4018,30 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Session"];
                 };
+            };
+        };
+    };
+    auth_recover_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecoverPasswordRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["RecoverPasswordRequest"];
+                "multipart/form-data": components["schemas"]["RecoverPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -4065,6 +4271,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BackupSettings"];
+                };
+            };
+        };
+    };
+    currencies_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Currency"][];
+                };
+            };
+        };
+    };
+    currencies_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CurrencyCreateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CurrencyCreateRequest"];
+                "multipart/form-data": components["schemas"]["CurrencyCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Currency"];
+                };
+            };
+        };
+    };
+    currencies_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCurrencyUpdateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCurrencyUpdateRequest"];
+                "multipart/form-data": components["schemas"]["PatchedCurrencyUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Currency"];
                 };
             };
         };
@@ -6070,6 +6347,72 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Stay"];
                 };
+            };
+        };
+    };
+    system_alert_sound_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/mpeg": string;
+                };
+            };
+            /** @description No response body */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    system_alert_sound_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["AlertSoundUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    system_alert_sound_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

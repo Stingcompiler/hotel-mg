@@ -37,6 +37,7 @@ export type Form = {
   deposit: string;
   deposit_method: Method;
   deposit_reference: string;
+  deposit_currency: string; // "" = the hotel's currency
   manager_password: string;
   manager_reason: string;
   needManager: boolean;
@@ -60,6 +61,7 @@ export function emptyForm(today: string): Form {
     deposit: "",
     deposit_method: "cash",
     deposit_reference: "",
+    deposit_currency: "",
     manager_password: "",
     manager_reason: "",
     needManager: false,

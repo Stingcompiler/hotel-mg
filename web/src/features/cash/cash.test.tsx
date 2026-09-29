@@ -13,6 +13,7 @@ const OPEN = {
     receipts: { cash: 19_000_000, bankak: 12_000_000, transfer: 1_000_000, total: 32_000_000 },
     expenses: { cash: 1_250_000, bankak: 0, transfer: 0, total: 1_250_000 },
     expected: 22_750_000,
+    foreign: [{ currency: "USD", symbol: "$", cash: 15_000, total: 15_000, base: 37_500_000 }],
   },
   movements: [{ at: "2026-09-26T07:00:00Z", kind: "in", text: "دفعة — غرفة 203", amount: 12_000_000, method: "bankak", reference: "BOK-1", by: "أحمد علي", ref_id: "p1" }],
   last_closed: null,
@@ -50,6 +51,7 @@ test("expected cash, the difference preview and a reason before closing", async 
   expect(screen.getByText("بنكك", { selector: "div" })).toBeInTheDocument();
   fireEvent.change(screen.getByLabelText(/^المعدود في الدرج/), { target: { value: "225,000" } });
   expect(screen.getByText("− 2,500")).toBeInTheDocument();
+  expect(screen.getByText("نقدي بعملة $")).toBeInTheDocument(); // dollars listed apart from the pounds drawer
   fireEvent.click(screen.getByRole("button", { name: "إغلاق الوردية" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("سبب الفرق مطلوب عند وجود فرق");
   fireEvent.change(screen.getByLabelText(/سبب الفرق/), { target: { value: "أُعيد لنزيل" } });

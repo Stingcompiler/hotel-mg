@@ -29,7 +29,9 @@ export function RoomCard({ room, boardDate, now, selected, onOpen }: Props) {
           {t(`roomState.${room.display_status}`)}
         </span>
       </span>
-      <span className="-mt-0.5 text-label font-normal text-text-secondary">{room.room_type_name}</span>
+      <span className="-mt-0.5 truncate text-label font-normal text-text-secondary" title={room.name || undefined}>
+        {room.name ? `${room.room_type_name} · ${room.name}` : room.room_type_name}
+      </span>
       <span className="mt-auto flex w-full flex-col">
         <span className="truncate text-body font-medium leading-5">{lines.main || " "}</span>
         <span className={`text-label ${TONE_CLASS[lines.tone]}`}>{lines.sub}</span>

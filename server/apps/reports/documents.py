@@ -67,7 +67,7 @@ def _invoice_payments(folio: Folio) -> list[dict]:
             "at": p.received_at,
             "receipt": p.receipt_label,
             "kind": p.get_kind_display(),
-            "method": p.get_method_display(),
+            "method": f"{p.get_method_display()} ({p.foreign_text()})" if p.currency else p.get_method_display(),
             "reference": p.reference,
             "amount": p.amount,
         }
@@ -142,6 +142,7 @@ def payment_receipt(payment: Payment) -> dict:
         "nights": r.nights,
         "amount": payment.amount,
         "amount_in_words": rules.amount_in_words(payment.amount),
+        "paid_in": payment.foreign_text() or None,
         "method": payment.get_method_display(),
         "reference": payment.reference,
         "stay_total": totals.total,

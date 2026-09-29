@@ -5,11 +5,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import IsOwner
 from apps.accounts.services import verify_manager_override
 
 from . import services
-from .models import Folio, FolioLine, Payment
+from .models import Currency, Folio, FolioLine, Payment
 from .serializers import (
+    CurrencyCreateSerializer,
+    CurrencySerializer,
+    CurrencyUpdateSerializer,
     FolioSerializer,
     LineCreateSerializer,
     PaymentCreateSerializer,
@@ -117,3 +121,35 @@ class ReversePaymentView(APIView):
         reason, approver = _approval(data.validated_data)
         reversal = services.reverse_payment(request.user, pk, reason=reason, approver=approver)
         return Response(PaymentSerializer(reversal).data, status=status.HTTP_201_CREATED)
+
+
+# --- Currencies -----------------------------------------------------------------------------------
+
+
+class CurrencyListView(APIView):
+    """Everyone signed in reads the accepted currencies (payment dialogs); only the owner adds one."""
+
+    def get_permissions(self):
+        return [IsOwner()] if self.request.method == "POST" else [IsAuthenticated()]
+
+    @extend_schema(responses=CurrencySerializer(many=True))
+    def get(self, request):
+        return Response(CurrencySerializer(Currency.objects.all(), many=True).data)
+
+    @extend_schema(request=CurrencyCreateSerializer, responses={201: CurrencySerializer})
+    def post(self, request):
+        data = CurrencyCreateSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        row = services.create_currency(request.user, **data.validated_data)
+        return Response(CurrencySerializer(row).data, status=status.HTTP_201_CREATED)
+
+
+class CurrencyDetailView(APIView):
+    permission_classes = [IsOwner]
+
+    @extend_schema(request=CurrencyUpdateSerializer, responses=CurrencySerializer)
+    def patch(self, request, pk):
+        get_object_or_404(Currency, pk=pk)
+        data = CurrencyUpdateSerializer(data=request.data, partial=True)
+        data.is_valid(raise_exception=True)
+        return Response(CurrencySerializer(services.update_currency(request.user, pk, **data.validated_data)).data)

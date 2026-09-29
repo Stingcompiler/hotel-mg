@@ -14,6 +14,7 @@ function room(over: Partial<BoardRoom>): BoardRoom {
   return {
     id: "r",
     number: "101",
+    name: "",
     floor: 1,
     room_type: "t",
     room_type_name: "مفردة",

@@ -1,17 +1,30 @@
-import { Field, MoneyInput, Section, Segmented, TextInput } from "@/components/ui/form";
+import type { components } from "@api/schema";
+
+import { Field, MoneyInput, Section, Segmented, Select, TextInput } from "@/components/ui/form";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
 
 import { amount, type Errors, type Form, type Method } from "./model";
 
-type Props = { form: Form; errors: Errors; update: (patch: Partial<Form>) => void; planPrice: number; planLabel: string; total: number };
+type Currency = components["schemas"]["Currency"];
+type Props = {
+  form: Form;
+  errors: Errors;
+  update: (patch: Partial<Form>) => void;
+  planPrice: number;
+  planLabel: string;
+  total: number;
+  currencies: Currency[];
+  depositBase: number;
+};
 
 /** Step 3 «المال»: price (edit needs a reason), discount + reason, deposit + method (+ reference when not cash). */
-export function MoneySection({ form, errors, update, planPrice, planLabel, total }: Props) {
+export function MoneySection({ form, errors, update, planPrice, planLabel, total, currencies, depositBase }: Props) {
   const edited = form.price !== null;
   // A deposit above the total is allowed (it stays as the guest's credit) but is usually a typo: say so before saving.
-  const deposit = amount(form.deposit) ?? 0;
-  const over = total > 0 && deposit > total ? deposit - total : 0;
+  const over = total > 0 && depositBase > total ? depositBase - total : 0;
+  const depositCurrency = currencies.find((c) => c.code === form.deposit_currency);
+  const typed = amount(form.deposit) ?? 0;
   return (
     <Section step={3} title={t("newRes.money")}>
       <div className="grid grid-cols-[1fr_1fr_2fr] items-start gap-3">
@@ -78,8 +91,39 @@ export function MoneySection({ form, errors, update, planPrice, planLabel, total
       )}
 
       <div className="grid grid-cols-[1fr_1fr_2fr] items-start gap-3">
-        <Field label={t("newRes.deposit")} error={errors.deposit}>
-          <MoneyInput value={form.deposit} invalid={!!errors.deposit} placeholder="0" onChange={(e) => update({ deposit: e.target.value })} />
+        <Field
+          label={t("newRes.deposit")}
+          error={errors.deposit}
+          hint={
+            depositCurrency && typed > 0
+              ? t("payment.equivalent", {
+                  amount: `${formatMoney(depositBase)} ${t("money.currency")}`,
+                  rate: `1 ${depositCurrency.symbol || depositCurrency.code} = ${formatMoney(depositCurrency.rate)}`,
+                })
+              : undefined
+          }
+          action={
+            currencies.length > 0 ? (
+              <span className="w-24">
+                <Select aria-label={t("payment.currency")} value={form.deposit_currency} onChange={(e) => update({ deposit_currency: e.target.value, deposit: "" })}>
+                  <option value="">{t("money.currency")}</option>
+                  {currencies.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.symbol || c.code}
+                    </option>
+                  ))}
+                </Select>
+              </span>
+            ) : undefined
+          }
+        >
+          <MoneyInput
+            value={form.deposit}
+            suffix={depositCurrency ? depositCurrency.symbol || depositCurrency.code : undefined}
+            invalid={!!errors.deposit}
+            placeholder="0"
+            onChange={(e) => update({ deposit: e.target.value })}
+          />
         </Field>
         <div className="flex flex-col gap-1.5">
           <span className="text-label text-text-secondary">{t("newRes.method")}</span>

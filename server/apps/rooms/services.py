@@ -9,7 +9,7 @@ from . import rules
 from .models import Room, RoomStatus, RoomStatusHistory, RoomType
 
 PRICE_FIELDS = frozenset({"nightly_price", "weekly_price", "monthly_price"})
-ROOM_FIELDS = ["number", "floor", "room_type", "status", "maintenance_reason", "in_service", "note"]
+ROOM_FIELDS = ["number", "name", "floor", "room_type", "status", "maintenance_reason", "in_service", "note"]
 
 
 def _label(status: str) -> str:
@@ -56,9 +56,10 @@ def update_room_type(actor, room_type_id, *, version: int, **changes) -> RoomTyp
 
 
 @transaction.atomic
-def create_room(actor, *, number, floor, room_type, note="") -> Room:
+def create_room(actor, *, number, floor, room_type, note="", name="") -> Room:
     room = Room.objects.create(
         number=number,
+        name=name.strip(),
         floor=floor,
         room_type=room_type,
         note=note,

@@ -23,6 +23,34 @@ class Sequence(models.Model):
         return f"{self.name}={self.last}"
 
 
+class Currency(BaseModel):
+    """A foreign currency the hotel accepts, with the owner's rate (owner decision 2026-09-28).
+
+    ``rate`` is the base currency in minor units for one whole unit (1 USD = 2,500 ج.س → 250000). A payment keeps
+    its own copy of the rate, so changing it later never touches past receipts. Never deleted: ``is_active``.
+    """
+
+    code = models.CharField(max_length=3, help_text="ISO 4217, e.g. USD.")
+    name = models.CharField(max_length=40)
+    symbol = models.CharField(max_length=6, blank=True)
+    rate = MoneyField(help_text="Base-currency minor units for one whole unit of this currency.")
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["code"]
+        constraints = [
+            models.UniqueConstraint(fields=["hotel_id", "code"], name="currency_code_per_hotel"),
+            models.CheckConstraint(condition=models.Q(rate__gt=0), name="currency_rate_positive"),
+        ]
+
+    def __str__(self):
+        return self.code
+
+    @property
+    def label(self) -> str:
+        return self.symbol or self.code
+
+
 class Folio(BaseModel):
     """The bill of one reservation. Created at booking so deposits can be taken before arrival.
 
@@ -96,6 +124,10 @@ class Payment(AppendOnlyModel):
     reverses = models.OneToOneField("self", null=True, blank=True, on_delete=models.PROTECT, related_name="reversed_by")
     reason = models.CharField(max_length=300, blank=True)
     received_at = models.DateTimeField()
+    # Paid in a foreign currency: what the guest handed over and the rate used; ``amount`` is its base equivalent.
+    currency = models.CharField(max_length=3, blank=True, help_text="Empty: the base currency; else ISO code (USD).")
+    foreign_amount = models.BigIntegerField(null=True, blank=True, help_text="Signed minor units (cents) of currency.")
+    rate = models.BigIntegerField(null=True, blank=True, help_text="Base minor units per whole unit, at the time.")
 
     class Meta:
         ordering = ["received_at", "created_at"]
@@ -112,8 +144,19 @@ class Payment(AppendOnlyModel):
         return f"RCP-{self.receipt_no:06d}"
 
     def description(self) -> str:
-        """«دفعة — غرفة 204 · فاطمة أحمد النور» as in the shift movements."""
+        """«دفعة — غرفة 204 · فاطمة أحمد النور» as in the shift movements; «(150 $)» when paid in a foreign currency."""
         reservation = self.folio.reservation
         room = f"غرفة {reservation.room.number}" if reservation.room_id else "بلا غرفة"
         text = f"{self.get_kind_display()} — {room} · {reservation.guest.full_name}"
+        if self.currency:
+            text = f"{text} ({self.foreign_text()})"
         return f"{text} — {self.reason}" if self.reason else text
+
+    def foreign_text(self) -> str:
+        """«150 $ بسعر 2,500» — empty for a base-currency payment."""
+        from . import rules
+
+        if not self.currency:
+            return ""
+        symbol = Currency.objects.filter(code=self.currency).values_list("symbol", flat=True).first() or self.currency
+        return f"{rules.foreign_text(self.foreign_amount, symbol)} بسعر {rules.rate_text(self.rate)}"

@@ -198,3 +198,34 @@ test("a wrong password says how many attempts are left, then until when the acco
   fireEvent.click(screen.getByRole("button", { name: "دخول" }));
   expect(await screen.findByText("5 محاولات خاطئة — قُفل الحساب حتى 10:05 · سُجِّل في التدقيق")).toBeInTheDocument();
 });
+
+test("«نسيت كلمة المرور؟» sets a new password with the account's email, offline", async () => {
+  const recoverCalls: unknown[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: Request) => {
+      const url = new URL(input.url);
+      if (url.pathname === "/api/v1/auth/users") return json(200, USERS);
+      if (url.pathname === "/api/v1/system/status") return json(200, STATUS);
+      if (url.pathname === "/api/v1/auth/recover") {
+        recoverCalls.push(await input.json());
+        return new Response(null, { status: 204 });
+      }
+      return json(404, { code: "not_found" });
+    }),
+  );
+  renderLogin("password");
+  fireEvent.click(await screen.findByRole("button", { name: "نسيت كلمة المرور؟" }));
+  fireEvent.change(screen.getByLabelText("اسم المستخدم"), { target: { value: "admin" } });
+  fireEvent.change(screen.getByLabelText("البريد المحفوظ في الحساب"), { target: { value: "owner@hotel.sd" } });
+  fireEvent.change(screen.getByLabelText(/كلمة المرور الجديدة/), { target: { value: "new-secret-1" } });
+  const submit = screen.getByRole("button", { name: "تعيين كلمة المرور" });
+  fireEvent.change(screen.getByLabelText(/تأكيد كلمة المرور/), { target: { value: "new-secret" } });
+  expect(submit).toBeDisabled();
+  fireEvent.change(screen.getByLabelText(/تأكيد كلمة المرور/), { target: { value: "new-secret-1" } });
+  fireEvent.click(submit);
+  expect(await screen.findByText("تم تغيير كلمة المرور")).toBeInTheDocument();
+  expect(recoverCalls).toEqual([{ username: "admin", email: "owner@hotel.sd", password: "new-secret-1" }]);
+  fireEvent.click(screen.getByRole("button", { name: "العودة إلى الدخول" }));
+  expect(await screen.findByRole("heading", { name: "تسجيل الدخول" })).toBeInTheDocument();
+});

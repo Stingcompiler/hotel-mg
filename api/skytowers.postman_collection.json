@@ -266,6 +266,37 @@
           }
         },
         {
+          "name": "auth_recover_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/recover",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "recover"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "«نسيت كلمة المرور؟»: username + the account's reference email + a new password (reception PC, offline).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"\",\n  \"email\": \"\",\n  \"password\": \"\"\n}"
+            }
+          }
+        },
+        {
           "name": "auth_setup_create",
           "request": {
             "method": "POST",
@@ -546,6 +577,100 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"owner_recipient\": \"\",\n  \"interval_hours\": 0,\n  \"keep_count\": 0,\n  \"keep_days\": 0,\n  \"on_shift_close\": false,\n  \"auto_drive\": false,\n  \"second_dir\": \"\",\n  \"version\": 0\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "currencies",
+      "item": [
+        {
+          "name": "currencies_list",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/currencies/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "currencies",
+                ""
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Everyone signed in reads the accepted currencies (payment dialogs); only the owner adds one."
+          }
+        },
+        {
+          "name": "currencies_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/currencies/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "currencies",
+                ""
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "Everyone signed in reads the accepted currencies (payment dialogs); only the owner adds one.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"\",\n  \"name\": \"\",\n  \"rate\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "currencies_partial_update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/currencies/:id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "currencies",
+                ":id"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"version\": 0,\n  \"name\": \"\",\n  \"symbol\": \"\",\n  \"rate\": 0,\n  \"is_active\": false\n}"
             }
           }
         }
@@ -964,7 +1089,7 @@
             "description": "Needs an open shift on this device (409 ``no_open_shift``).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 0,\n  \"method\": \"cash\"\n}"
+              "raw": "{\n  \"method\": \"cash\"\n}"
             }
           }
         },
@@ -2757,7 +2882,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"number\": \"\",\n  \"floor\": 0,\n  \"room_type\": \"\",\n  \"note\": \"\",\n  \"in_service\": false,\n  \"version\": 0\n}"
+              "raw": "{\n  \"number\": \"\",\n  \"name\": \"\",\n  \"floor\": 0,\n  \"room_type\": \"\",\n  \"note\": \"\",\n  \"in_service\": false,\n  \"version\": 0\n}"
             }
           }
         },
@@ -3352,6 +3477,76 @@
       "name": "system",
       "item": [
         {
+          "name": "system_alert_sound_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system/alert-sound",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system",
+                "alert-sound"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "The alert sound: everyone signed in plays it (404: use the built-in tone); only the owner changes it."
+          }
+        },
+        {
+          "name": "system_alert_sound_create",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system/alert-sound",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system",
+                "alert-sound"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "The alert sound: everyone signed in plays it (404: use the built-in tone); only the owner changes it.",
+            "body": {
+              "mode": "formdata",
+              "formdata": []
+            }
+          }
+        },
+        {
+          "name": "system_alert_sound_destroy",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system/alert-sound",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system",
+                "alert-sound"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "The alert sound: everyone signed in plays it (404: use the built-in tone); only the owner changes it."
+          }
+        },
+        {
           "name": "system_clock_approve_create",
           "request": {
             "method": "POST",
@@ -3566,7 +3761,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"version\": 0,\n  \"username\": \"\",\n  \"full_name\": \"\",\n  \"role\": \"owner\",\n  \"is_active\": false,\n  \"password\": \"\"\n}"
+              "raw": "{\n  \"version\": 0,\n  \"username\": \"\",\n  \"full_name\": \"\",\n  \"role\": \"owner\",\n  \"is_active\": false,\n  \"password\": \"\",\n  \"email\": \"\"\n}"
             }
           }
         },
