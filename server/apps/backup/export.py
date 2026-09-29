@@ -58,7 +58,7 @@ def _last_ok(**filters) -> BackupRun | None:
     return BackupRun.objects.filter(status=BackupRun.Status.OK, **filters).order_by("-created_at").first()
 
 
-def _retention(folder: Path, keep: int, keep_days: int, hotel8: str) -> list[str]:
+def _retention(folder: Path, keep: int, keep_days: int, hotel8: str, max_mb: int = 0) -> list[str]:
     backups = []
     for path in folder.glob("skytowers-*.age"):
         parsed = rules.parse_file_name(path.name)
@@ -66,7 +66,12 @@ def _retention(folder: Path, keep: int, keep_days: int, hotel8: str) -> list[str
             backups.append((parsed[1], path))
     newest_first = [str(p) for _, p in sorted(backups, reverse=True)]
     stamped = [(p, datetime.fromtimestamp(Path(p).stat().st_mtime, tz=UTC)) for p in newest_first]
-    removed = sorted(set(rules.to_delete(newest_first, keep)) | set(rules.too_old(stamped, keep_days, timezone.now())))
+    sizes = [(p, Path(p).stat().st_size) for p in newest_first]
+    removed = sorted(
+        set(rules.to_delete(newest_first, keep))
+        | set(rules.too_old(stamped, keep_days, timezone.now()))
+        | set(rules.too_big(sizes, max_mb * 1024 * 1024))
+    )
     for path in removed:
         Path(path).unlink(missing_ok=True)
     return removed
@@ -195,9 +200,9 @@ def run_backup(actor=None, kind: str = BackupRun.Kind.MANUAL, now: datetime | No
             return _record(kind, BackupRun.Status.FAILED, actor, message=str(exc)[:300])
 
     hotel8 = str(current_hotel_id()).replace("-", "")[:8]
-    _retention(settings.RUNTIME.backups_dir, config.keep_count, config.keep_days, hotel8)
+    _retention(settings.RUNTIME.backups_dir, config.keep_count, config.keep_days, hotel8, config.max_total_mb)
     if config.second_dir and Path(config.second_dir).exists():
-        _retention(Path(config.second_dir), config.keep_count, config.keep_days, hotel8)
+        _retention(Path(config.second_dir), config.keep_count, config.keep_days, hotel8, config.max_total_mb)
     return run
 
 

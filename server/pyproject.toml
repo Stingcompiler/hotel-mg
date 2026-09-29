@@ -1,6 +1,6 @@
 [project]
 name = "skytowers-server"
-version = "1.1.12"
+version = "1.1.13"
 requires-python = ">=3.12,<3.13"
 
 [tool.pytest.ini_options]

@@ -1619,6 +1619,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/support-bundle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description «حزمة الدعم»: the service log, versions and backup/import history on a USB stick for support; no hotel data,
+         *     keys or secrets (review 2026-09-29 enhancements).
+         */
+        post: operations["system_support_bundle_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/": {
         parameters: {
             query?: never;
@@ -1960,6 +1980,11 @@ export interface components {
              * @description Backups older than this are deleted; 0 = never.
              */
             keep_days: number;
+            /**
+             * Format: int64
+             * @description The backups of a folder together stay under this size (MB); 0 = no limit.
+             */
+            max_total_mb: number;
             on_shift_close: boolean;
             auto_drive: boolean;
             /** @description USB / external disk folder. */
@@ -2944,6 +2969,11 @@ export interface components {
              * @description Backups older than this are deleted; 0 = never.
              */
             keep_days?: number;
+            /**
+             * Format: int64
+             * @description The backups of a folder together stay under this size (MB); 0 = no limit.
+             */
+            max_total_mb?: number;
             on_shift_close?: boolean;
             auto_drive?: boolean;
             /** @description USB / external disk folder. */
@@ -3817,6 +3847,13 @@ export interface components {
              */
             to_date: string;
             reason: string;
+        };
+        SupportBundle: {
+            path: string;
+        };
+        SupportBundleRequestRequest: {
+            /** @description One of GET /backup/usb. */
+            drive: string;
         };
         SyncResult: {
             /** @description Reception: files uploaded now. */
@@ -6728,6 +6765,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SystemStatus"];
+                };
+            };
+        };
+    };
+    system_support_bundle_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupportBundleRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SupportBundleRequestRequest"];
+                "multipart/form-data": components["schemas"]["SupportBundleRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupportBundle"];
                 };
             };
         };

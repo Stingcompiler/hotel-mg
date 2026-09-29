@@ -14,6 +14,9 @@ class BackupSettings(BaseModel):
     keep_days = models.PositiveSmallIntegerField(
         default=90, help_text="Backups older than this are deleted; 0 = never."
     )
+    max_total_mb = models.PositiveIntegerField(
+        default=5000, help_text="The backups of a folder together stay under this size (MB); 0 = no limit."
+    )
     on_shift_close = models.BooleanField(default=True)
     auto_drive = models.BooleanField(default=True)
     second_dir = models.CharField(max_length=260, blank=True, help_text="USB / external disk folder.")

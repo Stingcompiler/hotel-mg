@@ -41,13 +41,18 @@ export function BackupTab({ readOnly }: { readOnly: boolean }) {
   }).data;
   const runs = useQuery({ queryKey: BACKUP_RUNS, queryFn: () => data(api.GET("/api/v1/backup/runs")) }).data;
   const [draft, setDraft] = useState<Settings | null>(null);
-  const [text, setText] = useState({ interval: "", keep: "", days: "" });
+  const [text, setText] = useState({ interval: "", keep: "", days: "", size: "" });
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   useEffect(() => {
     if (settings.data) {
       setDraft(settings.data);
-      setText({ interval: String(settings.data.interval_hours), keep: String(settings.data.keep_count), days: String(settings.data.keep_days) });
+      setText({
+        interval: String(settings.data.interval_hours),
+        keep: String(settings.data.keep_count),
+        days: String(settings.data.keep_days),
+        size: String(settings.data.max_total_mb),
+      });
     }
   }, [settings.data]);
 
@@ -59,6 +64,7 @@ export function BackupTab({ readOnly }: { readOnly: boolean }) {
         interval_hours: Number(text.interval || 0),
         keep_count: Number(text.keep || 0),
         keep_days: Number(text.days || 0),
+        max_total_mb: Number(text.size || 0),
         on_shift_close: draft!.on_shift_close,
         auto_drive: draft!.auto_drive,
         second_dir: draft!.second_dir.trim(),
@@ -95,7 +101,8 @@ export function BackupTab({ readOnly }: { readOnly: boolean }) {
     (JSON.stringify({ ...draft, version: 0 }) !== JSON.stringify({ ...settings.data, version: 0 }) ||
       text.interval !== String(settings.data.interval_hours) ||
       text.keep !== String(settings.data.keep_count) ||
-      text.days !== String(settings.data.keep_days));
+      text.days !== String(settings.data.keep_days) ||
+      text.size !== String(settings.data.max_total_mb));
   // The owner PC's own settings are editable by its manager even though every other tab is read-only there.
   const locked = owner ? readOnly && session.role !== "owner" : readOnly;
 
@@ -117,6 +124,9 @@ export function BackupTab({ readOnly }: { readOnly: boolean }) {
                 </Field>
                 <Field label={t("backup.keepDays")} hint={t("backup.keepDaysHint")}>
                   <TextInput readOnly={locked} inputMode="numeric" value={text.days} onChange={(e) => setText({ ...text, days: num(e.target.value) })} />
+                </Field>
+                <Field label={t("backup.maxSize")} hint={t("backup.maxSizeHint")}>
+                  <TextInput readOnly={locked} inputMode="numeric" value={text.size} onChange={(e) => setText({ ...text, size: num(e.target.value) })} />
                 </Field>
               </div>
               <Switch

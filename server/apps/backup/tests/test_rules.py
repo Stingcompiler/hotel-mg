@@ -41,3 +41,12 @@ def test_too_old_keeps_the_newest_three_and_zero_means_never():
     assert rules.too_old(stamps, 90, now) == ["b", "a"]
     assert rules.too_old(stamps, 0, now) == []
     assert rules.too_old([], 30, now) == []
+
+
+def test_too_big_keeps_the_newest_three_and_zero_means_no_limit():
+    """E-12: the backups of a folder stay under a total size."""
+    sizes = [("e", 40), ("d", 40), ("c", 40), ("b", 40), ("a", 40)]
+    assert rules.too_big(sizes, 0) == []
+    assert rules.too_big(sizes, 130) == ["b", "a"]
+    assert rules.too_big(sizes, 10) == ["b", "a"]  # the newest three stay even over the limit
+    assert rules.too_big(sizes, 1000) == []

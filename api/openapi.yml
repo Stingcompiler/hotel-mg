@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Sky Towers API
-  version: '1.11'
+  version: '1.12'
   description: Local API of the Sky Towers hotel management system.
 paths:
   /api/v1/audit/:
@@ -3114,6 +3114,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/SystemStatus'
           description: ''
+  /api/v1/system/support-bundle:
+    post:
+      operationId: system_support_bundle_create
+      description: |-
+        «حزمة الدعم»: the service log, versions and backup/import history on a USB stick for support; no hotel data,
+        keys or secrets (review 2026-09-29 enhancements).
+      tags:
+      - system
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportBundleRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupportBundleRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupportBundleRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportBundle'
+          description: ''
   /api/v1/users/:
     get:
       operationId: users_list
@@ -3830,6 +3860,13 @@ components:
           minimum: 0
           format: int64
           description: Backups older than this are deleted; 0 = never.
+        max_total_mb:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: The backups of a folder together stay under this size (MB);
+            0 = no limit.
         on_shift_close:
           type: boolean
         auto_drive:
@@ -3846,6 +3883,7 @@ components:
       - interval_hours
       - keep_count
       - keep_days
+      - max_total_mb
       - on_shift_close
       - auto_drive
       - second_dir
@@ -6082,6 +6120,13 @@ components:
           minimum: 0
           format: int64
           description: Backups older than this are deleted; 0 = never.
+        max_total_mb:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: The backups of a folder together stay under this size (MB);
+            0 = no limit.
         on_shift_close:
           type: boolean
         auto_drive:
@@ -8171,6 +8216,23 @@ components:
       - from_date
       - to_date
       - reason
+    SupportBundle:
+      type: object
+      properties:
+        path:
+          type: string
+      required:
+      - path
+    SupportBundleRequestRequest:
+      type: object
+      properties:
+        drive:
+          type: string
+          minLength: 1
+          description: One of GET /backup/usb.
+          maxLength: 260
+      required:
+      - drive
     SyncResult:
       type: object
       properties:

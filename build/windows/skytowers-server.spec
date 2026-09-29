@@ -46,6 +46,45 @@ a.datas = [
     if "discovery_cache/documents/" not in entry[0].replace("\\", "/") or entry[0].endswith("drive.v3.json")
 ]
 pyz = PYZ(a.pure)
+
+# Windows version resource: Explorer › Properties › Details and support tools show which build this is (review
+# 2026-09-29, E-22). The number is APP_VERSION, the one the tests keep equal to the installer's.
+import re  # noqa: E402
+
+from PyInstaller.utils.win32.versioninfo import (  # noqa: E402
+    FixedFileInfo,
+    StringFileInfo,
+    StringStruct,
+    StringTable,
+    VarFileInfo,
+    VarStruct,
+    VSVersionInfo,
+)
+
+APP_VERSION = re.search(r'^APP_VERSION = "([^"]+)"', (SERVER / "config" / "settings" / "base.py").read_text("utf-8"), re.M)[1]
+numbers = tuple(int(n) for n in APP_VERSION.split(".")) + (0,) * (4 - len(APP_VERSION.split(".")))
+version_info = VSVersionInfo(
+    ffi=FixedFileInfo(filevers=numbers, prodvers=numbers),
+    kids=[
+        StringFileInfo(
+            [
+                StringTable(
+                    "040904B0",
+                    [
+                        StringStruct("CompanyName", "Sky Towers"),
+                        StringStruct("FileDescription", "Sky Towers server (Windows service)"),
+                        StringStruct("FileVersion", APP_VERSION),
+                        StringStruct("InternalName", "skytowers-server"),
+                        StringStruct("OriginalFilename", "skytowers-server.exe"),
+                        StringStruct("ProductName", "Sky Towers"),
+                        StringStruct("ProductVersion", APP_VERSION),
+                    ],
+                )
+            ]
+        ),
+        VarFileInfo([VarStruct("Translation", [1033, 1200])]),
+    ],
+)
 exe = EXE(
     pyz,
     a.scripts,
@@ -54,5 +93,6 @@ exe = EXE(
     name="skytowers-server",
     console=True,
     icon=str(SERVER.parent / "desktop" / "src-tauri" / "icons" / "icon.ico"),
+    version=version_info,
 )
 coll = COLLECT(exe, a.binaries, a.datas, name="skytowers-server")
