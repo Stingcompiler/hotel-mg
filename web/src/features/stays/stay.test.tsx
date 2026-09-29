@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 import { session } from "@/api/session";
@@ -29,13 +29,23 @@ const FOLIO = {
   ],
 };
 
+let earlyQuote: object | null = null;
+
 beforeEach(() => {
+  earlyQuote = null;
   session.signIn("tok");
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: Request) => {
       const path = new URL(input.url).pathname;
-      const body = path === "/api/v1/stays/s1" ? STAY : path === "/api/v1/folios/f1" ? FOLIO : { role: "reception" };
+      const body =
+        path === "/api/v1/stays/s1"
+          ? STAY
+          : path === "/api/v1/folios/f1"
+            ? FOLIO
+            : path === "/api/v1/stays/s1/checkout"
+              ? { early_departure: earlyQuote }
+              : { role: "reception" };
       return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
     }),
   );
@@ -68,7 +78,29 @@ test("header, reversal link, and the check-out rule for a debt", async () => {
   fireEvent.click(within(dialog).getByRole("button", { name: /تجاوز المدير/ }));
   fireEvent.change(within(dialog).getByLabelText("كلمة مرور المدير"), { target: { value: "pw" } });
   fireEvent.change(within(dialog).getByLabelText(/سبب الخروج بدين/), { target: { value: "يسدد غدًا" } });
-  expect(within(dialog).getByRole("button", { name: "تسجيل الخروج بدين" })).toBeEnabled();
+  await waitFor(() => expect(within(dialog).getByRole("button", { name: "تسجيل الخروج بدين" })).toBeEnabled());
+});
+
+test("leaving early shows the nights used at the price paid and the refund", async () => {
+  earlyQuote = {
+    nights_used: 12, nights_booked: 30, room_charges: 28_500_000, new_room_charges: 11_400_000, services: 0,
+    paid: 27_000_000, refund: 15_600_000, balance_after: 0,
+  };
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MemoryRouter initialEntries={["/stays/s1"]}>
+        <Routes>
+          <Route path="/stays/:id" element={<StayDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "تسجيل خروج" }));
+  const dialog = screen.getByRole("dialog");
+  expect(await within(dialog).findByText(/مغادرة مبكرة — 12 ليلة من 30 ليلة/)).toBeInTheDocument();
+  expect(within(dialog).getByText("156,000 ج.س")).toBeInTheDocument(); // refunded
+  expect(within(dialog).queryByText("لا يمكن تسجيل الخروج بدين")).toBeNull(); // settled: nothing owed
+  expect(within(dialog).getByRole("button", { name: "تسجيل الخروج" })).toBeEnabled();
 });
 
 test("«عكس» a room charge asks for the manager when the server requires it", async () => {

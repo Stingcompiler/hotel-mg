@@ -25,6 +25,15 @@ export function formatMoney(minor: number, options: MoneyFormat = {}): string {
   return options.currency ? `${text} ج.س` : text;
 }
 
+/** Cents of a foreign currency → base minor units at ``rate`` (base minor per whole unit), rounded half away from
+ *  zero like the server (billing.rules.to_base): the one conversion of the app (review 2026-09-29, F-15). */
+export function toBase(foreignMinor: number, rate: number): number {
+  const numerator = foreignMinor * rate;
+  const sign = numerator < 0 ? -1 : 1;
+  const abs = Math.abs(numerator);
+  return sign * (Math.floor(abs / MINOR) + (2 * (abs % MINOR) >= MINOR ? 1 : 0));
+}
+
 /** "15,000" / "١٥٬٠٠٠" / "15000.5" → 1_500_050. Returns null for anything that is not an amount. */
 export function parseMoney(text: string): number | null {
   const clean = toWestern(text).replace(/[,٬\s]/g, "").replace("٫", ".").replace("ج.س", "");

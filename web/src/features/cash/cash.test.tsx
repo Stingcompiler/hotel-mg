@@ -13,11 +13,12 @@ const OPEN = {
     receipts: { cash: 19_000_000, bankak: 12_000_000, transfer: 1_000_000, total: 32_000_000 },
     expenses: { cash: 1_250_000, bankak: 0, transfer: 0, total: 1_250_000 },
     expected: 22_750_000,
-    foreign: [{ currency: "USD", symbol: "$", cash: 15_000, total: 15_000, base: 37_500_000 }],
+    foreign: [{ currency: "USD", symbol: "$", cash: 15_000, total: 15_000, base: 37_500_000, opening: 0, expected: 15_000 }],
   },
   movements: [{ at: "2026-09-26T07:00:00Z", kind: "in", text: "دفعة — غرفة 203", amount: 12_000_000, method: "bankak", reference: "BOK-1", by: "أحمد علي", ref_id: "p1" }],
   last_closed: null,
   suggested_opening: 5_000_000,
+  suggested_opening_foreign: {},
 };
 const posts: { path: string; body: unknown }[] = [];
 
@@ -54,6 +55,8 @@ test("expected cash, the difference preview and a reason before closing", async 
   expect(screen.getByText("نقدي بعملة $")).toBeInTheDocument(); // dollars listed apart from the pounds drawer
   fireEvent.click(screen.getByRole("button", { name: "إغلاق الوردية" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("سبب الفرق مطلوب عند وجود فرق");
+  fireEvent.change(screen.getByLabelText("المعدود بـ$"), { target: { value: "150" } }); // the dollars are counted too (A-7)
+  fireEvent.change(screen.getByLabelText("المسلَّم للمالك"), { target: { value: "100,000" } });
   fireEvent.change(screen.getByLabelText(/سبب الفرق/), { target: { value: "أُعيد لنزيل" } });
   fireEvent.click(screen.getByRole("button", { name: "إغلاق الوردية" }));
   // Closing is irreversible: a confirmation repeats expected, counted and the difference, then posts.
@@ -61,7 +64,22 @@ test("expected cash, the difference preview and a reason before closing", async 
   expect(dialog).toHaveTextContent("227,500");
   expect(dialog).toHaveTextContent("225,000");
   expect(dialog).toHaveTextContent("− 2,500");
+  expect(dialog).toHaveTextContent("125,000"); // left in the drawer for the next shift (A-6)
   expect(posts).toEqual([]);
   fireEvent.click(screen.getByRole("button", { name: "إغلاق الوردية الآن" }));
-  await waitFor(() => expect(posts).toEqual([{ path: "/api/v1/shifts/close", body: { counted: 22_500_000, difference_reason: "أُعيد لنزيل", version: 2 } }]));
+  await waitFor(() =>
+    expect(posts).toEqual([
+      {
+        path: "/api/v1/shifts/close",
+        body: {
+          counted: 22_500_000,
+          counted_foreign: { USD: 15_000 },
+          handed_over: 10_000_000,
+          handed_over_foreign: {},
+          difference_reason: "أُعيد لنزيل",
+          version: 2,
+        },
+      },
+    ]),
+  );
 });

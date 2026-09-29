@@ -555,7 +555,10 @@
     "debtStays": "سيبقى {amount} دينًا على النزيل ويظهر في تقرير الديون وملف النزيل.",
     "submit": "تسجيل الخروج",
     "submitDebt": "تسجيل الخروج بدين",
-    "payRemaining": "إضافة دفعة {amount}"
+    "payRemaining": "إضافة دفعة {amount}",
+    "earlyTitle": "مغادرة مبكرة — {used} من {booked}",
+    "earlyText": "تُحسب الليالي المستهلكة بالسعر المدفوع ({from} ← {to}) ويُردّ الباقي للنزيل من الوردية.",
+    "refund": "يُردّ للنزيل"
   },
   "extendDlg": {
     "title": "تمديد الإقامة — غرفة {room}",
@@ -725,7 +728,18 @@
     "confirmTitle": "تأكيد إغلاق الوردية",
     "confirmClose": "إغلاق الوردية الآن",
     "confirmText": "بعد الإغلاق لا يمكن تعديل الوردية؛ يُطبع كشفها ويُرحَّل الفرق إلى التقارير.",
-    "closedNotice": "أُغلقت الوردية · المعدود {counted} · الفرق {diff}"
+    "closedNotice": "أُغلقت الوردية · المعدود {counted} · الفرق {diff}",
+    "foreignOpening": "منها {amount} افتتاحي",
+    "countedForeign": "المعدود بـ{currency}",
+    "handedOver": "المسلَّم للمالك",
+    "handedOverIn": "المسلَّم للمالك بـ{currency}",
+    "handedOverHint": "اختياري: ما يُسلَّم للمالك عند الإغلاق يُخصم مما يبقى في الدرج للوردية التالية.",
+    "leftInDrawer": "يبقى في الدرج",
+    "errHanded": "المسلَّم للمالك لا يتجاوز المعدود.",
+    "typeHandover": "تسليم",
+    "openingIn": "افتتاحي {currency}",
+    "openingDiffers": "الرصيد يختلف عما تركته الوردية السابقة ({amount}) — اكتب السبب.",
+    "openingReason": "سبب الاختلاف"
   },
   "expenseCategory": {
     "supplies": "مستلزمات",
@@ -1385,6 +1399,12 @@
     "counted": "المعدود في الدرج",
     "difference": "الفرق",
     "reason": "السبب: {reason}",
+    "move_handover": "تسليم",
+    "colCurrency": "العملة",
+    "colReceived": "المقبوض نقدًا",
+    "handedOver": "المسلَّم للمالك",
+    "leftInDrawer": "يبقى في الدرج",
+    "openingDiffers": "الافتتاحي يختلف عما تركته الوردية السابقة ({amount}): {reason}",
     "signHandover": "الموظف المسلِّم · {name}",
     "signReceiver": "المستلم / المدير",
     "move_open": "افتتاح",

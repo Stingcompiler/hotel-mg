@@ -2813,6 +2813,29 @@ paths:
                 $ref: '#/components/schemas/Stay'
           description: ''
   /api/v1/stays/{id}/checkout:
+    get:
+      operationId: stays_checkout_retrieve
+      description: 'What checking out today settles: an early departure''s nights
+        used, new room charges and refund.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stays
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutQuote'
+          description: ''
     post:
       operationId: stays_checkout_create
       parameters:
@@ -4025,6 +4048,16 @@ components:
           minimum: 1
       required:
       - reservation
+    CheckoutQuote:
+      type: object
+      properties:
+        early_departure:
+          allOf:
+          - $ref: '#/components/schemas/EarlyDeparture'
+          nullable: true
+          description: 'Null: leaving on the booked day or later.'
+      required:
+      - early_departure
     CheckoutRequest:
       type: object
       properties:
@@ -4044,6 +4077,20 @@ components:
           type: string
           default: ''
           maxLength: 200
+        refund_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          default: cash
+          description: |-
+            Early departure: how the unused nights are paid back.
+
+            * `cash` - نقدي
+            * `bankak` - بنكك
+            * `transfer` - تحويل
+        refund_reference:
+          type: string
+          default: ''
+          maxLength: 60
         version:
           type: integer
           minimum: 1
@@ -4053,6 +4100,22 @@ components:
         counted:
           type: integer
           minimum: 0
+        counted_foreign:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+          description: 'Foreign cash counted: code → minor units.'
+        handed_over:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Pounds taken out for the owner.
+        handed_over_foreign:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
         difference_reason:
           type: string
           default: ''
@@ -4203,12 +4266,19 @@ components:
           nullable: true
         suggested_opening:
           type: integer
+          description: Left in the drawer by the last shift (counted − handed over).
+        suggested_opening_foreign:
+          type: object
+          additionalProperties:
+            type: integer
+          description: 'Foreign cash left by the last shift: code → its minor units.'
       required:
       - shift
       - totals
       - movements
       - last_closed
       - suggested_opening
+      - suggested_opening_foreign
     DebtsKpi:
       type: object
       properties:
@@ -4310,6 +4380,38 @@ components:
         * `weekly` - أسبوعي
         * `monthly` - شهري
         * `mixed` - مختلط
+    EarlyDeparture:
+      type: object
+      properties:
+        nights_used:
+          type: integer
+        nights_booked:
+          type: integer
+        room_charges:
+          type: integer
+          description: Room charges on the folio now.
+        new_room_charges:
+          type: integer
+          description: The nights used at the prices paid.
+        services:
+          type: integer
+        paid:
+          type: integer
+        refund:
+          type: integer
+          description: Paid back at checkout from the open shift.
+        balance_after:
+          type: integer
+          description: '> 0 still owed after the refund.'
+      required:
+      - nights_used
+      - nights_booked
+      - room_charges
+      - new_room_charges
+      - services
+      - paid
+      - refund
+      - balance_after
     Expense:
       type: object
       properties:
@@ -4656,12 +4758,20 @@ components:
         base:
           type: integer
           description: Base-currency equivalent at the rates used.
+        opening:
+          type: integer
+          description: In the drawer at opening, its minor units.
+        expected:
+          type: integer
+          description: Opening + cash received − cash refunded, its minor units.
       required:
       - currency
       - symbol
       - cash
       - total
       - base
+      - opening
+      - expected
     Guest:
       type: object
       properties:
@@ -5542,11 +5652,13 @@ components:
       - open
       - in
       - out
+      - handover
       type: string
       description: |-
         * `open` - open
         * `in` - in
         * `out` - out
+        * `handover` - handover
     NeglectedKpi:
       type: object
       properties:
@@ -5619,6 +5731,17 @@ components:
         opening:
           type: integer
           minimum: 0
+        opening_foreign:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+          description: 'Foreign cash in the drawer: code → minor units.'
+        opening_reason:
+          type: string
+          default: ''
+          description: Required when it differs from what was left.
+          maxLength: 300
       required:
       - opening
     OwnerDashboard:
@@ -6559,6 +6682,7 @@ components:
         amount:
           type: integer
           minimum: 1
+          description: Base currency; omit when refunding in `currency`.
         method:
           $ref: '#/components/schemas/PaymentMethodEnum'
         reference:
@@ -6569,8 +6693,17 @@ components:
           type: string
           minLength: 1
           maxLength: 300
+        currency:
+          type: string
+          default: ''
+          description: Refund in this currency, e.g. USD.
+          maxLength: 3
+        foreign_amount:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Its minor units.
       required:
-      - amount
       - method
       - reason
     Report:
@@ -7378,6 +7511,38 @@ components:
         difference_reason:
           type: string
           maxLength: 300
+        opening_expected:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Left by the previous shift.
+        opening_reason:
+          type: string
+          maxLength: 300
+        handed_over:
+          type: integer
+          readOnly: true
+          description: Pounds handed to the owner at close.
+        opening_foreign:
+          type: object
+          additionalProperties:
+            type: integer
+          readOnly: true
+        expected_foreign:
+          type: object
+          additionalProperties:
+            type: integer
+          readOnly: true
+        counted_foreign:
+          type: object
+          additionalProperties:
+            type: integer
+          readOnly: true
+        handed_over_foreign:
+          type: object
+          additionalProperties:
+            type: integer
+          readOnly: true
         version:
           type: integer
           maximum: 9223372036854775807
@@ -7395,6 +7560,13 @@ components:
       - counted
       - difference
       - difference_reason
+      - opening_expected
+      - opening_reason
+      - handed_over
+      - opening_foreign
+      - expected_foreign
+      - counted_foreign
+      - handed_over_foreign
       - version
     ShiftDetail:
       type: object
@@ -7470,6 +7642,38 @@ components:
         difference_reason:
           type: string
           maxLength: 300
+        opening_expected:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Left by the previous shift.
+        opening_reason:
+          type: string
+          maxLength: 300
+        handed_over:
+          type: integer
+          readOnly: true
+          description: Pounds handed to the owner at close.
+        opening_foreign:
+          type: object
+          additionalProperties:
+            type: integer
+          readOnly: true
+        expected_foreign:
+          type: object
+          additionalProperties:
+            type: integer
+          readOnly: true
+        counted_foreign:
+          type: object
+          additionalProperties:
+            type: integer
+          readOnly: true
+        handed_over_foreign:
+          type: object
+          additionalProperties:
+            type: integer
+          readOnly: true
         version:
           type: integer
           maximum: 9223372036854775807
@@ -7494,6 +7698,13 @@ components:
       - counted
       - difference
       - difference_reason
+      - opening_expected
+      - opening_reason
+      - handed_over
+      - opening_foreign
+      - expected_foreign
+      - counted_foreign
+      - handed_over_foreign
       - version
       - receipts
       - cash_expenses
@@ -7523,6 +7734,23 @@ components:
           nullable: true
         difference_reason:
           type: string
+        handed_over:
+          type: integer
+          description: Pounds handed to the owner at close.
+        left_in_drawer:
+          type: integer
+          nullable: true
+        opening_expected:
+          type: integer
+          nullable: true
+          description: Left by the previous shift.
+        opening_reason:
+          type: string
+        currencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementCurrency'
+          description: One line per foreign currency (A-9, D-1).
         formula:
           type: string
       required:
@@ -7535,6 +7763,11 @@ components:
       - counted
       - difference
       - difference_reason
+      - handed_over
+      - left_in_drawer
+      - opening_expected
+      - opening_reason
+      - currencies
       - formula
     ShiftTotals:
       type: object
@@ -7602,6 +7835,42 @@ components:
         * `new` - new
         * `imported` - imported
         * `older` - older
+    StatementCurrency:
+      type: object
+      properties:
+        currency:
+          type: string
+        symbol:
+          type: string
+        opening:
+          type: integer
+          description: Its minor units.
+        received:
+          type: integer
+          description: Cash received net of refunds, its minor units.
+        expected:
+          type: integer
+        counted:
+          type: integer
+          nullable: true
+        difference:
+          type: integer
+          nullable: true
+        handed_over:
+          type: integer
+        base:
+          type: integer
+          description: Pounds value of what was received, at the rates used.
+      required:
+      - currency
+      - symbol
+      - opening
+      - received
+      - expected
+      - counted
+      - difference
+      - handed_over
+      - base
     StatementShift:
       type: object
       properties:

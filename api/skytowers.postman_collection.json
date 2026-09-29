@@ -1126,7 +1126,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 0,\n  \"method\": \"cash\",\n  \"reason\": \"\"\n}"
+              "raw": "{\n  \"method\": \"cash\",\n  \"reason\": \"\"\n}"
             }
           }
         }
@@ -3360,6 +3360,34 @@
           }
         },
         {
+          "name": "stays_checkout_retrieve",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/stays/:id/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stays",
+                ":id",
+                "checkout"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "What checking out today settles: an early departure's nights used, new room charges and refund."
+          }
+        },
+        {
           "name": "stays_checkout_create",
           "request": {
             "method": "POST",
@@ -3392,7 +3420,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"override_password\": \"\",\n  \"override_reason\": \"\",\n  \"room_status\": \"cleaning\",\n  \"maintenance_reason\": \"\",\n  \"version\": 0\n}"
+              "raw": "{\n  \"override_password\": \"\",\n  \"override_reason\": \"\",\n  \"room_status\": \"cleaning\",\n  \"maintenance_reason\": \"\",\n  \"refund_method\": \"cash\",\n  \"refund_reference\": \"\",\n  \"version\": 0\n}"
             }
           }
         },

@@ -19,6 +19,10 @@ import { notice } from "@/lib/notices";
 
 type Current = components["schemas"]["CurrentShift"];
 const money = (v: number) => formatMoney(v);
+const minor = (s: string | undefined) => (s && s.trim() ? parseMoney(s) ?? 0 : 0);
+/** Only the currencies with an amount: {USD: 16000}. */
+const byCode = (codes: string[], values: Record<string, string>) =>
+  Object.fromEntries(codes.map((c) => [c, minor(values[c])]).filter(([, v]) => v !== 0));
 const signed = (v: number) => (v < 0 ? `− ${formatMoney(-v)}` : v > 0 ? `+ ${formatMoney(v)}` : "0");
 
 /** 6.7 Cash & shift: the open shift with expected cash and closing, opening a shift, and the shift history. */
@@ -71,14 +75,33 @@ function OpenShift({ current }: { current: Current }) {
   const offline = useSystemStatus().isError;
   const refresh = useRefreshCash();
   const [counted, setCounted] = useState("");
+  const [countedF, setCountedF] = useState<Record<string, string>>({});
+  const [handed, setHanded] = useState("");
+  const [handedF, setHandedF] = useState<Record<string, string>>({});
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const countedMinor = counted.trim() ? parseMoney(counted) : null;
   const diff = countedMinor === null ? null : countedMinor - totals.expected;
+  // Dollars and other currencies are counted too, each in its own units (review 2026-09-29, A-7).
+  const codes = totals.foreign.map((f) => f.currency);
+  const diffF = Object.fromEntries(totals.foreign.map((f) => [f.currency, minor(countedF[f.currency]) - f.expected]));
+  const anyDiff = (diff !== null && diff !== 0) || codes.some((c) => diffF[c] !== 0);
+  const handedMinor = minor(handed);
 
   const close = useMutation({
     mutationFn: () =>
-      data(api.POST("/api/v1/shifts/close", { body: { counted: countedMinor!, difference_reason: reason.trim(), version: shift.version } })),
+      data(
+        api.POST("/api/v1/shifts/close", {
+          body: {
+            counted: countedMinor!,
+            counted_foreign: byCode(codes, countedF),
+            handed_over: handedMinor,
+            handed_over_foreign: byCode(codes, handedF),
+            difference_reason: reason.trim(),
+            version: shift.version,
+          },
+        }),
+      ),
     onSuccess: () => {
       setConfirming(false);
       notice(t("cash.closedNotice", { counted: money(countedMinor!), diff: signed(diff ?? 0) }));
@@ -95,7 +118,8 @@ function OpenShift({ current }: { current: Current }) {
   const [confirming, setConfirming] = useState(false);
   const submit = () => {
     if (countedMinor === null) return setError(t("cash.errCounted"));
-    if (diff !== 0 && !reason.trim()) return setError(t("cash.errReason"));
+    if (anyDiff && !reason.trim()) return setError(t("cash.errReason"));
+    if (handedMinor > countedMinor || codes.some((c) => minor(handedF[c]) > minor(countedF[c]))) return setError(t("cash.errHanded"));
     setError(null);
     setConfirming(true);
   };
@@ -136,7 +160,10 @@ function OpenShift({ current }: { current: Current }) {
               <div key={f.currency} className={line}>
                 <span>{t("cash.foreignCash", { currency: f.symbol })}</span>
                 <span className="font-semibold">
-                  {formatMoney(f.cash)} {f.symbol}
+                  {formatMoney(f.expected)} {f.symbol}
+                  {f.opening !== 0 && (
+                    <span className="ms-2 text-label font-normal text-text-secondary">{t("cash.foreignOpening", { amount: `${formatMoney(f.opening)} ${f.symbol}` })}</span>
+                  )}
                   <span className="ms-2 text-label font-normal text-text-secondary">{t("cash.foreignWorth", { amount: money(f.base) })}</span>
                 </span>
               </div>
@@ -183,9 +210,24 @@ function OpenShift({ current }: { current: Current }) {
               </div>
             </div>
           )}
+          {totals.foreign.map((f) => (
+            <div key={f.currency} className="grid grid-cols-2 gap-3">
+              <SmallMoney label={t("cash.countedForeign", { currency: f.symbol })} unit={f.symbol} value={countedF[f.currency] ?? ""} onChange={(v) => setCountedF({ ...countedF, [f.currency]: v })} />
+              <div className={`flex flex-col justify-end pb-2 text-body ${diffF[f.currency] === 0 ? "text-success-text" : "text-danger-text"}`}>
+                {t("cash.difference")}: <span dir="ltr" className="font-semibold">{signed(diffF[f.currency])} {f.symbol}</span>
+              </div>
+            </div>
+          ))}
+          <div className="grid grid-cols-2 gap-3">
+            <SmallMoney label={t("cash.handedOver")} unit={t("money.currency")} value={handed} onChange={setHanded} />
+            {totals.foreign.map((f) => (
+              <SmallMoney key={f.currency} label={t("cash.handedOverIn", { currency: f.symbol })} unit={f.symbol} value={handedF[f.currency] ?? ""} onChange={(v) => setHandedF({ ...handedF, [f.currency]: v })} />
+            ))}
+          </div>
+          <div className="text-label font-normal text-text-secondary">{t("cash.handedOverHint")}</div>
           <label className="flex flex-col gap-1.5">
             <span className="text-label text-text-secondary">
-              {t("cash.reason")} {diff !== null && diff !== 0 && <span className="text-danger">*</span>} <span className="text-text-disabled">{t("cash.reasonHint")}</span>
+              {t("cash.reason")} {anyDiff && <span className="text-danger">*</span>} <span className="text-text-disabled">{t("cash.reasonHint")}</span>
             </span>
             <textarea
               rows={3}
@@ -237,6 +279,28 @@ function OpenShift({ current }: { current: Current }) {
                 {signed(diff ?? 0)}
               </span>
             </div>
+            {totals.foreign.map((f) => (
+              <div key={f.currency} className={`flex justify-between py-2.5 text-body ${diffF[f.currency] ? "text-danger" : ""}`}>
+                <span>{t("cash.countedForeign", { currency: f.symbol })}</span>
+                <span className="font-semibold">
+                  {formatMoney(minor(countedF[f.currency]))} {f.symbol} · <span dir="ltr">{signed(diffF[f.currency])}</span>
+                </span>
+              </div>
+            ))}
+            {(handedMinor > 0 || codes.some((c) => minor(handedF[c]) > 0)) && (
+              <div className="flex justify-between py-2.5 text-body">
+                <span className="text-text-secondary">{t("cash.handedOver")}</span>
+                <span className="font-semibold">
+                  {[`${money(handedMinor)} ${t("money.currency")}`, ...totals.foreign.filter((f) => minor(handedF[f.currency]) > 0).map((f) => `${formatMoney(minor(handedF[f.currency]))} ${f.symbol}`)].join(" · ")}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between py-2.5 text-body">
+              <span className="text-text-secondary">{t("cash.leftInDrawer")}</span>
+              <span className="font-semibold">
+                {money((countedMinor ?? 0) - handedMinor)} {t("money.currency")}
+              </span>
+            </div>
           </div>
           {reason.trim() && (
             <div className="text-body text-text-secondary">
@@ -255,7 +319,13 @@ function Movements({ current }: { current: Current }) {
   const [filter, setFilter] = useState<"all" | "in" | "out">("all");
   const rows = current.movements.filter((m) => filter === "all" || m.kind === filter);
   const GRID = "grid grid-cols-[100px_140px_1fr_160px_120px_160px] items-center gap-4 px-4";
-  const chip = { in: "bg-success-soft text-success-text", out: "bg-danger-soft text-danger-text", open: "bg-bg-surface-2 text-text-secondary" };
+  const chip = {
+    in: "bg-success-soft text-success-text",
+    out: "bg-danger-soft text-danger-text",
+    open: "bg-bg-surface-2 text-text-secondary",
+    handover: "bg-warning-soft text-warning-text",
+  };
+  const kindLabel = { in: "cash.typeIn", out: "cash.typeOut", open: "cash.typeOpen", handover: "cash.typeHandover" } as const;
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
       <div className="flex h-12 flex-none items-center gap-3 border-b border-border px-4">
@@ -290,7 +360,7 @@ function Movements({ current }: { current: Current }) {
             </div>
             <div>
               <span className={`inline-flex h-6 items-center rounded-control px-2 text-label ${chip[m.kind]}`}>
-                {t(m.kind === "in" ? "cash.typeIn" : m.kind === "out" ? "cash.typeOut" : "cash.typeOpen")}
+                {t(kindLabel[m.kind])}
               </span>
             </div>
             <div className="truncate">
@@ -315,10 +385,21 @@ function NoShift({ current }: { current: Current }) {
   const offline = useSystemStatus().isError;
   const refresh = useRefreshCash();
   const [opening, setOpening] = useState(formatMoney(current.suggested_opening));
+  const leftF = current.suggested_opening_foreign;
+  const codes = Object.keys(leftF);
+  const [openingF, setOpeningF] = useState<Record<string, string>>(Object.fromEntries(codes.map((c) => [c, formatMoney(leftF[c])])));
+  const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const last = current.last_closed;
+  // What the last shift left in the drawer: a different opening needs a reason (review 2026-09-29, A-6).
+  const differs = !!last && ((parseMoney(opening) ?? 0) !== current.suggested_opening || codes.some((c) => minor(openingF[c]) !== leftF[c]));
   const open = useMutation({
-    mutationFn: () => data(api.POST("/api/v1/shifts/open", { body: { opening: parseMoney(opening) ?? 0 } })),
+    mutationFn: () =>
+      data(
+        api.POST("/api/v1/shifts/open", {
+          body: { opening: parseMoney(opening) ?? 0, opening_foreign: byCode(codes, openingF), opening_reason: reason.trim() },
+        }),
+      ),
     onSuccess: refresh,
     onError: (e) => setError(e instanceof ApiError ? e.message : t("errors.error")),
   });
@@ -349,17 +430,62 @@ function NoShift({ current }: { current: Current }) {
             <span className="text-body font-medium text-text-secondary">{t("money.currency")}</span>
           </span>
         </label>
-        <button type="button" disabled={offline || open.isPending || parseMoney(opening) === null} onClick={() => open.mutate()} className={buttons.primary}>
+        {codes.map((c) => (
+          <div key={c} className="w-40">
+            <SmallMoney label={t("cash.openingIn", { currency: c })} unit={c} value={openingF[c] ?? ""} onChange={(v) => setOpeningF({ ...openingF, [c]: v })} />
+          </div>
+        ))}
+        <button
+          type="button"
+          disabled={offline || open.isPending || parseMoney(opening) === null || (differs && !reason.trim())}
+          onClick={() => open.mutate()}
+          className={buttons.primary}
+        >
           <LockOpen className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
           {t("cash.openButton")}
         </button>
       </section>
+      {differs && (
+        <label className="flex flex-col gap-1.5 rounded-card border border-warning bg-warning-soft px-4 py-3">
+          <span className="text-body font-medium text-warning-text">
+            {t("cash.openingDiffers", { amount: `${money(current.suggested_opening)} ${t("money.currency")}` })}
+          </span>
+          <input
+            aria-label={t("cash.openingReason")}
+            placeholder={t("cash.openingReason")}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="h-10 rounded-control border border-border-strong bg-bg-surface px-3 font-sans text-body text-text-primary"
+          />
+        </label>
+      )}
       {error && <ErrorBanner>{error}</ErrorBanner>}
       <section className="flex flex-1 flex-col items-center justify-center gap-3 rounded-card border border-border bg-bg-surface">
         <Receipt className="h-10 w-10 text-text-disabled" strokeWidth={1.75} aria-hidden />
         <div className="text-body text-text-secondary">{t("cash.noMoves")}</div>
       </section>
     </>
+  );
+}
+
+function SmallMoney({ label, unit, value, onChange }: { label: string; unit: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-label text-text-secondary">{label}</span>
+      <span className="flex h-10 items-center justify-between rounded-control border border-border-strong bg-bg-surface px-3 focus-within:border-primary">
+        <input
+          aria-label={label}
+          inputMode="decimal"
+          value={value}
+          onChange={(e) => {
+            groupThousands(e.target);
+            onChange(e.target.value);
+          }}
+          className="w-full min-w-0 border-0 bg-transparent p-0 font-sans text-body text-text-primary outline-none"
+        />
+        <span className="text-body font-medium text-text-secondary">{unit}</span>
+      </span>
+    </label>
   );
 }
 
