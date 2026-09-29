@@ -64,6 +64,19 @@ def responsible_shift(shifts: list[tuple], when: datetime):
     return next((shift_id for shift_id, opened_at, _ in shifts if opened_at > when), None)
 
 
+MAX_POSTPONE = timedelta(hours=36)  # «صباح الغد» from just after midnight is 33 h away
+
+
+def postpone_error(now: datetime, until: datetime | None) -> str | None:
+    """Arabic reason a snooze or «بانتظار الرد» time is refused, else None: it must be later, and within 36 hours — a
+    postponement of any length kept an alert from ever becoming «مُهمَل» (review 2026-09-29, A-10)."""
+    if until is None or until <= now:
+        return "اختر وقتًا لاحقًا."
+    if until - now > MAX_POSTPONE:
+        return "لا يتجاوز التأجيل 36 ساعة."
+    return None
+
+
 def can_snooze(snooze_count: int, max_snoozes: int) -> bool:
     return snooze_count < max_snoozes
 
