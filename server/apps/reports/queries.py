@@ -619,6 +619,30 @@ def debts(params: Params) -> Report:
 # --- Revenue and collection ------------------------------------------------------------------
 
 
+def _currency_tiles(params: Params, scope: Q, method: str | None) -> list[dict]:
+    """What came in per foreign currency, in that currency (the «عملات أخرى» column is its pounds value; A-8)."""
+    from apps.billing import rules as billing_rules
+    from apps.billing.models import Currency
+
+    sums = (
+        Payment.objects.filter(_in_period("received_at", params), scope, **({"method": method} if method else {}))
+        .exclude(currency="")
+        .order_by()
+        .values_list("currency")
+        .annotate(s=Sum("foreign_amount"))
+    )
+    names = {c.code: (c.name, c.symbol) for c in Currency.objects.all()}
+    return [
+        {
+            "label": f"المحصّل {names.get(code, (code, code))[0]}",
+            "value": billing_rules.foreign_text(amount, names.get(code, (code, code))[1] or code),
+            "type": "text",
+        }
+        for code, amount in sorted(sums)
+        if amount
+    ]
+
+
 @report("revenue", "الإيرادات والتحصيل")
 def revenue(params: Params) -> Report:
     room_type, method = _room_type(params), _method(params)
@@ -687,6 +711,7 @@ def revenue(params: Params) -> Report:
                 "value": rules.percent(totals["collected"], totals["revenue"]),
                 "type": "percent",
             },
+            *_currency_tiles(params, scope, method),
         ],
         formula="الإيراد يُحتسب عند التسكين/التمديد؛ المحصّل عند استلام الدفعة (صافي بعد الردّ والعكس).",
         filters=_filters(room_type, method),

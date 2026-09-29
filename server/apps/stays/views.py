@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from apps.billing.services import FolioTotals, balances_by_reservation, deposits_by_reservation
 from apps.rooms.models import RoomType
 
-from . import rules, services, stay_services
+from . import services, stay_services
 from .board import board
 from .models import Reservation, Stay
 from .serializers import (
@@ -24,6 +24,7 @@ from .serializers import (
     ChangeRoomOptionSerializer,
     ChangeRoomSerializer,
     CheckInSerializer,
+    CheckoutQuoteSerializer,
     CheckoutSerializer,
     ExtendQuoteRequestSerializer,
     ExtendQuoteSerializer,
@@ -273,6 +274,12 @@ class ChangeRoomView(APIView):
 class CheckoutView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=CheckoutQuoteSerializer)
+    def get(self, request, pk):
+        """What checking out today settles: an early departure's nights used, new room charges and refund."""
+        stay = get_object_or_404(_stays(), pk=pk)
+        return Response(CheckoutQuoteSerializer({"early_departure": stay_services.early_departure(stay)}).data)
+
     @extend_schema(request=CheckoutSerializer, responses=StaySerializer)
     def post(self, request, pk):
         get_object_or_404(Stay, pk=pk)
@@ -298,7 +305,7 @@ class CancelStayView(APIView):
                     "current_total": stay.reservation.total,
                     "services_total": stay_services.services_total(folio),
                     "paid": FolioTotals.of(folio).paid,
-                    "options": [{"key": o.key, "label": rules.option_label(o), "total": total} for o, total in options],
+                    "options": options,
                 }
             ).data
         )

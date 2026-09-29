@@ -260,7 +260,26 @@ class ChangeRoomSerializer(ManagerOverrideMixin):
 class CheckoutSerializer(ManagerOverrideMixin):
     room_status = serializers.ChoiceField(choices=AFTER_ROOM_STATUS, default="cleaning")
     maintenance_reason = serializers.CharField(max_length=200, required=False, allow_blank=True, default="")
+    refund_method = serializers.ChoiceField(
+        choices=PaymentMethod.choices, default="cash", help_text="Early departure: how the unused nights are paid back."
+    )
+    refund_reference = serializers.CharField(max_length=60, required=False, allow_blank=True, default="")
     version = serializers.IntegerField(min_value=1, required=False)
+
+
+class EarlyDepartureSerializer(serializers.Serializer):
+    nights_used = serializers.IntegerField()
+    nights_booked = serializers.IntegerField()
+    room_charges = MoneyMinorField(help_text="Room charges on the folio now.")
+    new_room_charges = MoneyMinorField(help_text="The nights used at the prices paid.")
+    services = MoneyMinorField()
+    paid = MoneyMinorField()
+    refund = MoneyMinorField(help_text="Paid back at checkout from the open shift.")
+    balance_after = MoneyMinorField(help_text="> 0 still owed after the refund.")
+
+
+class CheckoutQuoteSerializer(serializers.Serializer):
+    early_departure = EarlyDepartureSerializer(allow_null=True, help_text="Null: leaving on the booked day or later.")
 
 
 class CancelOptionSerializer(serializers.Serializer):

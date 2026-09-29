@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -156,3 +156,26 @@ def test_peak_overlap():
     assert rules.peak_overlap(ranges, d, date(2026, 10, 2)) == 2  # the 28th
     assert rules.peak_overlap(ranges, date(2026, 9, 29), date(2026, 10, 1)) == 1
     assert rules.peak_overlap([], d, date(2026, 9, 27)) == 0
+
+
+def test_used_room_charge_prices_the_nights_used_at_what_was_paid():
+    d = date(2026, 9, 1)
+    # A month booked for 600 at an agreed price, 10 nights used: a third, never the list price.
+    assert rules.used_room_charge([(d, d + timedelta(30), 60_000)], d + timedelta(10), 60_000) == 20_000
+    # Upgrade from day 21 (difference 10 000 for the last 10 nights) and a 7-night extension for 14 000.
+    snap = {
+        "extensions": [{"from": "2026-10-01", "to": "2026-10-08", "total": 14_000}],
+        "room_changes": [{"date": "2026-09-21", "until": "2026-10-01", "difference": 10_000}],
+    }
+    blocks = rules.charge_blocks(d, d + timedelta(37), 84_000, snap)
+    assert blocks[0] == (d, d + timedelta(30), 60_000)
+    assert rules.used_room_charge(blocks, d + timedelta(20), 84_000) == 40_000  # before the upgrade
+    assert rules.used_room_charge(blocks, d + timedelta(37), 84_000) == 84_000  # everything, never more
+    # A later discount of 8 400 (10 %) applies to the nights used as well.
+    assert rules.used_room_charge(blocks, d + timedelta(20), 75_600) == 36_000
+    assert rules.used_room_charge(blocks, d, 84_000) == 0
+    assert rules.used_room_charge([(d, d, 5_000)], d + timedelta(3), 5_000) == 0  # an empty block
+    assert rules.used_room_charge([(d, d + timedelta(3), 0)], d + timedelta(1), 0) == 0  # a free stay
+    assert rules.charge_blocks(d, d + timedelta(3), 9_000, {}) == [(d, d + timedelta(3), 9_000)]
+    older = {"room_changes": [{"date": "2026-09-03", "difference": 100}]}  # before 1.1.11: no «until»
+    assert rules.charge_blocks(d, d + timedelta(5), 1_000, older)[1] == (d + timedelta(2), d + timedelta(5), 100)

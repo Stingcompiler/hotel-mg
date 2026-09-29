@@ -194,5 +194,26 @@ def shift_statement(shift: Shift, printed_by) -> dict:
         "counted": shift.counted,
         "difference": shift.difference,
         "difference_reason": shift.difference_reason,
+        "handed_over": shift.handed_over,
+        "left_in_drawer": shift.counted - shift.handed_over if shift.counted is not None else None,
+        "opening_expected": shift.opening_expected,
+        "opening_reason": shift.opening_reason,
+        # The dollars and other currencies of the drawer, each in its own units (review 2026-09-29, A-9, D-1).
+        "currencies": [
+            {
+                "currency": row["currency"],
+                "symbol": row["symbol"],
+                "opening": row["opening"],
+                "received": row["cash"],
+                "expected": row["expected"],
+                "counted": shift.counted_foreign.get(row["currency"], 0) if shift.closed_at else None,
+                "difference": shift.counted_foreign.get(row["currency"], 0) - row["expected"]
+                if shift.closed_at
+                else None,
+                "handed_over": shift.handed_over_foreign.get(row["currency"], 0),
+                "base": row["base"],
+            }
+            for row in totals.foreign
+        ],
         "formula": rules.CASH_FORMULA,
     }

@@ -1,9 +1,11 @@
-import { ChevronDown, CircleAlert, KeyRound, TriangleAlert } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { CalendarClock, ChevronDown, CircleAlert, KeyRound, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 
 import { api, ApiError, data } from "@/api/client";
 import { ErrorBanner, Field, Segmented, TextInput } from "@/components/ui/form";
 import { buttons, Modal } from "@/components/ui/Modal";
+import { nights } from "@/i18n/counts";
 import { digits } from "@/i18n/digits";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
@@ -13,8 +15,21 @@ type Props = { stayId: string; version: number; room: string; totals: Totals; on
 
 const money = (v: number) => `${formatMoney(v)} ${t("money.currency")}`;
 
-/** 6.5 B/C: check-out; a non-zero balance blocks it unless a manager overrides with password + reason. */
-export function CheckoutModal({ stayId, version, room, totals, onClose, onPay, onDone }: Props) {
+type Method = "cash" | "bankak" | "transfer";
+
+/** 6.5 B/C: check-out; a non-zero balance blocks it unless a manager overrides with password + reason.
+ *  Leaving before the booked day: the nights used at the price paid, the rest refunded (owner decision 4). */
+export function CheckoutModal({ stayId, version, room, totals: booked, onClose, onPay, onDone }: Props) {
+  const quote = useQuery({
+    queryKey: ["stays", stayId, "checkout-quote"],
+    queryFn: () => data(api.GET("/api/v1/stays/{id}/checkout", { params: { path: { id: stayId } } })),
+  });
+  const early = quote.data?.early_departure ?? null;
+  const totals: Totals = early
+    ? { total: early.new_room_charges + early.services, paid: early.paid - early.refund, balance: early.balance_after }
+    : booked;
+  const [method, setMethod] = useState<Method>("cash");
+  const [reference, setReference] = useState("");
   const [after, setAfter] = useState<"cleaning" | "maintenance">("cleaning");
   const [maintenanceReason, setMaintenanceReason] = useState("");
   const [open, setOpen] = useState(false);
@@ -24,7 +39,9 @@ export function CheckoutModal({ stayId, version, room, totals, onClose, onPay, o
   const [busy, setBusy] = useState(false);
   const owes = totals.balance !== 0;
   const overrideReady = open && !!password && !!reason.trim();
-  const canSubmit = (!owes || overrideReady) && (after === "cleaning" || !!maintenanceReason.trim()) && !busy;
+  const needsReference = !!early && early.refund > 0 && method !== "cash" && !reference.trim();
+  const canSubmit =
+    (!owes || overrideReady) && (after === "cleaning" || !!maintenanceReason.trim()) && !needsReference && !quote.isPending && !busy;
 
   const submit = async () => {
     setBusy(true);
@@ -39,6 +56,8 @@ export function CheckoutModal({ stayId, version, room, totals, onClose, onPay, o
             maintenance_reason: maintenanceReason.trim(),
             override_password: owes ? password : "",
             override_reason: owes ? reason.trim() : "",
+            refund_method: method,
+            refund_reference: reference.trim(),
           },
         }),
       );
@@ -77,6 +96,44 @@ export function CheckoutModal({ stayId, version, room, totals, onClose, onPay, o
         </>
       }
     >
+      {early && !open && (
+        <div className="flex flex-col gap-3 rounded-card bg-info-soft px-4 py-3 text-info-text">
+          <div className="flex gap-3">
+            <CalendarClock className="mt-0.5 h-icon w-icon flex-none" strokeWidth={1.75} aria-hidden />
+            <div className="flex-1">
+              <div className="text-body font-semibold">
+                {t("checkout.earlyTitle", { used: nights(early.nights_used), booked: nights(early.nights_booked) })}
+              </div>
+              <div className="text-body">{t("checkout.earlyText", { from: money(early.room_charges), to: money(early.new_room_charges) })}</div>
+            </div>
+            {early.refund > 0 && (
+              <div className="text-end">
+                <div className="text-label">{t("checkout.refund")}</div>
+                <div className="text-section-title">{money(early.refund)}</div>
+              </div>
+            )}
+          </div>
+          {early.refund > 0 && (
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-label">{t("cancelStay.refundMethod")}</span>
+                <Segmented
+                  label={t("cancelStay.refundMethod")}
+                  value={method}
+                  onChange={setMethod}
+                  options={(["cash", "bankak", "transfer"] as const).map((m) => ({ value: m, label: t(`payMethod.${m}`) }))}
+                />
+              </div>
+              {method !== "cash" && (
+                <Field label={t("payment.reference")} required className="w-48">
+                  <TextInput dir="ltr" value={reference} placeholder={t("payment.referenceHint")} onChange={(e) => setReference(e.target.value)} />
+                </Field>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {!open && (
         <div className="grid grid-cols-3 gap-3">
           <div>

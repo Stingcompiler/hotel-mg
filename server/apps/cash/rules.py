@@ -17,6 +17,37 @@ def difference_reason_required(counted: int, expected: int) -> bool:
     return difference(counted, expected) != 0
 
 
+def left_in_drawer(counted: int, handed_over: int) -> int:
+    """What the next shift should find: counted at close minus what was handed to the owner (A-6)."""
+    return counted - handed_over
+
+
+def left_foreign(counted: dict[str, int], handed_over: dict[str, int]) -> dict[str, int]:
+    return {
+        code: amount - handed_over.get(code, 0) for code, amount in counted.items() if amount - handed_over.get(code, 0)
+    }
+
+
+def handover_valid(counted: int, handed_over: int, counted_foreign: dict, handed_foreign: dict) -> bool:
+    """Nothing handed over that was not counted, and nothing negative."""
+    if not 0 <= handed_over <= counted:
+        return False
+    return all(0 <= amount <= counted_foreign.get(code, 0) for code, amount in handed_foreign.items())
+
+
+def foreign_differences(expected: dict[str, int], counted: dict[str, int]) -> dict[str, int]:
+    """Per currency, counted − expected (its minor units); only the currencies that differ."""
+    codes = sorted(set(expected) | set(counted))
+    return {c: counted.get(c, 0) - expected.get(c, 0) for c in codes if counted.get(c, 0) != expected.get(c, 0)}
+
+
+def opening_differs(opening: int, expected: int | None, opening_foreign: dict, expected_foreign: dict) -> bool:
+    """An opening that does not match what the previous shift left needs a reason (A-6). The first shift has none."""
+    if expected is None:
+        return False
+    return opening != expected or bool(foreign_differences(expected_foreign, opening_foreign))
+
+
 def attachment_missing(amount: int, threshold: int, has_attachment: bool) -> bool:
     """Expenses above the hotel's threshold need a receipt; flagged, not blocked («بانتظار مرفق»)."""
     return amount > threshold and not has_attachment

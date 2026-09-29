@@ -48,13 +48,16 @@ class CurrentShiftView(APIView):
     @extend_schema(responses=CurrentShiftSerializer)
     def get(self, request):
         shift = services.current_shift()
-        last = Shift.objects.filter(device=services.device(), closed_at__isnull=False).first()
+        last = services.last_closed()
+        left, left_foreign = services.left_by(last)
         data = {
             "shift": shift,
             "totals": services.ShiftTotals.of(shift) if shift else None,
             "movements": services.movements(shift) if shift else [],
             "last_closed": last,
-            "suggested_opening": last.opening if last else 0,
+            # What the last shift left in the drawer (its opening was suggested before: review 2026-09-29, A-6).
+            "suggested_opening": left or 0,
+            "suggested_opening_foreign": left_foreign,
         }
         return Response(CurrentShiftSerializer(data).data)
 

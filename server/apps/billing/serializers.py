@@ -108,10 +108,23 @@ class PaymentCreateSerializer(serializers.Serializer):
 
 
 class RefundSerializer(serializers.Serializer):
-    amount = MoneyMinorField(min_value=1)
+    amount = MoneyMinorField(min_value=1, required=False, help_text="Base currency; omit when refunding in `currency`.")
     method = serializers.ChoiceField(choices=PaymentMethod.choices)
     reference = serializers.CharField(max_length=60, required=False, allow_blank=True, default="")
     reason = serializers.CharField(max_length=300)
+    currency = serializers.CharField(
+        max_length=3, required=False, allow_blank=True, default="", help_text="Refund in this currency, e.g. USD."
+    )
+    foreign_amount = serializers.IntegerField(
+        min_value=1, required=False, allow_null=True, help_text="Its minor units."
+    )
+
+    def validate(self, attrs):
+        if attrs.get("currency") and not attrs.get("foreign_amount"):
+            raise serializers.ValidationError({"foreign_amount": ["أدخل المبلغ بالعملة المختارة."]})
+        if not attrs.get("currency") and not attrs.get("amount"):
+            raise serializers.ValidationError({"amount": ["أدخل المبلغ."]})
+        return attrs
 
 
 class PaymentSerializer(serializers.ModelSerializer):

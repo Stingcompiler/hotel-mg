@@ -1,6 +1,6 @@
 import { formatDate, formatWhen } from "./dates";
 import { digits, setDigits, toWestern } from "./digits";
-import { formatMoney, parseMoney } from "./money";
+import { formatMoney, parseMoney, toBase } from "./money";
 import { errorMessage, t } from "./t";
 
 afterEach(() => setDigits("western"));
@@ -43,4 +43,13 @@ test("strings come from ar.json with variables", () => {
   expect(errorMessage("no_open_shift")).toBe("لا توجد وردية مفتوحة على هذا الجهاز.");
   expect(errorMessage("weird_code")).toBe("حدث خطأ غير متوقع.");
   expect(errorMessage("x", "من الخادم")).toBe("من الخادم");
+});
+
+describe("toBase (review 2026-09-29, F-15)", () => {
+  it("converts like the server: half away from zero", () => {
+    expect(toBase(15_000, 250_000)).toBe(37_500_000); // 150.00 $ at 2,500
+    expect(toBase(1, 150)).toBe(2); // 1.5 → 2
+    expect(toBase(-1, 150)).toBe(-2); // a refund rounds away from zero too
+    expect(toBase(1, 149)).toBe(1);
+  });
 });

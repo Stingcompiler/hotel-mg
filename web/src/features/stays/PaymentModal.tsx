@@ -7,7 +7,7 @@ import { buttons, Modal } from "@/components/ui/Modal";
 import { openPrint } from "@/features/print/PrintPage";
 import { useCurrencies } from "@/features/settings/CurrenciesTab";
 import { digits } from "@/i18n/digits";
-import { formatMoney, parseMoney } from "@/i18n/money";
+import { formatMoney, parseMoney, toBase } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { notice } from "@/lib/notices";
 
@@ -30,7 +30,7 @@ export function PaymentModal({ folioId, room, balance, onClose, onDone }: Props)
   const invalidAmount = amount !== "" && (minor === null || minor <= 0);
   const needsReference = method !== "cash" && !reference.trim();
   // The pounds it is worth, shown before saving (the server applies the same rate and has the final word).
-  const base = minor !== null && currency ? Math.round((minor * currency.rate) / 100) : minor;
+  const base = minor !== null && currency ? toBase(minor, currency.rate) : minor;
   // Paying more than the balance is allowed (a deposit for the next nights) but is usually a typo: say so before saving.
   const overpay = base !== null && balance > 0 && base > balance ? base - balance : 0;
   const sign = currency ? currency.symbol || currency.code : t("money.currency");

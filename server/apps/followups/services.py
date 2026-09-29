@@ -149,19 +149,19 @@ def act(
         raise ApiError("task_closed", 409)
     now = timezone.now()
 
-    if action == "snooze":
+    if action in ("snooze", "waiting"):
+        # Both postpone the alert: both count toward the rule's limit and neither goes past 36 hours (A-10).
         if not rules.can_snooze(task.snooze_count, task.rule.max_snoozes):
             raise ApiError("snooze_limit", 409, max_snoozes=task.rule.max_snoozes)
-        if until is None or until <= now:
-            raise ApiError("validation_error", 400, detail="اختر وقتًا لاحقًا للتأجيل.")
-        task.status, task.next_at = FollowupTask.Status.SNOOZED, until
-        task.snooze_count += 1
-    elif action == "waiting":
-        if not note.strip():
+        if action == "waiting" and not note.strip():
             raise ApiError("reason_required", 400, detail="اكتب ما قاله النزيل.")
-        if until is None or until <= now:
-            raise ApiError("validation_error", 400, detail="حدّد وقت المتابعة.")
-        task.status, task.next_at, task.note = FollowupTask.Status.WAITING, until, note.strip()
+        if problem := rules.postpone_error(now, until):
+            raise ApiError("validation_error", 400, detail=problem)
+        task.snooze_count += 1
+        if action == "snooze":
+            task.status, task.next_at = FollowupTask.Status.SNOOZED, until
+        else:
+            task.status, task.next_at, task.note = FollowupTask.Status.WAITING, until, note.strip()
     elif action in ("extend", "confirm_checkout"):
         if task.stay_id is None or task.stay.reservation.status != ReservationStatus.CHECKED_IN:
             raise ApiError("invalid_reservation_status", 409)

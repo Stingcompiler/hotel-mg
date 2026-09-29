@@ -231,7 +231,7 @@ function TaskLine({ row, late = false, offline }: { row: TaskRow; late?: boolean
             <button type="button" disabled={disabled} onClick={() => navigate(`/stays/${row.stay}?action=checkout`)} className={btn}>
               {t("followups.confirmCheckout")}
             </button>
-            <button type="button" disabled={disabled} onClick={() => setPop(pop === "waiting" ? null : "waiting")} className={btn}>
+            <button type="button" disabled={disabled || !row.can_snooze} onClick={() => setPop(pop === "waiting" ? null : "waiting")} className={btn}>
               {t("followups.waiting")}
             </button>
           </>

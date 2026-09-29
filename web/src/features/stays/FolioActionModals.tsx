@@ -5,8 +5,9 @@ import type { components } from "@api/schema";
 import { api, ApiError, data } from "@/api/client";
 import { ErrorBanner, Field, MoneyInput, Segmented, TextInput } from "@/components/ui/form";
 import { buttons, Modal } from "@/components/ui/Modal";
+import { useCurrencies } from "@/features/settings/CurrenciesTab";
 import { digits } from "@/i18n/digits";
-import { formatMoney, parseMoney } from "@/i18n/money";
+import { formatMoney, parseMoney, toBase } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { notice } from "@/lib/notices";
 
@@ -80,13 +81,19 @@ export function ReverseModal({ folioId, entry, onClose, onDone }: { folioId: str
 export function RefundModal({ folioId, room, credit, onClose, onDone }: { folioId: string; room: string; credit: number; onClose: () => void; onDone: () => void }) {
   const [amount, setAmount] = useState(formatMoney(credit));
   const [method, setMethod] = useState<Method>("cash");
+  // Dollars taken in can go back in dollars, from the dollar cash (review 2026-09-29, A-7).
+  const currencies = (useCurrencies().data ?? []).filter((c) => c.is_active);
+  const [code, setCode] = useState("");
+  const currency = currencies.find((c) => c.code === code);
+  const sign = currency ? currency.symbol || currency.code : t("money.currency");
   const [reference, setReference] = useState("");
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const minor = parseMoney(amount);
+  const base = minor !== null && currency ? toBase(minor, currency.rate) : minor;
   const invalidAmount = amount !== "" && (minor === null || minor <= 0);
-  const tooMuch = minor !== null && minor > credit;
+  const tooMuch = base !== null && base > credit;
   const ready = minor !== null && minor > 0 && !tooMuch && !!reason.trim() && (method === "cash" || !!reference.trim()) && !busy;
 
   const save = async () => {
@@ -97,10 +104,12 @@ export function RefundModal({ folioId, room, credit, onClose, onDone }: { folioI
       await data(
         api.POST("/api/v1/folios/{id}/refunds", {
           params: { path: { id: folioId } },
-          body: { amount: minor, method, reference: reference.trim(), reason: reason.trim() },
+          body: currency
+            ? { method, reference: reference.trim(), reason: reason.trim(), currency: currency.code, foreign_amount: minor }
+            : { amount: minor, method, reference: reference.trim(), reason: reason.trim() },
         }),
       );
-      notice(t("folioAction.refundDone", { amount: `${formatMoney(minor)} ${t("money.currency")}` }));
+      notice(t("folioAction.refundDone", { amount: `${formatMoney(minor)} ${sign}` }));
       onDone();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t("errors.error"));
@@ -127,9 +136,28 @@ export function RefundModal({ folioId, room, credit, onClose, onDone }: { folioI
       }
     >
       <div className="text-body text-text-secondary">{t("folioAction.refundCredit", { amount: `${formatMoney(credit)} ${t("money.currency")}` })}</div>
+      {currencies.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-label text-text-secondary">{t("payment.currency")}</span>
+          <Segmented<string>
+            label={t("payment.currency")}
+            value={code}
+            onChange={(next) => {
+              setCode(next);
+              setAmount("");
+            }}
+            options={[{ value: "", label: t("money.currency") }, ...currencies.map((c) => ({ value: c.code, label: c.symbol || c.code }))]}
+          />
+        </div>
+      )}
       <Field label={t("payment.amount")} error={invalidAmount ? t("payment.errAmount") : tooMuch ? t("folioAction.errRefundAmount") : null}>
-        <MoneyInput autoFocus value={amount} invalid={invalidAmount || tooMuch} onChange={(e) => setAmount(e.target.value)} />
+        <MoneyInput autoFocus suffix={sign} value={amount} invalid={invalidAmount || tooMuch} onChange={(e) => setAmount(e.target.value)} />
       </Field>
+      {currency && base !== null && base > 0 && (
+        <div className="text-body text-text-secondary">
+          {t("payment.equivalent", { amount: `${formatMoney(base)} ${t("money.currency")}`, rate: `1 ${sign} = ${formatMoney(currency.rate)}` })}
+        </div>
+      )}
       <div className="flex flex-col gap-1.5">
         <span className="text-label text-text-secondary">{t("payment.method")}</span>
         <Segmented<Method>

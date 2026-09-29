@@ -84,3 +84,12 @@ def test_responsible_shift():
     assert rules.responsible_shift(shifts, T0) == "b"  # nobody was at the desk: waiting for «b»
     assert rules.responsible_shift(shifts, T0 + timedelta(days=3)) == "c"
     assert rules.responsible_shift(shifts[:2], T0 + timedelta(days=3)) is None
+
+
+def test_a_postponement_is_later_and_within_36_hours():
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime(2026, 9, 29, 10, tzinfo=UTC)
+    assert rules.postpone_error(now, None) and rules.postpone_error(now, now)
+    assert rules.postpone_error(now, now + timedelta(hours=36)) is None
+    assert rules.postpone_error(now, now + timedelta(hours=36, minutes=1)) == "لا يتجاوز التأجيل 36 ساعة."

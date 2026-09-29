@@ -200,7 +200,7 @@ class Command(BaseCommand):
                 )
                 payments += 1
         cash.close_shift(manager, counted=0)
-        cash.open_shift(actor, opening=demo_data.SHIFT["opening"])
+        cash.open_shift(actor, opening=demo_data.SHIFT["opening"], opening_reason="رصيد الوردية في البيانات التجريبية")
         for row in demo_data.EXPENSES:
             cash.create_expense(actor, **row)
         return payments, len(demo_data.EXPENSES)

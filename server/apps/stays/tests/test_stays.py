@@ -182,7 +182,8 @@ class TestCheckout:
         stay = stay_of(walk_in(reception_api, guest, single, rooms["101"]))
         res = reception_api.post(f"/api/v1/stays/{stay.pk}/checkout", {}, format="json")
         assert res.status_code == 409
-        assert res.json()["code"] == "balance_not_zero" and res.json()["balance"] == 3_600_000
+        # Leaving on the arrival day of a 3-night booking is an early departure: one night at the price paid is due.
+        assert res.json()["code"] == "balance_not_zero" and res.json()["balance"] == 1_200_000
 
     def test_checkout_frees_room_for_cleaning(self, reception_api, guest, single, rooms, open_shift, pay):
         r = walk_in(reception_api, guest, single, rooms["101"])
@@ -232,6 +233,7 @@ class TestCancelStay:
         opts = reception_api.get(f"/api/v1/stays/{stay.pk}/cancel").json()
         assert opts["nights_used"] == 12
         assert [(o["label"], o["total"]) for o in opts["options"]] == [
+            ("بالسعر المدفوع — 12 ليلة", 30_000_000 * 12 // 30),  # the month's price, pro rata (A-5)
             ("أسبوع + 5 ليالٍ", 9_500_000 + 5 * 1_500_000),
             ("12 ليلة", 12 * 1_500_000),
         ]

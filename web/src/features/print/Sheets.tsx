@@ -259,6 +259,11 @@ export function ShiftStatementA4({ doc, version }: { doc: Statement; version: st
       <div className="mt-2 text-[11pt] text-text-secondary">
         {t("payMethod.cash")} {money(receipts.cash)} · {t("payMethod.bankak")} {money(receipts.bankak)} · {t("payMethod.transfer")} {money(receipts.transfer)}
       </div>
+      {doc.opening_reason && (
+        <div className="mt-1 text-[11pt]">
+          {t("print.openingDiffers", { amount: doc.opening_expected === null ? "—" : money(doc.opening_expected), reason: doc.opening_reason })}
+        </div>
+      )}
 
       <table className="print-table mt-4 text-[12pt]">
         <thead>
@@ -288,6 +293,39 @@ export function ShiftStatementA4({ doc, version }: { doc: Statement; version: st
         </tbody>
       </table>
 
+      {/* Dollars and other currencies of the drawer, each in its own units (review 2026-09-29, A-9, D-1). */}
+      {doc.currencies.length > 0 && (
+        <table className="print-table mt-4 text-[12pt]">
+          <thead>
+            <tr className="border-y-2 border-text-primary text-[11pt]">
+              <th>{t("print.colCurrency")}</th>
+              <th className="num">{t("print.opening")}</th>
+              <th className="num">{t("print.colReceived")}</th>
+              <th className="num">{t("print.expected")}</th>
+              <th className="num">{t("print.counted")}</th>
+              <th className="num">{t("print.difference")}</th>
+              <th className="num">{t("print.handedOver")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {doc.currencies.map((c) => {
+              const cur = (v: number | null) => (v === null ? "—" : `${v < 0 ? "− " : ""}${money(Math.abs(v))} ${c.symbol}`);
+              return (
+                <tr key={c.currency} className="border-b border-border">
+                  <td>{c.currency}</td>
+                  <td className="num" dir="ltr">{cur(c.opening)}</td>
+                  <td className="num" dir="ltr">{cur(c.received)}</td>
+                  <td className="num" dir="ltr">{cur(c.expected)}</td>
+                  <td className="num" dir="ltr">{cur(c.counted)}</td>
+                  <td className="num font-semibold" dir="ltr">{cur(c.difference)}</td>
+                  <td className="num" dir="ltr">{cur(c.handed_over)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+
       <section className="mt-5 flex items-start gap-6">
         <div className="flex-1 whitespace-pre-line text-[10pt] text-text-secondary">{doc.formula}</div>
         <div className="w-[80mm] flex-none rounded-control border-2 border-text-primary p-3">
@@ -300,6 +338,12 @@ export function ShiftStatementA4({ doc, version }: { doc: Statement; version: st
             </span>
           </div>
           {doc.difference_reason && <div className="mt-1 text-[11pt]">{t("print.reason", { reason: doc.difference_reason })}</div>}
+          {doc.handed_over > 0 && (
+            <div className="mt-1 border-t border-border pt-1">
+              <Row label={t("print.handedOver")} value={money(doc.handed_over)} />
+              <Row label={t("print.leftInDrawer")} value={doc.left_in_drawer === null ? "—" : money(doc.left_in_drawer)} />
+            </div>
+          )}
         </div>
       </section>
 

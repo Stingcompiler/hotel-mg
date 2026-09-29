@@ -17,7 +17,23 @@ from apps.core.models import HotelSettings
 from . import rules
 from .models import Expense, ExpenseAttachment, Shift
 
-SHIFT_FIELDS = ["device", "opened_at", "opening", "closed_at", "closed_by", "expected", "counted", "difference_reason"]
+SHIFT_FIELDS = [
+    "device",
+    "opened_at",
+    "opening",
+    "opening_expected",
+    "opening_reason",
+    "opening_foreign",
+    "closed_at",
+    "closed_by",
+    "expected",
+    "counted",
+    "handed_over",
+    "expected_foreign",
+    "counted_foreign",
+    "handed_over_foreign",
+    "difference_reason",
+]
 EXPENSE_FIELDS = [
     "shift",
     "category",
@@ -114,21 +130,32 @@ class ShiftTotals:
             "shift_id", "method", "amount"
         ):
             spent[shift_id].append((method, amount))
-        symbols = dict(Currency.objects.values_list("code", "symbol")) if foreign else {}
+        carried = any(s.opening_foreign for s in shifts)
+        symbols = dict(Currency.objects.values_list("code", "symbol")) if foreign or carried else {}
         out = {}
         for shift in shifts:
             receipts = rules.totals_by_method(base[shift.pk])
             expenses = rules.totals_by_method(spent[shift.pk])
             by_currency = billing_rules.foreign_totals(foreign[shift.pk])
+            rows = []
+            for code in sorted(set(by_currency) | set(shift.opening_foreign)):
+                row = by_currency.get(code, {"cash": 0, "total": 0, "base": 0})
+                opening = shift.opening_foreign.get(code, 0)
+                rows.append(
+                    {
+                        "currency": code,
+                        "symbol": symbols.get(code) or code,
+                        **row,
+                        "opening": opening,
+                        "expected": opening + row["cash"],  # in the drawer, its own minor units (A-7)
+                    }
+                )
             out[shift.pk] = cls(
                 shift.opening,
                 receipts,
                 expenses,
                 rules.expected_cash(shift.opening, receipts["cash"], expenses["cash"]),
-                [
-                    {"currency": code, "symbol": symbols.get(code) or code, **row}
-                    for code, row in sorted(by_currency.items())
-                ],
+                rows,
             )
         return out
 
@@ -136,13 +163,48 @@ class ShiftTotals:
 # --- Shifts ------------------------------------------------------------------------------
 
 
+def last_closed() -> Shift | None:
+    return Shift.objects.filter(device=device(), closed_at__isnull=False).order_by("-closed_at").first()
+
+
+def left_by(shift: Shift | None) -> tuple[int | None, dict]:
+    """What a closed shift left in the drawer: pounds and foreign cash (None/{} before the first shift)."""
+    if shift is None or shift.counted is None:
+        return None, {}
+    return (
+        rules.left_in_drawer(shift.counted, shift.handed_over),
+        rules.left_foreign(shift.counted_foreign, shift.handed_over_foreign),
+    )
+
+
 @transaction.atomic
-def open_shift(actor, *, opening: int) -> Shift:
+def open_shift(actor, *, opening: int, opening_foreign: dict | None = None, opening_reason: str = "") -> Shift:
+    """Open the drawer. The opening is checked against what the last shift left: a different amount needs a reason,
+    so cash cannot disappear between shifts without a trace (review 2026-09-29, A-6)."""
     if current_shift() is not None:
         raise ApiError("shift_already_open", 409)
+    opening_foreign = {code: amount for code, amount in (opening_foreign or {}).items() if amount}
+    expected, expected_foreign = left_by(last_closed())
+    reason = opening_reason.strip()
+    if rules.opening_differs(opening, expected, opening_foreign, expected_foreign) and not reason:
+        raise ApiError(
+            "reason_required",
+            400,
+            detail="الرصيد الافتتاحي يختلف عما تركته الوردية السابقة — اكتب السبب.",
+            expected=expected,
+            expected_foreign=expected_foreign,
+        )
     try:
         with transaction.atomic():
-            shift = Shift.objects.create(device=device(), opened_at=timezone.now(), opening=opening, created_by=actor)
+            shift = Shift.objects.create(
+                device=device(),
+                opened_at=timezone.now(),
+                opening=opening,
+                opening_expected=expected,
+                opening_reason=reason,
+                opening_foreign=opening_foreign,
+                created_by=actor,
+            )
     except IntegrityError:  # a concurrent open on the same device won the race
         raise ApiError("shift_already_open", 409) from None
     audit.record(
@@ -152,20 +214,46 @@ def open_shift(actor, *, opening: int) -> Shift:
 
 
 @transaction.atomic
-def close_shift(actor, *, counted: int, difference_reason: str = "", version: int | None = None) -> Shift:
+def close_shift(
+    actor,
+    *,
+    counted: int,
+    difference_reason: str = "",
+    counted_foreign: dict | None = None,
+    handed_over: int = 0,
+    handed_over_foreign: dict | None = None,
+    version: int | None = None,
+) -> Shift:
+    """Close the drawer: pounds and every foreign currency are counted against what is expected, and what is handed
+    to the owner is recorded, so the next opening can be checked (review 2026-09-29, A-6, A-7)."""
     shift = require_open_shift()
     shift = get_for_update(Shift.objects, shift.pk, version)
-    expected = ShiftTotals.of(shift).expected
+    totals = ShiftTotals.of(shift)
+    expected = totals.expected
+    expected_foreign = {row["currency"]: row["expected"] for row in totals.foreign if row["expected"]}
+    counted_foreign = {code: amount for code, amount in (counted_foreign or {}).items() if amount}
+    handed_over_foreign = {code: amount for code, amount in (handed_over_foreign or {}).items() if amount}
+    if not rules.handover_valid(counted, handed_over, counted_foreign, handed_over_foreign):
+        raise ApiError("validation_error", 400, detail="المسلَّم للمالك لا يتجاوز المعدود.")
     reason = difference_reason.strip()
-    if rules.difference_reason_required(counted, expected) and not reason:
+    foreign_diff = rules.foreign_differences(expected_foreign, counted_foreign)
+    if (rules.difference_reason_required(counted, expected) or foreign_diff) and not reason:
         raise ApiError(
-            "reason_required", 400, detail="سبب الفرق مطلوب.", difference=rules.difference(counted, expected)
+            "reason_required",
+            400,
+            detail="سبب الفرق مطلوب.",
+            difference=rules.difference(counted, expected),
+            foreign_differences=foreign_diff,
         )
     before = audit.snapshot(shift, SHIFT_FIELDS)
     shift.closed_at = timezone.now()
     shift.closed_by = actor
     shift.expected = expected
     shift.counted = counted
+    shift.handed_over = handed_over
+    shift.expected_foreign = expected_foreign
+    shift.counted_foreign = counted_foreign
+    shift.handed_over_foreign = handed_over_foreign
     shift.difference_reason = reason
     shift.save()
     from apps.backup.services import after_shift_close  # backup depends on cash, not the reverse
@@ -227,6 +315,19 @@ def movements(shift: Shift) -> list[dict]:
                 "reference": p.reference,
                 "by": p.created_by.full_name if p.created_by else "",
                 "ref_id": str(p.pk),
+            }
+        )
+    if shift.closed_at and shift.handed_over:
+        rows.append(
+            {
+                "at": shift.closed_at,
+                "kind": "handover",
+                "text": "تسليم للمالك عند الإغلاق",
+                "amount": -shift.handed_over,
+                "method": "cash",
+                "reference": "",
+                "by": shift.closed_by.full_name if shift.closed_by else "",
+                "ref_id": str(shift.pk),
             }
         )
     # Newest first; rows of the same instant in a fixed order, the opening balance last (review 2026-09-29, QA-2).

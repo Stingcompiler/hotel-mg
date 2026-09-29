@@ -25,3 +25,19 @@ def test_totals_by_method():
         "transfer": 0,
         "total": 10,
     }
+
+
+def test_the_cash_chain_rules():
+    """Review 2026-09-29, A-6/A-7: what a shift leaves, what may be handed over, per-currency differences."""
+    assert rules.left_in_drawer(3_500_000, 1_000_000) == 2_500_000
+    assert rules.left_foreign({"USD": 20_000, "EUR": 500}, {"USD": 5_000, "EUR": 500}) == {"USD": 15_000}
+    assert rules.handover_valid(100, 100, {"USD": 50}, {"USD": 50})
+    assert not rules.handover_valid(100, 101, {}, {})
+    assert not rules.handover_valid(100, -1, {}, {})
+    assert not rules.handover_valid(100, 0, {"USD": 50}, {"USD": 60})
+    assert not rules.handover_valid(100, 0, {}, {"EUR": 1})
+    assert rules.foreign_differences({"USD": 100, "EUR": 5}, {"USD": 90, "EUR": 5, "SAR": 3}) == {"SAR": 3, "USD": -10}
+    assert not rules.opening_differs(7, None, {"USD": 1}, {})  # the first shift: nothing to compare with
+    assert not rules.opening_differs(7, 7, {"USD": 1}, {"USD": 1})
+    assert rules.opening_differs(6, 7, {}, {})
+    assert rules.opening_differs(7, 7, {}, {"USD": 1})

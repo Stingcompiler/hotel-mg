@@ -1473,7 +1473,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** @description What checking out today settles: an early departure's nights used, new room charges and refund. */
+        get: operations["stays_checkout_retrieve"];
         put?: never;
         post: operations["stays_checkout_create"];
         delete?: never;
@@ -2044,6 +2045,10 @@ export interface components {
             room?: string | null;
             version?: number;
         };
+        CheckoutQuote: {
+            /** @description Null: leaving on the booked day or later. */
+            early_departure: components["schemas"]["EarlyDeparture"] | null;
+        };
         CheckoutRequest: {
             /** @default  */
             override_password?: string;
@@ -2053,10 +2058,33 @@ export interface components {
             room_status?: components["schemas"]["AfterRoomStatusEnum"];
             /** @default  */
             maintenance_reason?: string;
+            /**
+             * @description Early departure: how the unused nights are paid back.
+             *
+             *     * `cash` - نقدي
+             *     * `bankak` - بنكك
+             *     * `transfer` - تحويل
+             * @default cash
+             */
+            refund_method?: components["schemas"]["PaymentMethodEnum"];
+            /** @default  */
+            refund_reference?: string;
             version?: number;
         };
         CloseShiftRequest: {
             counted: number;
+            /** @description Foreign cash counted: code → minor units. */
+            counted_foreign?: {
+                [key: string]: number;
+            };
+            /**
+             * @description Pounds taken out for the owner.
+             * @default 0
+             */
+            handed_over?: number;
+            handed_over_foreign?: {
+                [key: string]: number;
+            };
             /** @default  */
             difference_reason?: string;
             version?: number;
@@ -2110,7 +2138,12 @@ export interface components {
             totals: components["schemas"]["ShiftTotals"] | null;
             movements: components["schemas"]["Movement"][];
             last_closed: components["schemas"]["Shift"] | null;
+            /** @description Left in the drawer by the last shift (counted − handed over). */
             suggested_opening: number;
+            /** @description Foreign cash left by the last shift: code → its minor units. */
+            suggested_opening_foreign: {
+                [key: string]: number;
+            };
         };
         DebtsKpi: {
             value: number;
@@ -2165,6 +2198,20 @@ export interface components {
          * @enum {string}
          */
         DurationKindEnum: "daily" | "weekly" | "monthly" | "mixed";
+        EarlyDeparture: {
+            nights_used: number;
+            nights_booked: number;
+            /** @description Room charges on the folio now. */
+            room_charges: number;
+            /** @description The nights used at the prices paid. */
+            new_room_charges: number;
+            services: number;
+            paid: number;
+            /** @description Paid back at checkout from the open shift. */
+            refund: number;
+            /** @description > 0 still owed after the refund. */
+            balance_after: number;
+        };
         Expense: {
             /** Format: uuid */
             readonly id: string;
@@ -2300,6 +2347,10 @@ export interface components {
             total: number;
             /** @description Base-currency equivalent at the rates used. */
             base: number;
+            /** @description In the drawer at opening, its minor units. */
+            opening: number;
+            /** @description Opening + cash received − cash refunded, its minor units. */
+            expected: number;
         };
         Guest: {
             /** Format: uuid */
@@ -2669,9 +2720,10 @@ export interface components {
          * @description * `open` - open
          *     * `in` - in
          *     * `out` - out
+         *     * `handover` - handover
          * @enum {string}
          */
-        MovementKindEnum: "open" | "in" | "out";
+        MovementKindEnum: "open" | "in" | "out" | "handover";
         NeglectedKpi: {
             value: number;
             latest_shift_user: string | null;
@@ -2700,6 +2752,15 @@ export interface components {
         };
         OpenShiftRequest: {
             opening: number;
+            /** @description Foreign cash in the drawer: code → minor units. */
+            opening_foreign?: {
+                [key: string]: number;
+            };
+            /**
+             * @description Required when it differs from what was left.
+             * @default
+             */
+            opening_reason?: string;
         };
         OwnerDashboard: {
             period: components["schemas"]["Period"];
@@ -3153,11 +3214,19 @@ export interface components {
             recovery_code: string | null;
         };
         RefundRequest: {
-            amount: number;
+            /** @description Base currency; omit when refunding in `currency`. */
+            amount?: number;
             method: components["schemas"]["PaymentMethodEnum"];
             /** @default  */
             reference?: string;
             reason: string;
+            /**
+             * @description Refund in this currency, e.g. USD.
+             * @default
+             */
+            currency?: string;
+            /** @description Its minor units. */
+            foreign_amount?: number | null;
         };
         Report: {
             name: string;
@@ -3493,6 +3562,23 @@ export interface components {
             readonly counted: number | null;
             readonly difference: number | null;
             difference_reason: string;
+            /** @description Left by the previous shift. */
+            readonly opening_expected: number | null;
+            opening_reason: string;
+            /** @description Pounds handed to the owner at close. */
+            readonly handed_over: number;
+            readonly opening_foreign: {
+                [key: string]: number;
+            };
+            readonly expected_foreign: {
+                [key: string]: number;
+            };
+            readonly counted_foreign: {
+                [key: string]: number;
+            };
+            readonly handed_over_foreign: {
+                [key: string]: number;
+            };
             /** Format: int64 */
             version: number;
         };
@@ -3522,6 +3608,23 @@ export interface components {
             readonly counted: number | null;
             readonly difference: number | null;
             difference_reason: string;
+            /** @description Left by the previous shift. */
+            readonly opening_expected: number | null;
+            opening_reason: string;
+            /** @description Pounds handed to the owner at close. */
+            readonly handed_over: number;
+            readonly opening_foreign: {
+                [key: string]: number;
+            };
+            readonly expected_foreign: {
+                [key: string]: number;
+            };
+            readonly counted_foreign: {
+                [key: string]: number;
+            };
+            readonly handed_over_foreign: {
+                [key: string]: number;
+            };
             /** Format: int64 */
             version: number;
             /** @description Cash receipts. */
@@ -3539,6 +3642,14 @@ export interface components {
             counted: number | null;
             difference: number | null;
             difference_reason: string;
+            /** @description Pounds handed to the owner at close. */
+            handed_over: number;
+            left_in_drawer: number | null;
+            /** @description Left by the previous shift. */
+            opening_expected: number | null;
+            opening_reason: string;
+            /** @description One line per foreign currency (A-9, D-1). */
+            currencies: components["schemas"]["StatementCurrency"][];
             formula: string;
         };
         ShiftTotals: {
@@ -3572,6 +3683,20 @@ export interface components {
          * @enum {string}
          */
         StateEnum: "new" | "imported" | "older";
+        StatementCurrency: {
+            currency: string;
+            symbol: string;
+            /** @description Its minor units. */
+            opening: number;
+            /** @description Cash received net of refunds, its minor units. */
+            received: number;
+            expected: number;
+            counted: number | null;
+            difference: number | null;
+            handed_over: number;
+            /** @description Pounds value of what was received, at the rates used. */
+            base: number;
+        };
         StatementShift: {
             id: string;
             device: string;
@@ -6283,6 +6408,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Stay"];
+                };
+            };
+        };
+    };
+    stays_checkout_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckoutQuote"];
                 };
             };
         };
