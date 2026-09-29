@@ -47,6 +47,13 @@ def setup_django() -> str:
     # After django.setup(): settings.LOGGING replaces the root handlers, so a file handler added
     # earlier is dropped and server.log stays empty.
     _log_to_file(cfg.home / "logs")
+    # A database migrated by a newer version: this older build must not run on it (review 2026-09-29, E-5).
+    newer = newer_database()
+    if newer:
+        logging.getLogger("skytowers").error(
+            "the database was updated by a newer Sky Towers (%s); install that version again", ", ".join(newer)
+        )
+        raise SystemExit(4)
     # Updates: a newer build migrates the database on its first start (spec §11).
     call_command("migrate", interactive=False, verbosity=0)
     from apps.backup import adopt
@@ -153,6 +160,18 @@ def stop(server) -> None:
                 pass
 
     server.trigger.pull_trigger(close_all)
+
+
+def newer_database() -> list[str]:
+    """Migrations applied to the database that this build does not know (``app.name``)."""
+    from django.db import connection
+    from django.db.migrations.loader import MigrationLoader
+
+    from apps.backup import rules as backup_rules
+
+    loader = MigrationLoader(connection, ignore_no_migrations=True)
+    unknown = backup_rules.unknown_migrations(set(loader.applied_migrations), set(loader.disk_migrations))
+    return sorted(f"{app}.{name}" for app, name in unknown)
 
 
 def main() -> None:

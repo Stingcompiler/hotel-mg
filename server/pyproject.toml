@@ -18,5 +18,5 @@ extend-exclude = ["*/migrations/*"]
 select = ["E", "F", "W", "I", "B", "UP", "DJ"]
 
 [tool.coverage.run]
-source = ["apps", "config"]
+source = ["apps", "config", "service"]
 omit = ["*/migrations/*", "*/tests/*"]

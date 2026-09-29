@@ -302,7 +302,8 @@ def test_keep_days_deletes_old_backups_but_never_the_newest(hotel, tmp_path):
     stay_services.extend(hotel, stays[0].pk, duration_kind="daily", count=1)
     backup(hotel)
     left = {p.name for p in settings.RUNTIME.backups_dir.glob("*.age")}
-    assert len(left) == 2 and paths[2].name in left and not (left & {p.name for p in paths[:2]})
+    # The newest three are kept whatever their age (E-8): the oldest six-week-old file goes.
+    assert len(left) == 3 and paths[0].name not in left and paths[1].name in left
     # 0 = never delete by age; and the newest file survives even when it is itself older than the limit.
     cfg.keep_days = 0
     cfg.save()
@@ -310,7 +311,7 @@ def test_keep_days_deletes_old_backups_but_never_the_newest(hotel, tmp_path):
         os.utime(path, (old, old))
     stay_services.extend(hotel, stays[1].pk, duration_kind="daily", count=1)
     backup(hotel)
-    assert len(list(settings.RUNTIME.backups_dir.glob("*.age"))) == 3
+    assert len(list(settings.RUNTIME.backups_dir.glob("*.age"))) == 4
 
 
 def test_run_if_due_and_no_backup_alert(hotel):
