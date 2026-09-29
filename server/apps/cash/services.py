@@ -163,7 +163,6 @@ class ShiftTotals:
 # --- Shifts ------------------------------------------------------------------------------
 
 
-@transaction.atomic
 def last_closed() -> Shift | None:
     return Shift.objects.filter(device=device(), closed_at__isnull=False).order_by("-closed_at").first()
 
@@ -178,6 +177,7 @@ def left_by(shift: Shift | None) -> tuple[int | None, dict]:
     )
 
 
+@transaction.atomic
 def open_shift(actor, *, opening: int, opening_foreign: dict | None = None, opening_reason: str = "") -> Shift:
     """Open the drawer. The opening is checked against what the last shift left: a different amount needs a reason,
     so cash cannot disappear between shifts without a trace (review 2026-09-29, A-6)."""

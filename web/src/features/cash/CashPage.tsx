@@ -213,7 +213,7 @@ function OpenShift({ current }: { current: Current }) {
           {totals.foreign.map((f) => (
             <div key={f.currency} className="grid grid-cols-2 gap-3">
               <SmallMoney label={t("cash.countedForeign", { currency: f.symbol })} unit={f.symbol} value={countedF[f.currency] ?? ""} onChange={(v) => setCountedF({ ...countedF, [f.currency]: v })} />
-              <div className={`flex flex-col justify-end pb-2 text-body ${diffF[f.currency] === 0 ? "text-success-text" : "text-danger-text"}`}>
+              <div className={`flex items-end gap-1.5 pb-2.5 text-body ${diffF[f.currency] === 0 ? "text-success-text" : "text-danger-text"}`}>
                 {t("cash.difference")}: <span dir="ltr" className="font-semibold">{signed(diffF[f.currency])} {f.symbol}</span>
               </div>
             </div>
