@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
+from django.utils.html import escape
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import ListAPIView
@@ -76,18 +77,38 @@ class BackupSettingsView(APIView):
 
     @extend_schema(request=BackupSettingsUpdateSerializer, responses=BackupSettingsSerializer)
     def patch(self, request):
-        data = BackupSettingsUpdateSerializer(export.backup_settings(), data=request.data, partial=True)
+        current = export.backup_settings()
+        data = BackupSettingsUpdateSerializer(current, data=request.data, partial=True)
         data.is_valid(raise_exception=True)
+        # Who else receives every backup, and where copies go: the owner only, re-entering his password
+        # (review 2026-09-29, C-15).
+        changes = data.validated_data
+        if any(k in changes and changes[k] != getattr(current, k) for k in ("owner_recipient", "second_dir")):
+            if request.user.role != "owner":
+                raise ApiError("permission_denied", 403, detail="يغيّر المالك وحده مستلمي النسخ ومجلدها الثاني.")
+            require_confirmation(request)
         return Response(BackupSettingsSerializer(services.update_settings(request.user, **data.validated_data)).data)
 
 
 # --- Owner PC ---------------------------------------------------------------------------------
 
 
+class OwnerPC(BasePermission):
+    """The owner PC's import and backup endpoints exist on the owner PC only: on the reception PC they would merge a
+    file into the live data (review 2026-09-29, C-9). A new PC takes a hotel over with «adopt» instead."""
+
+    message = "هذا الإجراء على جهاز المالك فقط."
+
+    def has_permission(self, request, view):
+        return settings.SKYTOWERS_ROLE == "owner"
+
+
 class ManagerOrFirstImport(BasePermission):
     """Import needs a manager (artboard 6.13 B); the very first import on an empty owner PC has no users yet."""
 
     def has_permission(self, request, view):
+        if not OwnerPC().has_permission(request, view):
+            return False
         if not User.objects.exists():
             return True
         return IsManager().has_permission(request, view)
@@ -188,7 +209,7 @@ class OwnerImportRunsView(ListAPIView):
 class OwnerBackupView(APIView):
     """The owner PC's own backup of its (imported) data, encrypted to the owner key."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, OwnerPC]
 
     @extend_schema(request=None, responses={201: BackupRunSerializer})
     def post(self, request):
@@ -257,7 +278,7 @@ class DriveCallbackView(APIView):
         drive.save_token(token)
         page = (
             f"<!doctype html><html dir='rtl' lang='ar'><meta charset='utf-8'><body style='font-family:sans-serif'>"
-            f"<h2>تم ربط حساب Drive</h2><p dir='ltr'>{email}</p><p>يمكنك إغلاق هذه النافذة.</p></body></html>"
+            f"<h2>تم ربط حساب Drive</h2><p dir='ltr'>{escape(email)}</p><p>يمكنك إغلاق هذه النافذة.</p></body></html>"
         )
         return HttpResponse(page)
 

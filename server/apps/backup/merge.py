@@ -10,6 +10,7 @@ import copy
 import dataclasses
 import io
 import json
+import os
 import sqlite3
 import tempfile
 import uuid
@@ -248,9 +249,16 @@ def _copy_attachments(files: dict[str, bytes]) -> int:
         if relative is None:  # not an attachment, or a name that would leave the attachments folder
             continue
         dest = root.joinpath(*relative)
-        if not dest.exists():
+        # A file cut short by a power cut is replaced, not kept forever (its size differs from the backup's copy), and
+        # files are written through a temporary name so a new cut never leaves a partial one (review 2026-09-29, C-13).
+        if not dest.exists() or dest.stat().st_size != len(data):
             dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_bytes(data)
+            part = dest.with_name(dest.name + ".part")
+            with part.open("wb") as f:
+                f.write(data)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(part, dest)
             copied += 1
     return copied
 

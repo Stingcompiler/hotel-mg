@@ -271,8 +271,11 @@ def test_board(reception_api, guest, single, double, rooms):
 
 
 class TestOverrideLockout:
-    def test_wrong_override_passwords_lock_the_manager(self, reception_api, guest, single, double, rooms, manager):
-        """Spec §5: 5 failed attempts → 5-minute lock — also for the manager password typed as an override."""
+    def test_wrong_override_passwords_lock_the_approval_not_the_login(
+        self, reception_api, guest, single, double, rooms, manager
+    ):
+        """Spec §5: 5 failed attempts → 5-minute lock for the manager password typed as an override — on the approval
+        field only: a clerk must not be able to lock the manager out of the system (review 2026-09-29, C-4)."""
         stay = stay_of(walk_in(reception_api, guest, double, rooms["202"]))
         url = f"/api/v1/stays/{stay.pk}/change-room"
         body = {"room": str(rooms["101"].pk), "reason": "طلب النزيل", "override_reason": "x"}
@@ -280,10 +283,10 @@ class TestOverrideLockout:
             res = reception_api.post(url, {**body, "override_password": "wrong"}, format="json")
             assert res.json()["code"] == "override_invalid"
         manager.refresh_from_db()
-        assert manager.locked_until is not None
-        assert AuditLog.objects.filter(action="auth.locked", entity_id=str(manager.pk)).exists()
-        # The right password is refused while locked, and login is locked too.
+        assert manager.override_locked_until is not None and manager.locked_until is None
+        assert AuditLog.objects.filter(action="auth.override_locked", entity_id=str(manager.pk)).exists()
+        # The right password is refused on the approval field while locked; the manager still signs in.
         res = reception_api.post(url, {**body, "override_password": PASSWORD}, format="json")
         assert res.json()["code"] == "override_invalid"
         login = APIClient().post("/api/v1/auth/password", {"username": "manager", "password": PASSWORD}, format="json")
-        assert login.status_code == 423 and login.json()["code"] == "account_locked"
+        assert login.status_code == 200

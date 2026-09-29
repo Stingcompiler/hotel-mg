@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsManager
+from apps.core import imaging
 from apps.stays.models import ReservationStatus
 
 from . import services, stats
@@ -109,6 +110,7 @@ class GuestDocumentUploadView(APIView):
         get_object_or_404(Guest, pk=pk)
         data = DocumentUploadSerializer(data=request.data)
         data.is_valid(raise_exception=True)
+        imaging.check_upload_size(data.validated_data["file"].size)  # before reading (C-17)
         document = services.add_document(request.user, pk, data.validated_data["file"].read())
         return Response(GuestDocumentSerializer(document).data, status=status.HTTP_201_CREATED)
 

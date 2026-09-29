@@ -1,6 +1,5 @@
 from datetime import datetime, time, timedelta
 
-from django.conf import settings
 from django.db.models import Q, Sum
 from django.http import HttpResponse
 from django.utils import timezone
@@ -13,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core import imaging
 from apps.core.models import HotelSettings
 
 from . import services
@@ -233,6 +233,7 @@ class ExpenseAttachmentView(APIView):
         get_object_or_404(Expense, pk=pk)
         data = UploadSerializer(data=request.data)
         data.is_valid(raise_exception=True)
+        imaging.check_upload_size(data.validated_data["file"].size)  # before reading (C-17)
         services.add_expense_attachment(request.user, pk, data.validated_data["file"].read())
         return Response(
             ExpenseSerializer(_expenses().get(pk=pk), context=_expense_context()).data, status=status.HTTP_201_CREATED
@@ -245,5 +246,5 @@ class ExpenseAttachmentFileView(APIView):
     @extend_schema(responses={(200, "image/jpeg"): OpenApiResponse(OpenApiTypes.BINARY)})
     def get(self, request, pk, att_pk):
         attachment = get_object_or_404(ExpenseAttachment, pk=att_pk, expense_id=pk)
-        data = (settings.RUNTIME.attachments_dir / attachment.file_path).read_bytes()
+        data = imaging.stored_path(attachment.file_path).read_bytes()
         return HttpResponse(data, content_type="image/jpeg")

@@ -344,14 +344,15 @@ function PasswordForm({
  *  Wrong emails count like wrong passwords (locked after 5); nothing is sent anywhere. */
 function RecoverForm({ onBack }: { onBack: () => void }) {
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
+  const [secret, setSecret] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [newCode, setNewCode] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const mismatch = !!confirm && confirm !== password;
-  const ready = !!username.trim() && !!email.trim() && password.length >= 6 && password === confirm && !busy;
+  const ready = !!username.trim() && !!secret.trim() && password.length >= 8 && password === confirm && !busy;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -359,7 +360,10 @@ function RecoverForm({ onBack }: { onBack: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      await data(api.POST("/api/v1/auth/recover", { body: { username: username.trim(), email: email.trim(), password } }));
+      // Staff type the email on their account; the owner types his recovery code (owner decision 2026-09-29).
+      const proof = secret.trim().includes("@") ? { email: secret.trim() } : { recovery_code: secret.trim() };
+      const res = await data(api.POST("/api/v1/auth/recover", { body: { username: username.trim(), password, ...proof } }));
+      setNewCode(res.recovery_code ?? null);
       setDone(true);
     } catch (err) {
       setError(passwordError(err));
@@ -375,6 +379,14 @@ function RecoverForm({ onBack }: { onBack: () => void }) {
       <div className="flex w-full flex-col gap-4">
         <h2 className="m-0 text-page-title">{t("login.recoverDoneTitle")}</h2>
         <div className="text-body text-text-secondary">{t("login.recoverDone")}</div>
+        {newCode && (
+          <>
+            <div className="text-body font-semibold">{t("login.newRecoveryCode")}</div>
+            <div dir="ltr" className="rounded-card border border-border-strong bg-bg-surface-2 py-3 text-center font-mono text-[24px] font-semibold tracking-widest text-text-primary">
+              {newCode}
+            </div>
+          </>
+        )}
         <button type="button" onClick={onBack} className="h-12 rounded-control border-0 bg-primary font-sans text-body font-semibold text-primary-text-on hover:bg-primary-hover">
           {t("login.backToSignIn")}
         </button>
@@ -393,7 +405,8 @@ function RecoverForm({ onBack }: { onBack: () => void }) {
       </label>
       <label className="flex flex-col gap-1.5 text-label text-text-secondary">
         {t("login.email")}
-        <input dir="ltr" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={field} />
+        <input dir="ltr" autoComplete="off" value={secret} onChange={(e) => setSecret(e.target.value)} className={field} />
+        <span className="text-label font-normal text-text-secondary">{t("login.emailHint")}</span>
       </label>
       <label className="flex flex-col gap-1.5 text-label text-text-secondary">
         {t("login.newPassword")}

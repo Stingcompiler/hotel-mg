@@ -52,6 +52,15 @@ class User(BaseModel, AbstractBaseUser, PermissionsMixin):
         blank=True,
         help_text="Reference email: «نسيت كلمة المرور؟» on the reception PC asks for it (offline, nothing is sent).",
     )
+    # The owner's one-time recovery code (owner decision 2026-09-29, review C-1): shown once, stored hashed.
+    recovery_code_hash = models.CharField(max_length=128, blank=True)
+    # «نسيت كلمة المرور؟» failures: their own counter and an escalating lock, never the sign-in lock (C-1, C-4).
+    recovery_failed = models.PositiveSmallIntegerField(default=0)
+    recovery_locks = models.PositiveSmallIntegerField(default=0)
+    recovery_locked_until = models.DateTimeField(null=True, blank=True)
+    # Wrong «كلمة مرور المدير» on a reception screen: counted here, so a clerk cannot lock the manager's sign-in (C-4).
+    override_failed = models.PositiveSmallIntegerField(default=0)
+    override_locked_until = models.DateTimeField(null=True, blank=True)
     default_pin = models.BooleanField(
         default=False,
         help_text="The quick-login PIN is the well-known default (123456): anyone can pick the account and type it.",

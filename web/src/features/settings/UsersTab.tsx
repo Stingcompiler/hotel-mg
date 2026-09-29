@@ -26,6 +26,7 @@ export function UsersTab({ readOnly }: { readOnly: boolean }) {
   const queryClient = useQueryClient();
   const users = useQuery({ queryKey: USERS, queryFn: () => data(api.GET("/api/v1/users/")) });
   const { gate, modal } = useConfirmGate();
+  const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
   const [editing, setEditing] = useState<User | "new" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const refresh = () => void queryClient.invalidateQueries({ queryKey: USERS });
@@ -115,12 +116,14 @@ export function UsersTab({ readOnly }: { readOnly: boolean }) {
           user={editing === "new" ? null : editing}
           gate={gate}
           onClose={() => setEditing(null)}
-          onDone={() => {
+          onDone={(code) => {
             setEditing(null);
             refresh();
+            if (code) setRecoveryCode(code);
           }}
         />
       )}
+      {recoveryCode && <RecoveryCodeModal code={recoveryCode} onClose={() => setRecoveryCode(null)} />}
       {modal}
     </Card>
   );
@@ -128,7 +131,7 @@ export function UsersTab({ readOnly }: { readOnly: boolean }) {
 
 type Gate = ReturnType<typeof useConfirmGate>["gate"];
 
-function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: Gate; onClose: () => void; onDone: () => void }) {
+function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: Gate; onClose: () => void; onDone: (recoveryCode?: string | null) => void }) {
   const [form, setForm] = useState({
     username: user?.username ?? "",
     full_name: user?.full_name ?? "",
@@ -143,7 +146,8 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
   const owner = user?.role === "owner";
   // Only the owner may give the owner role (accounts.rules.can_manage_user).
-  const actorIsOwner = useMe().data?.role === "owner";
+  const me = useMe().data;
+  const actorIsOwner = me?.role === "owner";
 
   const action = () => {
     if (!user) return t("settings.users.actCreate", { name: form.full_name });
@@ -154,6 +158,7 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
   const save = async () => {
     setBusy(true);
     setError(null);
+    let newCode: string | null = null;
     try {
       await gate(action(), async (headers) => {
         if (!user) {
@@ -178,10 +183,30 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
         if (!owner && form.role !== user.role) body.role = form.role;
         if (form.password) body.password = form.password;
         if (form.email.trim() !== (user.email ?? "")) body.email = form.email.trim();
-        if (Object.keys(body).length > 1) await data(api.PATCH("/api/v1/users/{id}", { params: { path: { id: user.id } }, headers, body }));
+        if (Object.keys(body).length > 1) {
+          const saved = await data(api.PATCH("/api/v1/users/{id}", { params: { path: { id: user.id } }, headers, body }));
+          // The owner's new password comes with a new one-time recovery code: shown once (review 2026-09-29, C-1).
+          if (saved.recovery_code) newCode = saved.recovery_code;
+        }
         if (form.pin) await data(api.POST("/api/v1/users/{id}/reset-pin", { params: { path: { id: user.id } }, headers, body: { pin: form.pin } }));
       });
-      onDone();
+      onDone(newCode);
+    } catch (e) {
+      if (!(e instanceof Cancelled)) setError(apiErrorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // «رمز استعادة جديد»: the owner, for his own account (the old code stops working).
+  const renewCode = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await gate(t("settings.users.actRecovery"), (headers) =>
+        data(api.POST("/api/v1/users/{id}/recovery-code", { params: { path: { id: user!.id } }, headers })),
+      );
+      onDone(res.recovery_code);
     } catch (e) {
       if (!(e instanceof Cancelled)) setError(apiErrorText(e));
     } finally {
@@ -193,7 +218,10 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
   const needsPassword = !user && form.role !== "reception";
   // A new password is typed twice (review 2026-09-28, UI-14): a typo would lock the owner out of their own PC.
   const mismatch = !!form.password && form.confirm !== form.password;
-  const valid = form.full_name.trim() && (user || form.username.trim()) && pinOk && (!needsPassword || form.password) && !mismatch;
+  // 8 characters at least: backup keys are only as strong as the owner's and managers' passwords (C-6).
+  const shortPassword = !!form.password && form.password.length < 8;
+  const valid = form.full_name.trim() && (user || form.username.trim()) && pinOk && (!needsPassword || form.password) && !mismatch && !shortPassword;
+  const self = !!user && user.id === me?.id;
 
   return (
     <Modal
@@ -257,6 +285,7 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
           label={user ? t("settings.users.newPassword") : t("settings.users.password")}
           required={needsPassword}
           hint={needsPassword ? t("settings.users.passwordManager") : t("settings.users.keepEmpty")}
+          error={shortPassword ? t("settings.users.passwordShort") : null}
         >
           <TextInput type="password" autoComplete="new-password" value={form.password} onChange={(e) => set({ password: e.target.value })} />
         </Field>
@@ -277,7 +306,37 @@ function UserModal({ user, gate, onClose, onDone }: { user: User | null; gate: G
           />
         </Field>
       )}
+      {self && user?.role === "owner" && (
+        <div className="flex flex-wrap items-center gap-3 rounded-control bg-bg-surface-2 px-3 py-2.5">
+          <span className="flex-1 text-body">{user.has_recovery_code ? t("settings.users.recoveryHas") : t("settings.users.recoveryNone")}</span>
+          <button type="button" disabled={busy} onClick={() => void renewCode()} className={linkButton}>
+            {t("settings.users.recoveryNew")}
+          </button>
+        </div>
+      )}
       <div className="text-label font-normal text-text-secondary">{t("settings.users.footnote")}</div>
+    </Modal>
+  );
+}
+
+/** The owner's one-time recovery code, shown once (review 2026-09-29, C-1): written down or printed, never stored. */
+export function RecoveryCodeModal({ code, onClose }: { code: string; onClose: () => void }) {
+  return (
+    <Modal
+      title={t("settings.users.recoveryTitle")}
+      width={480}
+      onClose={onClose}
+      footer={
+        <button type="button" onClick={onClose} className={buttons.primary}>
+          {t("settings.users.recoverySaved")}
+        </button>
+      }
+    >
+      <div className="text-body text-text-secondary">{t("settings.users.recoveryText")}</div>
+      <div dir="ltr" className="rounded-card border border-border-strong bg-bg-surface-2 py-4 text-center font-mono text-[28px] font-semibold tracking-widest text-text-primary">
+        {code}
+      </div>
+      <div className="rounded-control bg-warning-soft px-3 py-2.5 text-body text-warning-text">{t("settings.users.recoveryWarn")}</div>
     </Modal>
   );
 }

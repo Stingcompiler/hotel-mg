@@ -13,6 +13,7 @@ import { formatDayMonth, formatTime } from "@/i18n/dates";
 import { digits, toWestern } from "@/i18n/digits";
 import { t } from "@/i18n/t";
 
+import { Cancelled, useConfirmGate } from "./confirm";
 import { apiErrorText, Card, HeadRow, linkButton, smallButton } from "./shared";
 
 type Settings = components["schemas"]["BackupSettings"];
@@ -50,6 +51,7 @@ export function BackupTab({ readOnly }: { readOnly: boolean }) {
     }
   }, [settings.data]);
 
+  const { gate, modal } = useConfirmGate();
   const save = useMutation({
     mutationFn: () => {
       const body: Patch = {
@@ -62,14 +64,19 @@ export function BackupTab({ readOnly }: { readOnly: boolean }) {
         second_dir: draft!.second_dir.trim(),
         owner_recipient: draft!.owner_recipient.trim(),
       };
-      return data(owner ? api.PATCH("/api/v1/owner/settings", { body }) : api.PATCH("/api/v1/backup/settings", { body }));
+      // Changing who else receives the backups or the second folder is the owner's, with his password (C-15).
+      const current = settings.data;
+      const sensitive = !!current && (body.second_dir !== current.second_dir || body.owner_recipient !== current.owner_recipient);
+      const send = (headers?: { "X-Confirm-Token"?: string }) =>
+        data(owner ? api.PATCH("/api/v1/owner/settings", { headers, body }) : api.PATCH("/api/v1/backup/settings", { headers, body }));
+      return sensitive ? gate(t("backup.actRecipients"), send) : send();
     },
     onSuccess: (value) => {
       setError(null);
       setSaved(true);
       queryClient.setQueryData(SETTINGS, value);
     },
-    onError: (e) => setError(apiErrorText(e)),
+    onError: (e) => !(e instanceof Cancelled) && setError(apiErrorText(e)),
   });
   const link = useMutation({
     mutationFn: () => data(owner ? api.POST("/api/v1/owner/drive/auth-url") : api.POST("/api/v1/backup/drive/auth-url")),
@@ -94,6 +101,7 @@ export function BackupTab({ readOnly }: { readOnly: boolean }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {modal}
       <BackupCard onImport={owner ? () => navigate("/backup?import=1") : undefined} />
       {error && <ErrorBanner>{error}</ErrorBanner>}
       {draft && (

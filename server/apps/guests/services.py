@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 
@@ -82,7 +81,7 @@ def update_guest(actor, guest_id, *, version: int, companions=None, **fields) ->
 
 
 def document_path(document: GuestDocument) -> Path:
-    return settings.RUNTIME.attachments_dir / document.file_path
+    return imaging.stored_path(document.file_path)
 
 
 @transaction.atomic

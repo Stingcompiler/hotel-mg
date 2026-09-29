@@ -7,4 +7,5 @@ urlpatterns = [
     path("<uuid:pk>", views.UserDetailView.as_view(), name="user-detail"),
     path("<uuid:pk>/reset-pin", views.ResetPinView.as_view(), name="user-reset-pin"),
     path("<uuid:pk>/unlock", views.UnlockView.as_view(), name="user-unlock"),
+    path("<uuid:pk>/recovery-code", views.RecoveryCodeView.as_view(), name="user-recovery-code"),
 ]

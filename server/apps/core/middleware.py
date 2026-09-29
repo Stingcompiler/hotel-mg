@@ -27,7 +27,8 @@ class ClockGuardMiddleware:
 
 
 # The only writes an owner PC accepts (spec §2): signing in, and its own import / Drive / backup endpoints.
-OWNER_ALLOWED_PREFIXES = ("/api/v1/auth/", "/api/v1/owner/")
+# … and approving its clock after a rollback, or imports stay refused forever (review 2026-09-29, C-14).
+OWNER_ALLOWED_PREFIXES = ("/api/v1/auth/", "/api/v1/owner/", "/api/v1/system/clock/approve")
 
 
 class OwnerReadOnlyMiddleware:

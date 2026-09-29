@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from django.conf import settings
 from PIL import Image, ImageOps, UnidentifiedImageError
 
+from .errors import ApiError
+
 MAX_STORED_BYTES = 300 * 1024  # after compression (spec §5)
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # before compression
 _START_EDGE = 1600
@@ -49,6 +51,22 @@ class StoredImage:
     @property
     def absolute_path(self):
         return settings.RUNTIME.attachments_dir / self.relative_path
+
+
+def stored_path(file_path: str):
+    """The file of a stored image, refused when the path recorded in the database leaves the attachments folder (a
+    database that came from a backup must not point elsewhere — review 2026-09-29, C-11)."""
+    root = settings.RUNTIME.attachments_dir.resolve()
+    path = (root / file_path).resolve()
+    if not path.is_relative_to(root):
+        raise ApiError("not_found", 404)
+    return path
+
+
+def check_upload_size(size: int) -> None:
+    """Refuse a photo that is too large before it is read into memory (review 2026-09-29, C-17)."""
+    if size > MAX_UPLOAD_BYTES:
+        raise ApiError("validation_error", 400, detail="الصورة أكبر من 10 ميغابايت.")
 
 
 def store_image(raw: bytes, folder: str) -> StoredImage:

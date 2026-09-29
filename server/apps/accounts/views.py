@@ -2,6 +2,7 @@ from django.conf import settings
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
+from rest_framework.parsers import JSONParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,6 +19,7 @@ from .serializers import (
     PasswordLoginSerializer,
     PinLoginSerializer,
     RecoverPasswordSerializer,
+    RecoveryCodeSerializer,
     ResetPinSerializer,
     SessionSerializer,
     SetupSerializer,
@@ -47,6 +49,7 @@ class LoginUsersView(APIView):
 class PinLoginView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+    parser_classes = [JSONParser]
 
     @extend_schema(request=PinLoginSerializer, responses=SessionSerializer)
     def post(self, request):
@@ -58,6 +61,7 @@ class PinLoginView(APIView):
 class PasswordLoginView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+    parser_classes = [JSONParser]
 
     @extend_schema(request=PasswordLoginSerializer, responses=SessionSerializer)
     def post(self, request):
@@ -72,14 +76,29 @@ class RecoverPasswordView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
-    @extend_schema(request=RecoverPasswordSerializer, responses={204: None})
+    parser_classes = [JSONParser]  # a web page elsewhere cannot post a form here (review 2026-09-29, C-5)
+
+    @extend_schema(request=RecoverPasswordSerializer, responses=RecoveryCodeSerializer)
     def post(self, request):
         if settings.SKYTOWERS_ROLE != "reception":
             raise ApiError("owner_read_only", 403)  # accounts live on the reception PC; the owner PC imports them
         data = RecoverPasswordSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        services.raise_for_login(services.recover_password(**data.validated_data))
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        result, code = services.recover_password(**data.validated_data)
+        services.raise_for_login(result)
+        return Response(RecoveryCodeSerializer({"recovery_code": code or None}).data)
+
+
+class RecoveryCodeView(APIView):
+    """«رمز استعادة جديد»: the owner, for his own account, after re-entering his password (X-Confirm-Token)."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=None, responses=RecoveryCodeSerializer)
+    def post(self, request, pk):
+        services.require_confirmation(request)
+        code = services.issue_recovery_code(request.user, pk)
+        return Response(RecoveryCodeSerializer({"recovery_code": code}).data)
 
 
 class SetupView(APIView):
@@ -87,6 +106,7 @@ class SetupView(APIView):
 
     permission_classes = [AllowAny]
     authentication_classes = []
+    parser_classes = [JSONParser]
 
     @extend_schema(request=SetupSerializer, responses=SessionSerializer)
     def post(self, request):
@@ -104,7 +124,8 @@ class ConfirmView(APIView):
     def post(self, request):
         data = ConfirmSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        token = services.issue_confirm_token(request.user, data.validated_data["password"])
+        session_key = getattr(request.auth, "key", "")
+        token = services.issue_confirm_token(request.user, data.validated_data["password"], session_key)
         expires_in = int(rules.CONFIRM_LIFETIME.total_seconds())
         return Response(ConfirmTokenSerializer({"confirm_token": token, "expires_in": expires_in}).data)
 

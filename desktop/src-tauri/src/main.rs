@@ -20,13 +20,12 @@ fn show_main(app: &AppHandle) {
     }
 }
 
-/// «فتح سجل الأخطاء» on the fallback page: opens `%ProgramData%\SkyTowers\logs` (or a given folder).
+/// «فتح سجل الأخطاء» on the fallback page: opens `%ProgramData%\SkyTowers\logs` — that folder only. It took any
+/// path before, and opening a path to a program runs it (review 2026-09-29, C-12).
 #[tauri::command]
-fn open_folder(app: AppHandle, path: Option<String>) -> Result<(), String> {
-    let folder = path.unwrap_or_else(|| {
-        let base = std::env::var("ProgramData").unwrap_or_else(|_| String::from("C:\\ProgramData"));
-        format!("{base}\\SkyTowers\\logs")
-    });
+fn open_folder(app: AppHandle) -> Result<(), String> {
+    let base = std::env::var("ProgramData").unwrap_or_else(|_| String::from("C:\\ProgramData"));
+    let folder = format!("{base}\\SkyTowers\\logs");
     app.opener().open_path(folder, None::<&str>).map_err(|e| e.to_string())
 }
 

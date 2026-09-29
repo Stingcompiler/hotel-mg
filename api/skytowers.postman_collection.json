@@ -292,7 +292,7 @@
             "description": "«نسيت كلمة المرور؟»: username + the account's reference email + a new password (reception PC, offline).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"\",\n  \"email\": \"\",\n  \"password\": \"\"\n}"
+              "raw": "{\n  \"username\": \"\",\n  \"password\": \"\"\n}"
             }
           }
         },
@@ -3763,6 +3763,34 @@
               "mode": "raw",
               "raw": "{\n  \"version\": 0,\n  \"username\": \"\",\n  \"full_name\": \"\",\n  \"role\": \"owner\",\n  \"is_active\": false,\n  \"password\": \"\",\n  \"email\": \"\"\n}"
             }
+          }
+        },
+        {
+          "name": "users_recovery_code_create",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/users/:id/recovery-code",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":id",
+                "recovery-code"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "«رمز استعادة جديد»: the owner, for his own account, after re-entering his password (X-Confirm-Token)."
           }
         },
         {

@@ -61,8 +61,8 @@ export function ReceptionShell() {
         ) : me?.default_pin && me.role !== "reception" ? (
           <DefaultPasswordNotice kind="pin" />
         ) : (
-          // «نسيت كلمة المرور؟» needs the email saved on the account (owner decision 2026-09-28).
-          me?.role === "owner" && !me.email && <DefaultPasswordNotice kind="email" />
+          // The owner recovers a forgotten password with his one-time code (owner decision 2026-09-29).
+          me?.role === "owner" && !me.has_recovery_code && <DefaultPasswordNotice kind="recovery" />
         )}
         <main className="min-h-0 flex-1 overflow-auto">
           <Outlet />

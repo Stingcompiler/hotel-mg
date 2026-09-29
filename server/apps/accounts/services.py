@@ -4,9 +4,12 @@ Failed logins must persist even though the request fails, so login services
 return a result and the view raises the API error after the transaction commits.
 """
 
+import hashlib
+import secrets
 from dataclasses import dataclass
 from datetime import datetime
 
+from django.contrib.auth.hashers import check_password, make_password
 from django.core import signing
 from django.db import transaction
 from django.utils import timezone
@@ -97,25 +100,70 @@ def login_with_password(username: str, password: str) -> LoginResult:
     return result
 
 
+def _require_password_length(password: str) -> None:
+    if not rules.password_long_enough(password):
+        raise ApiError("validation_error", 400, detail=f"كلمة المرور {rules.MIN_PASSWORD_LENGTH} أحرف على الأقل.")
+
+
+def new_recovery_code(user: User) -> str:
+    """A fresh one-time recovery code for the owner (shown once, stored hashed); the old one stops working."""
+    raw = "".join(secrets.choice(rules.RECOVERY_ALPHABET) for _ in range(rules.RECOVERY_LENGTH))
+    user.recovery_code_hash = make_password(raw)
+    user.save(update_fields=["recovery_code_hash"])
+    return rules.format_recovery_code(raw)
+
+
 @transaction.atomic
-def recover_password(username: str, email: str, password: str) -> LoginResult:
-    """«نسيت كلمة المرور؟» on the reception PC, offline (owner decision 2026-09-28): the email saved on the account
-    confirms who asks; nothing is sent anywhere. A wrong email counts as a failed sign-in (locked after 5, audited),
-    the new password signs every open session out and rewrites the backup key slot."""
-    if len(password) < 6:
-        raise ApiError("validation_error", 400, detail="كلمة المرور 6 أحرف على الأقل.")
-    wanted = email.strip().lower()
-    user = User.objects.select_for_update().filter(username=username.strip()).first()
-    result = _check_credential(user, lambda u: bool(u.email) and u.email.lower() == wanted, kind=None)
-    if not result.ok:
-        return result
+def issue_recovery_code(actor: User, user_id) -> str:
+    """«رمز استعادة جديد»: the owner, for his own account (confirmed with his password by the view)."""
+    user = User.objects.select_for_update().get(pk=user_id)
+    if user.pk != actor.pk or user.role != "owner":
+        raise ApiError("permission_denied", 403)
+    code = new_recovery_code(user)
+    audit.record(actor=actor, action="user.recovery_code", entity="user", entity_id=user.pk)
+    return code
+
+
+@transaction.atomic
+def recover_password(username: str, password: str, email: str = "", recovery_code: str = "") -> tuple[LoginResult, str]:
+    """«نسيت كلمة المرور؟» on the reception PC, offline.
+
+    The owner proves it with his one-time recovery code (owner decision 2026-09-29, review C-1) and receives a new
+    one; other accounts with a password use the email saved on them. Wrong attempts have their own escalating lock
+    and never lock the normal sign-in (C-4). The new password signs every session out, unlocks the account and
+    rewrites the backup key slot. Returns (result, new recovery code or "").
+    """
+    _require_password_length(password)
+    now = timezone.now()
+    user = User.objects.select_for_update().filter(username=username.strip(), is_active=True).first()
+    if user is None:
+        return LoginResult(), ""
+    if rules.is_locked(user.recovery_locked_until, now):
+        return LoginResult(user=user, locked_until=user.recovery_locked_until), ""
+    if user.role == "owner":
+        code = rules.normalize_recovery_code(recovery_code)
+        ok = bool(code) and bool(user.recovery_code_hash) and check_password(code, user.recovery_code_hash)
+    else:
+        wanted = email.strip().lower()
+        ok = user.has_usable_password() and bool(user.email) and user.email.lower() == wanted  # C-3: no PIN-only
+    if not ok:
+        user.recovery_failed, user.recovery_locks, user.recovery_locked_until = rules.recovery_failure(
+            user.recovery_failed, user.recovery_locks, now
+        )
+        _save_counters(user, "recovery_failed", "recovery_locks", "recovery_locked_until")
+        if user.recovery_locked_until:
+            audit.record(actor=user, action="auth.recovery_locked", entity="user", entity_id=user.pk)
+            return LoginResult(user=user, locked_until=user.recovery_locked_until), ""
+        return LoginResult(user=user, attempts_left=rules.attempts_left(user.recovery_failed)), ""
     before = audit.snapshot(user, USER_FIELDS)
     user.set_password(password)
     user.default_password = False
     user.failed_attempts, user.locked_until = 0, None
+    user.recovery_failed, user.recovery_locks, user.recovery_locked_until = 0, 0, None
     user.save()
     Token.objects.filter(user=user).delete()
     _backup_slot(user, password)
+    code = new_recovery_code(user) if user.role == "owner" else ""
     audit.record(
         actor=user,
         action="user.recover_password",
@@ -124,15 +172,14 @@ def recover_password(username: str, email: str, password: str) -> LoginResult:
         before=before,
         after=audit.snapshot(user, USER_FIELDS),
     )
-    return result
+    return LoginResult(ok=True, user=user), code
 
 
 @transaction.atomic
 def reset_password_offline(username: str, password: str) -> User:
     """``manage reset_password``: an administrator of the reception PC sets a new password (the owner forgot the only
     owner password). Unlocks the account and rewrites its backup key slot, so backups keep opening elsewhere."""
-    if len(password) < 6:
-        raise ApiError("validation_error", 400, detail="كلمة المرور 6 أحرف على الأقل.")
+    _require_password_length(password)
     user = User.objects.select_for_update().filter(username=username).first()
     if user is None:
         raise ApiError("not_found", 404, detail=f"لا يوجد مستخدم باسم {username}.")
@@ -189,10 +236,15 @@ def logout(user: User) -> None:
 # --- Password confirmation for sensitive actions (spec §6.8) -------------------
 
 
-def issue_confirm_token(user: User, password: str) -> str:
-    """Re-check the password and return a 5-minute confirmation token (sent as X-Confirm-Token)."""
+def _session_tag(session_key: str) -> str:
+    return hashlib.sha256((session_key or "").encode()).hexdigest()[:16]
+
+
+def issue_confirm_token(user: User, password: str, session_key: str = "") -> str:
+    """Re-check the password and return a 5-minute confirmation token (sent as X-Confirm-Token), valid only in the
+    session that asked for it: signing out or in again voids it (review 2026-09-29, C-7)."""
     raise_for_login(check_password_for_confirmation(user, password))
-    return signing.dumps({"u": str(user.pk)}, salt=CONFIRM_SALT)
+    return signing.dumps({"u": str(user.pk), "s": _session_tag(session_key)}, salt=CONFIRM_SALT)
 
 
 def require_confirmation(request) -> None:
@@ -202,7 +254,8 @@ def require_confirmation(request) -> None:
         data = signing.loads(raw, salt=CONFIRM_SALT, max_age=rules.CONFIRM_LIFETIME)
     except signing.BadSignature:
         raise ApiError("confirmation_required", 403) from None
-    if data.get("u") != str(request.user.pk):
+    session_key = getattr(request.auth, "key", "") or ""
+    if data.get("u") != str(request.user.pk) or data.get("s") != _session_tag(session_key):
         raise ApiError("confirmation_required", 403)
 
 
@@ -295,6 +348,7 @@ def update_user(actor: User, user_id, *, version: int, **changes) -> User:
     for field, value in changes.items():
         setattr(user, field, value)
     if password:
+        _require_password_length(password)
         user.set_password(password)
         user.default_password = False  # the login page stops showing the install's default
     if "role" in changes:
@@ -302,6 +356,8 @@ def update_user(actor: User, user_id, *, version: int, **changes) -> User:
     user.full_clean(exclude=["password", "hotel_id"])
     user.save()
     _backup_slot(user, password)
+    if password and user.role == "owner":
+        user.new_recovery_code = new_recovery_code(user)  # shown once in the answer (C-1)
     if changes.get("is_active") is False:
         Token.objects.filter(user=user).delete()
     audit.record(
@@ -358,10 +414,10 @@ def verify_manager_override(password: str, reason: str) -> User:
         raise ApiError("reason_required", 400)
     now = timezone.now()
     for manager in User.objects.filter(role__in=rules.MANAGER_ROLES, is_active=True):
-        if not rules.is_locked(manager.locked_until, now) and manager.check_password(password or ""):
-            if manager.failed_attempts:
-                manager.failed_attempts, manager.locked_until = 0, None
-                _save_counters(manager, "failed_attempts", "locked_until")
+        if not rules.is_locked(manager.override_locked_until, now) and manager.check_password(password or ""):
+            if manager.override_failed:
+                manager.override_failed, manager.override_locked_until = 0, None
+                _save_counters(manager, "override_failed", "override_locked_until")
             return manager
     raise ApiError("override_invalid", 403)
 
@@ -372,18 +428,10 @@ def register_override_failure() -> None:
     (the screen has one shared field), so the 5-attempt lock of spec §5 throttles guessing here too."""
     now = timezone.now()
     for manager in User.objects.filter(role__in=rules.MANAGER_ROLES, is_active=True):
-        if rules.is_locked(manager.locked_until, now):
+        if rules.is_locked(manager.override_locked_until, now):
             continue
-        before = audit.snapshot(manager, USER_FIELDS)
-        manager.failed_attempts, manager.locked_until = rules.register_failure(manager.failed_attempts, now)
-        _save_counters(manager, "failed_attempts", "locked_until")
-        LoginEvent.objects.create(user=manager, at=now, kind=LoginEvent.Kind.FAILED, created_by=manager)
-        if manager.locked_until:
-            audit.record(
-                actor=manager,
-                action="auth.locked",
-                entity="user",
-                entity_id=manager.pk,
-                before=before,
-                after=audit.snapshot(manager, USER_FIELDS),
-            )
+        manager.override_failed, manager.override_locked_until = rules.register_failure(manager.override_failed, now)
+        _save_counters(manager, "override_failed", "override_locked_until")
+        if manager.override_locked_until:
+            # The approval field is locked for a while; the manager's own sign-in is untouched (C-4).
+            audit.record(actor=manager, action="auth.override_locked", entity="user", entity_id=manager.pk)
