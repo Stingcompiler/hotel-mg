@@ -46,7 +46,11 @@ class Reservation(BaseModel):
             ),
             models.CheckConstraint(condition=models.Q(total__gte=0), name="reservation_total_not_negative"),
         ]
-        indexes = [models.Index(fields=["room", "status", "check_in_date"])]
+        indexes = [
+            models.Index(fields=["room", "status", "check_in_date"]),
+            models.Index(fields=["status", "check_out_date"]),
+            models.Index(fields=["check_in_date"]),
+        ]
 
     def __str__(self):
         return f"{self.guest} {self.check_in_date}→{self.check_out_date}"
@@ -68,6 +72,7 @@ class Stay(BaseModel):
 
     class Meta:
         ordering = ["-checked_in_at"]
+        indexes = [models.Index(fields=["checked_in_at"]), models.Index(fields=["checked_out_at"])]
 
     def __str__(self):
         return f"Stay {self.reservation}"
@@ -84,6 +89,7 @@ class StaySegment(BaseModel):
 
     class Meta:
         ordering = ["from_date", "created_at"]
+        indexes = [models.Index(fields=["to_date"])]
         constraints = [
             models.CheckConstraint(condition=models.Q(to_date__gte=models.F("from_date")), name="segment_dates_ordered")
         ]

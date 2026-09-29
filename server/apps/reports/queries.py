@@ -3,14 +3,14 @@
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta
 
-from django.db.models import Max, Q, Sum
+from django.db.models import Max, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 
 from apps.audit import rules as audit_rules
 from apps.audit import services as audit
 from apps.billing.models import Folio, FolioLine, Payment
-from apps.billing.services import FolioTotals, balances_by_reservation
+from apps.billing.services import balances_by_folio, balances_by_reservation, totals_by_folio
 from apps.cash.models import Expense, ExpenseCategory, PaymentMethod, Shift
 from apps.cash.services import ShiftTotals
 from apps.core import arabic
@@ -103,35 +103,64 @@ def _kind(kind: str) -> str:
 
 
 def _occupied_rooms_by_night(days: list[date]) -> dict[date, set]:
-    """Rooms with a stay in progress at midnight of each night (artboard 7.3 note)."""
+    """Rooms with a stay in progress at midnight of each night (artboard 7.3 note).
+
+    Only the segments that reach into the period are read, plus the open segment of every stay in progress (an
+    overdue stay is still here tonight until checkout). Every segment since the first day, with a query each, took
+    most of the owner dashboard's 80 s on five years of data (review 2026-09-29, F-1, F-4)."""
     today = timezone.localdate()
     first, last = days[0], days[-1]
+    open_segment = {}
+    for pk, stay_id in (
+        StaySegment.objects.filter(stay__reservation__status=ReservationStatus.CHECKED_IN)
+        .order_by("stay_id", "from_date", "created_at")
+        .values_list("pk", "stay_id")
+    ):
+        open_segment[stay_id] = pk  # the stay's last segment wins
+    open_ids = set(open_segment.values())
     nights = defaultdict(set)
-    segments = StaySegment.objects.filter(from_date__lte=last).select_related("stay__reservation")
-    for seg in segments:
-        end = seg.to_date
-        is_open = seg.stay.reservation.status == ReservationStatus.CHECKED_IN and seg == seg.stay.segments.last()
-        if is_open:
-            end = max(end, today + timedelta(days=1))  # overdue: still here tonight until checkout
-        d = max(seg.from_date, first)
+    segments = StaySegment.objects.filter(from_date__lte=last).filter(Q(to_date__gt=first) | Q(pk__in=open_ids))
+    for pk, room_id, from_date, end in segments.values_list("pk", "room_id", "from_date", "to_date"):
+        if pk in open_ids:
+            end = max(end, today + timedelta(days=1))
+        d = max(from_date, first)
         while d < end and d <= last:
-            nights[d].add(seg.room_id)
+            nights[d].add(room_id)
             d += timedelta(days=1)
     return nights
 
 
 def _maintenance_rooms_by_night(days: list[date]) -> dict[date, set]:
-    """Rooms whose status at the end of the day was maintenance."""
-    history = defaultdict(list)
-    for h in RoomStatusHistory.objects.order_by("at").values("room_id", "from_status", "to_status", "at"):
-        history[h["room_id"]].append(h)
+    """Rooms whose status at the end of the day was maintenance.
+
+    Per room: the status before the period (else the first change's «from», else the status now), then the changes
+    inside the period in order — not the whole history for every room and day (F-4)."""
+    start, stop = _start(days[0]), _start(days[-1] + timedelta(days=1))
+    history = RoomStatusHistory.objects.filter(room=OuterRef("pk"))
+    rooms = (
+        Room.objects.filter(in_service=True)
+        .annotate(
+            before=Subquery(history.filter(at__lt=start).order_by("-at").values("to_status")[:1]),
+            first_after=Subquery(history.filter(at__gte=start).order_by("at").values("from_status")[:1]),
+        )
+        .values("pk", "status", "before", "first_after")
+    )
+    changes = defaultdict(list)
+    for room_id, at, to_status in (
+        RoomStatusHistory.objects.filter(at__gte=start, at__lt=stop)
+        .order_by("at")
+        .values_list("room_id", "at", "to_status")
+    ):
+        changes[room_id].append((at, to_status))
     result = defaultdict(set)
-    for room in Room.objects.filter(in_service=True).values("pk", "status"):
-        events = history.get(room["pk"], [])
+    for room in rooms:
+        status = room["before"] or room["first_after"] or room["status"]
+        events, i = changes.get(room["pk"], []), 0
         for day in days:
             end = _start(day + timedelta(days=1))
-            before = [e for e in events if e["at"] < end]
-            status = before[-1]["to_status"] if before else (events[0]["from_status"] if events else room["status"])
+            while i < len(events) and events[i][0] < end:
+                status = events[i][1]
+                i += 1
             if status == RoomStatus.MAINTENANCE:
                 result[day].add(room["pk"])
     return result
@@ -143,6 +172,7 @@ def occupancy(params: Params) -> Report:
     available = Room.objects.filter(in_service=True).count()
     occupied = _occupied_rooms_by_night(days)
     maintenance = _maintenance_rooms_by_night(days)
+    numbers = dict(Room.objects.values_list("pk", "number"))
     arrivals = defaultdict(int)
     for d in (
         Stay.objects.filter(_in_period("checked_in_at", params))
@@ -182,10 +212,7 @@ def occupancy(params: Params) -> Report:
                 "departures": departures[day],
                 "revenue": revenue.get(day, 0),
                 "collected": collected.get(day, 0),
-                "maintenance": ", ".join(
-                    sorted(Room.objects.filter(pk__in=maintenance[day]).values_list("number", flat=True))
-                )
-                or "—",
+                "maintenance": ", ".join(sorted(numbers[pk] for pk in maintenance[day])) or "—",
             }
         )
     n = len(rows)
@@ -416,24 +443,36 @@ def ending_soon(params: Params) -> Report:
 # --- Debts -----------------------------------------------------------------------------------
 
 
+MAY_OWE = (
+    ReservationStatus.CHECKED_IN,
+    ReservationStatus.CHECKED_OUT,
+    ReservationStatus.CANCELLED,  # nights used before cancelling still owed (review 2026-09-28, BIZ-6)
+    ReservationStatus.NO_SHOW,
+)
+
+
+def _owing_ids() -> list:
+    """Folios with a positive balance: balances without joins over every folio that may owe (F-1…F-3)."""
+    balances = balances_by_folio(Folio.objects.filter(reservation__status__in=MAY_OWE))
+    return [pk for pk, balance in balances.items() if balance > 0]
+
+
+def _owing() -> dict:
+    """folio id → full totals (discounts too) of the folios that owe only."""
+    return totals_by_folio(Folio.objects.filter(pk__in=_owing_ids()))
+
+
 def _debts():
-    """(reservation, totals) for every folio with a positive balance."""
-    folios = Folio.objects.select_related("reservation__guest", "reservation__room", "reservation__stay__override_by")
-    out = []
-    for folio in folios:
-        totals = FolioTotals.of(folio)
-        if totals.balance > 0 and folio.reservation.status in (
-            ReservationStatus.CHECKED_IN,
-            ReservationStatus.CHECKED_OUT,
-            ReservationStatus.CANCELLED,  # nights used before cancelling still owed (review 2026-09-28, BIZ-6)
-            ReservationStatus.NO_SHOW,
-        ):
-            out.append((folio, totals))
-    return out
+    """(folio, totals) for every folio with a positive balance, newest invoice first."""
+    owing = _owing()
+    folios = Folio.objects.filter(pk__in=list(owing)).select_related(
+        "reservation__guest", "reservation__room", "reservation__stay__override_by"
+    )
+    return [(folio, owing[folio.pk]) for folio in folios]
 
 
 def _debt_count() -> int:
-    return len(_debts())
+    return len(_owing_ids())
 
 
 @report("debts", "الديون", badge=_debt_count)
@@ -480,29 +519,45 @@ def debts(params: Params) -> Report:
                 }
             )
     if status in ("late", "all"):
-        for stay in Stay.objects.filter(reservation__status=ReservationStatus.CHECKED_OUT).select_related(
+        # Settled after checkout: grouped totals and last payment per folio, then only the matching stays are loaded
+        # (two queries per departed guest before — 80 s for «all» on five years of data, F-3).
+        departed = Folio.objects.filter(reservation__status=ReservationStatus.CHECKED_OUT)
+        balances = balances_by_folio(departed)
+        last_paid_of = dict(
+            Payment.objects.filter(folio__in=departed.values("pk"))
+            .order_by()
+            .values_list("folio_id")
+            .annotate(m=Max("received_at"))
+        )
+        late_ids = [
+            stay_pk
+            for stay_pk, folio_pk, out_at in Stay.objects.filter(
+                reservation__status=ReservationStatus.CHECKED_OUT, checked_out_at__isnull=False
+            ).values_list("pk", "reservation__folio", "checked_out_at")
+            if balances.get(folio_pk) == 0 and last_paid_of.get(folio_pk) and last_paid_of[folio_pk] > out_at
+        ]
+        all_totals = totals_by_folio(Folio.objects.filter(reservation__stay__in=late_ids))
+        for stay in Stay.objects.filter(pk__in=late_ids).select_related(
             "reservation__guest", "reservation__room", "reservation__folio"
         ):
             folio = stay.reservation.folio
-            last_paid = folio.payments.aggregate(m=Max("received_at"))["m"]
-            totals = FolioTotals.of(folio)
-            if totals.balance == 0 and last_paid and stay.checked_out_at and last_paid > stay.checked_out_at:
-                r = stay.reservation
-                late = (timezone.localtime(last_paid).date() - timezone.localtime(stay.checked_out_at).date()).days
-                rows.append(
-                    {
-                        "guest": r.guest.full_name,
-                        "room": r.room.number if r.room_id else "—",
-                        "range": _range_text(r),
-                        "total": totals.total,
-                        "paid": totals.paid,
-                        "balance": 0,
-                        "age": f"سُدِّد بعد {arabic.days(late)}",
-                        "age_days": late,
-                        "reason": "مسدَّد متأخرًا",
-                        "state": "paid_late",
-                    }
-                )
+            last_paid, totals = last_paid_of[folio.pk], all_totals[folio.pk]
+            r = stay.reservation
+            late = (timezone.localtime(last_paid).date() - timezone.localtime(stay.checked_out_at).date()).days
+            rows.append(
+                {
+                    "guest": r.guest.full_name,
+                    "room": r.room.number if r.room_id else "—",
+                    "range": _range_text(r),
+                    "total": totals.total,
+                    "paid": totals.paid,
+                    "balance": 0,
+                    "age": f"سُدِّد بعد {arabic.days(late)}",
+                    "age_days": late,
+                    "reason": "مسدَّد متأخرًا",
+                    "state": "paid_late",
+                }
+            )
     due = [r for r in rows if r["state"] != "paid_late"]
     open_ = [r for r in due if r["state"] == "open"]
     after = [r for r in due if r["state"] == "after_checkout"]
@@ -706,12 +761,14 @@ def _shift_diff_count() -> int:
 @report("cash_shifts", "حركة الصندوق والورديات", default_days=6, badge=_shift_diff_count)
 def cash_shifts(params: Params) -> Report:
     rows = []
-    for s in (
+    shifts = list(
         Shift.objects.filter(_in_period("opened_at", params))
         .select_related("created_by", "closed_by")
         .order_by("opened_at")
-    ):
-        t = ShiftTotals.of(s)
+    )
+    all_totals = ShiftTotals.for_shifts(shifts)  # three queries for the period, not three per shift (F-5)
+    for s in shifts:
+        t = all_totals[s.pk]
         opened, closed = timezone.localtime(s.opened_at), timezone.localtime(s.closed_at) if s.closed_at else None
         rows.append(
             {

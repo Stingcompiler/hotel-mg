@@ -3,7 +3,7 @@
 from collections import defaultdict
 from datetime import date, timedelta
 
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from apps.billing.models import FolioLine, Payment
@@ -18,7 +18,14 @@ from apps.stays.models import ReservationStatus
 
 from . import rules
 from .framework import Params
-from .queries import _debts, _in_house, _in_period, _maintenance_rooms_by_night, _occupied_rooms_by_night
+from .queries import (
+    _debts,
+    _in_house,
+    _in_period,
+    _maintenance_rooms_by_night,
+    _occupied_rooms_by_night,
+    _start,
+)
 
 
 def _room_number(reservation) -> str:
@@ -70,7 +77,7 @@ def _weeks(start: date, end: date) -> list[dict]:
     return weeks
 
 
-def _attention(today: date, debt_limit: int, month: Params) -> list[dict]:
+def _attention(today: date, debt_limit: int, month: Params, debts: list) -> list[dict]:
     items = []
     for r in _in_house():
         if r.check_out_date <= today:
@@ -93,7 +100,7 @@ def _attention(today: date, debt_limit: int, month: Params) -> list[dict]:
                 "text": f"{task.title} — وردية {who}",
             }
         )
-    for folio, totals in _debts():
+    for folio, totals in debts:
         if totals.balance > debt_limit:
             r = folio.reservation
             items.append(
@@ -136,7 +143,16 @@ def _staff_response(month: Params) -> list[dict]:
     a snooze is not an action (artboard 6.12 note). An alert that fell due while no shift was open (the
     midnight alerts before the morning shift) belongs to the next shift that opened: it was waiting for them.
     """
-    shifts = list(Shift.objects.select_related("created_by").order_by("opened_at"))
+    # The shifts that can answer for an alert of the period: those open during it and the first one after it (the
+    # rule's «next shift»). Every shift since the hotel opened was read before (F-1).
+    start, stop = _start(month.date_from), _start(month.date_to + timedelta(days=1))
+    during = Shift.objects.filter(Q(opened_at__lt=stop) & (Q(closed_at__gte=start) | Q(closed_at__isnull=True)))
+    first_after = Shift.objects.filter(opened_at__gte=stop).order_by("opened_at").values("pk")[:1]
+    shifts = list(
+        Shift.objects.filter(Q(pk__in=during.values("pk")) | Q(pk__in=first_after))
+        .select_related("created_by")
+        .order_by("opened_at")
+    )
     windows = [(s.pk, s.opened_at, s.closed_at) for s in shifts]
     names = {s.pk: (s.created_by.full_name if s.created_by_id else "—") for s in shifts}
 
@@ -185,7 +201,7 @@ def owner_dashboard(period: str = "month") -> dict:
     tonight = series[-1]
     # The period average covers every night of the selected period, not the chart's last 30 nights.
     in_period = _occupancy_series(_days(start, end))
-    debts = [(folio, totals) for folio, totals in _debts()]
+    debts = _debts()  # once: the tiles and the attention list (it was read twice, F-1)
     largest = max(debts, key=lambda d: d[1].balance) if debts else None
     neglected = (
         FollowupTask.objects.filter(status="neglected").select_related("shift__created_by").order_by("-neglected_at")
@@ -232,7 +248,7 @@ def owner_dashboard(period: str = "month") -> dict:
             "peak": {"date": peak["date"], "percent": peak["percent"]},
         },
         "weeks": _weeks(start, end),
-        "attention": _attention(today, settings_row.debt_attention_threshold, month),
+        "attention": _attention(today, settings_row.debt_attention_threshold, month, debts),
         "staff": _staff_response(month),
         "overdue_stays": sum(
             1 for r in _in_house() if r.status == ReservationStatus.CHECKED_IN and r.check_out_date <= today

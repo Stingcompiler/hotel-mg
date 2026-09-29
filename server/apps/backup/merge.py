@@ -206,38 +206,51 @@ class _KeepTimestamps:
         return False
 
 
+MERGE_CHUNK = 500
+
+
 def _merge_model(model, hotel_id: str, target: str) -> dict:
+    """Insert absent rows, update mutable rows the reception changed since. Rows are compared by (id, updated_at)
+    first and only new or newer ones are loaded whole: importing a copy already imported built every row of five
+    years as an object to ignore it (23 s, review 2026-09-29, F-11)."""
     counts = {"inserted": 0, "updated": 0, "ignored": 0}
     append_only = issubclass(model, AppendOnlyModel)
     fields = [f for f in model._meta.concrete_fields if not f.primary_key]
-    incoming = model.objects.using(INCOMING).filter(hotel_id=hotel_id).order_by("pk")
-    batch = []
+    incoming = model.objects.using(INCOMING).filter(hotel_id=hotel_id)
+    new_ids, newer_ids = [], []
 
-    def flush(rows):
-        ids = [r.pk for r in rows]
-        existing = dict(model.objects.using(target).filter(pk__in=ids).values_list("pk", "updated_at"))
-        new = [r for r in rows if r.pk not in existing]
-        for r in new:
-            r._state.db = target
-        model.objects.using(target).bulk_create(new, ignore_conflicts=True)
-        counts["inserted"] += len(new)
-        for r in rows:
-            if r.pk not in existing:
-                continue
-            if append_only or r.updated_at <= existing[r.pk]:
+    def compare(pairs):
+        existing = dict(
+            model.objects.using(target).filter(pk__in=[pk for pk, _ in pairs]).values_list("pk", "updated_at")
+        )
+        for pk, updated_at in pairs:
+            if pk not in existing:
+                new_ids.append(pk)
+            elif append_only or updated_at <= existing[pk]:
                 counts["ignored"] += 1
-                continue
+            else:
+                newer_ids.append(pk)
+
+    pairs = []
+    for pair in incoming.order_by("pk").values_list("pk", "updated_at").iterator(chunk_size=2000):
+        pairs.append(pair)
+        if len(pairs) == MERGE_CHUNK:
+            compare(pairs)
+            pairs = []
+    if pairs:
+        compare(pairs)
+
+    for start in range(0, len(new_ids), MERGE_CHUNK):
+        rows = list(incoming.filter(pk__in=new_ids[start : start + MERGE_CHUNK]))
+        for r in rows:
+            r._state.db = target
+        model.objects.using(target).bulk_create(rows, ignore_conflicts=True)
+        counts["inserted"] += len(rows)
+    for start in range(0, len(newer_ids), MERGE_CHUNK):
+        for r in incoming.filter(pk__in=newer_ids[start : start + MERGE_CHUNK]):
             values = {f.attname: getattr(r, f.attname) for f in fields}
             model._base_manager.using(target).filter(pk=r.pk).update(**values)
             counts["updated"] += 1
-
-    for row in incoming.iterator(chunk_size=500):
-        batch.append(row)
-        if len(batch) == 500:
-            flush(batch)
-            batch = []
-    if batch:
-        flush(batch)
     return counts
 
 

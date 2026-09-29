@@ -88,7 +88,7 @@ class FollowupTask(BaseModel):
                 name="task_once_per_rule_subject_day",
             ),
         ]
-        indexes = [models.Index(fields=["status", "due_at"])]
+        indexes = [models.Index(fields=["status", "due_at"]), models.Index(fields=["due_at"])]
 
     def __str__(self):
         return f"{self.title} ({self.status})"

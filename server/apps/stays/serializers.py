@@ -92,6 +92,9 @@ class ReservationSerializer(serializers.ModelSerializer):
         annotated = getattr(reservation, "deposit_total", None)
         if annotated is not None:
             return annotated
+        deposits = self.context.get("deposits")
+        if deposits is not None:
+            return deposits.get(reservation.pk, 0)
         folio = getattr(reservation, "folio", None)
         if folio is None:
             return 0

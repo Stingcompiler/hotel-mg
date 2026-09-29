@@ -84,20 +84,34 @@ def _check_credential(user: User | None, credential_ok, kind: str | None) -> Log
     return LoginResult(ok=True, user=user, token=token.key)
 
 
-@transaction.atomic
+def _hash_first(user: User | None, check) -> bool:
+    """The password or PIN hash is checked before the write transaction. SQLite transactions here are IMMEDIATE:
+    hashing inside one held every other write (a payment at the desk) for up to 3 s (review 2026-09-29, F-10).
+    A locked account is not checked at all, as before."""
+    return (
+        user is not None
+        and user.is_active
+        and not rules.is_locked(user.locked_until, timezone.now())
+        and bool(check(user))
+    )
+
+
 def login_with_pin(user_id, pin: str) -> LoginResult:
-    user = User.objects.filter(pk=user_id).first()
-    return _check_credential(user, lambda u: u.check_pin(pin), LoginEvent.Kind.PIN)
+    ok = _hash_first(User.objects.filter(pk=user_id).first(), lambda u: u.check_pin(pin))
+    with transaction.atomic():
+        user = User.objects.filter(pk=user_id).first()  # counters as they are now, under the lock
+        return _check_credential(user, lambda u: ok, LoginEvent.Kind.PIN)
 
 
-@transaction.atomic
 def login_with_password(username: str, password: str) -> LoginResult:
-    user = User.objects.filter(username=username).first()
-    result = _check_credential(user, lambda u: u.check_password(password), LoginEvent.Kind.PASSWORD)
-    if result.ok:
-        # Accounts from before 1.1 get their backup key slot at their first password sign-in.
-        _backup_slot(result.user, password, on_login=True)
-    return result
+    ok = _hash_first(User.objects.filter(username=username).first(), lambda u: u.check_password(password))
+    with transaction.atomic():
+        user = User.objects.filter(username=username).first()
+        result = _check_credential(user, lambda u: ok, LoginEvent.Kind.PASSWORD)
+        if result.ok:
+            # Accounts from before 1.1 get their backup key slot at their first password sign-in.
+            _backup_slot(result.user, password, on_login=True)
+        return result
 
 
 def _require_password_length(password: str) -> None:
@@ -213,9 +227,10 @@ def _backup_slot(user: User, password: str | None, on_login: bool = False) -> No
         keyslots.clear_if_ineligible(user)
 
 
-@transaction.atomic
 def check_password_for_confirmation(user: User, password: str) -> LoginResult:
-    return _check_credential(user, lambda u: u.check_password(password), kind=None)
+    ok = _hash_first(User.objects.filter(pk=user.pk).first(), lambda u: u.check_password(password))
+    with transaction.atomic():
+        return _check_credential(User.objects.filter(pk=user.pk).first(), lambda u: ok, kind=None)
 
 
 def raise_for_login(result: LoginResult) -> None:
