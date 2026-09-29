@@ -589,12 +589,14 @@ def debts(params: Params) -> Report:
                 "label": "الديون المستحقة",
                 "value": sum(r["balance"] for r in open_),
                 "type": "money",
+                "tone": "danger",  # red when not zero; the screen no longer reads the label (review 2026-09-29, F-16)
                 "hint": f"{len(open_)} إقامات جارية",
             },
             {
                 "label": "ديون بعد المغادرة",
                 "value": sum(r["balance"] for r in after),
                 "type": "money",
+                "tone": "danger",
                 "hint": f"{len(after)} نزلاء · خروج بتجاوز المدير",
             },
             {
@@ -831,7 +833,7 @@ def cash_shifts(params: Params) -> Report:
         tiles=[
             {"label": "الورديات", "value": len(rows), "type": "int"},
             {"label": "ورديات بفرق", "value": len(diffs), "type": "int"},
-            {"label": "صافي الفروق", "value": sum(diffs), "type": "money"},
+            {"label": "صافي الفروق", "value": sum(diffs), "type": "money", "tone": "danger"},
         ],
     )
 

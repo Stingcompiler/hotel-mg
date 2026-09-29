@@ -62,15 +62,6 @@ class PasswordLoginSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=128, style={"input_type": "password"})
 
 
-class SetupSerializer(serializers.Serializer):
-    """First manager on a new reception PC."""
-
-    full_name = serializers.CharField(max_length=120)
-    username = serializers.CharField(max_length=64)
-    password = serializers.CharField(min_length=8, max_length=128, style={"input_type": "password"})
-    pin = serializers.CharField(max_length=6, validators=[_validate_pin])
-
-
 class SessionSerializer(serializers.Serializer):
     token = serializers.CharField()
     user = UserSerializer()

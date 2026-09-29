@@ -22,7 +22,6 @@ from .serializers import (
     RecoveryCodeSerializer,
     ResetPinSerializer,
     SessionSerializer,
-    SetupSerializer,
     UserCreateSerializer,
     UserSerializer,
     UserUpdateSerializer,
@@ -99,22 +98,6 @@ class RecoveryCodeView(APIView):
         services.require_confirmation(request)
         code = services.issue_recovery_code(request.user, pk)
         return Response(RecoveryCodeSerializer({"recovery_code": code}).data)
-
-
-class SetupView(APIView):
-    """First run: create the first manager when the reception PC has no users (login screen «إعداد النظام»)."""
-
-    permission_classes = [AllowAny]
-    authentication_classes = []
-    parser_classes = [JSONParser]
-
-    @extend_schema(request=SetupSerializer, responses=SessionSerializer)
-    def post(self, request):
-        if settings.SKYTOWERS_ROLE != "reception":
-            raise ApiError("owner_read_only", 403)
-        data = SetupSerializer(data=request.data)
-        data.is_valid(raise_exception=True)
-        return _session_response(services.setup_first_manager(**data.validated_data))
 
 
 class ConfirmView(APIView):

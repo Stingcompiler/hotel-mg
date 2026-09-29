@@ -20,6 +20,7 @@ def test_client_routes_get_index_html(client, built):
         assert res.status_code == 200, path
         assert b'<div id="root">' in b"".join(res.streaming_content)
         assert res["Cache-Control"] == "no-cache"
+        assert "script-src 'self'" in res["Content-Security-Policy"]  # C-12 / E-14
 
 
 def test_assets_are_cached_and_top_level_files_served(client, built):

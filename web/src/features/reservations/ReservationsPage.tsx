@@ -14,7 +14,7 @@ import { useRoomBoard } from "@/features/rooms/RoomBoardPage";
 import { formatDayMonth, formatRange } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
 import { formatMoney } from "@/i18n/money";
-import { t } from "@/i18n/t";
+import { t, tList } from "@/i18n/t";
 import { useMediaQuery } from "@/lib/useMediaQuery";
 
 type Reservation = components["schemas"]["Reservation"];
@@ -24,7 +24,7 @@ const DAY = 86_400_000;
 const toTime = (iso: string) => Date.parse(`${iso}T00:00:00Z`);
 const addDays = (iso: string, n: number) => new Date(toTime(iso) + n * DAY).toISOString().slice(0, 10);
 const diffDays = (a: string, b: string) => Math.round((toTime(a) - toTime(b)) / DAY);
-const DOW = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+const DOW = tList("lists.weekdays"); // Sunday first, as getUTCDay()
 
 /** 6.3 Reservations: 14-day timeline (7 at 1366) where time moves to the left from today on the right, and a list. */
 export function ReservationsPage() {

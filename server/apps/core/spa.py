@@ -35,6 +35,25 @@ def not_built_page(root) -> str:
     )
 
 
+# The app window is a WebView on this page (the desktop shell and the owner PC): scripts only from this server, API
+# calls to it and to the desktop shell's IPC, nothing framed or plugged in (review 2026-09-29, C-12 / E-14).
+CSP = "; ".join(
+    [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' 'unsafe-inline'",  # React style attributes (bar heights, colours of the charts)
+        "img-src 'self' data: blob:",
+        "font-src 'self' data:",
+        "media-src 'self' data: blob:",  # the owner's alert sound
+        "connect-src 'self' ipc: http://ipc.localhost",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "frame-ancestors 'none'",
+        "form-action 'self'",
+    ]
+)
+
+
 def asset(request, path):
     response = serve(request, path, document_root=settings.SPA_ROOT / "assets")
     response["Cache-Control"] = "public, max-age=31536000, immutable"
@@ -53,4 +72,5 @@ def index(request, path=""):
         return HttpResponse(not_built_page(root), status=503, content_type="text/html; charset=utf-8")
     response = FileResponse(page.open("rb"), content_type="text/html; charset=utf-8")
     response["Cache-Control"] = "no-cache"  # new builds load at once; the assets it names are immutable
+    response["Content-Security-Policy"] = CSP
     return response

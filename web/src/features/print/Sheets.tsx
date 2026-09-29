@@ -161,12 +161,13 @@ export function InvoiceA4({ doc, version }: { doc: Invoice; version: string }) {
             {doc.payments.map((p) => (
               <tr key={p.receipt} className="border-b border-border">
                 <td className="whitespace-nowrap">{formatDayMonth(p.at)}</td>
-                <td dir="ltr" className="text-end">
+                <td dir="ltr" className="whitespace-nowrap text-end">
                   {p.receipt}
                 </td>
                 <td>{p.kind}</td>
-                <td>{p.method}</td>
-                <td dir="ltr" className="text-end text-text-secondary">
+                {/* «نقدي (6 $ بسعر 2,500)» is long: a smaller size; the reference never breaks (review 2026-09-29, D-3). */}
+                <td className="text-[10pt]">{p.method}</td>
+                <td dir="ltr" className="whitespace-nowrap text-end text-text-secondary">
                   {p.reference}
                 </td>
                 <td className="num font-semibold">{money(p.amount)}</td>

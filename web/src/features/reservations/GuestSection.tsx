@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 import { api, data } from "@/api/client";
 import { Field, Section, Select, TextInput, inputClass } from "@/components/ui/form";
 import { previousStays } from "@/i18n/counts";
-import { t } from "@/i18n/t";
+import { t, tList } from "@/i18n/t";
 
 import type { Errors, Form, GuestRow, IdType } from "./model";
 
-const RELATIONS = ["زوج", "زوجة", "ابن", "ابنة", "أب", "أم", "أخ", "أخت", "قريب"];
-const NATIONALITIES = ["سوداني", "جنوب سوداني", "مصري", "إثيوبي", "إريتري", "تشادي", "سعودي", "إماراتي"];
+const RELATIONS = tList("lists.relations");
+const NATIONALITIES = tList("lists.nationalities");
 const ID_TYPES: IdType[] = ["national_id", "passport", "driving_license", "other"];
 
 type Props = { form: Form; errors: Errors; update: (patch: Partial<Form>) => void };

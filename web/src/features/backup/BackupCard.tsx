@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, CloudUpload, DatabaseBackup, Download, TriangleAlert } from "lucide-react";
-import type { ReactNode } from "react";
+import { Check, CloudUpload, DatabaseBackup, Download, TriangleAlert, Usb } from "lucide-react";
+import { type ReactNode, useState } from "react";
 
 import { api, ApiError, data } from "@/api/client";
 import { keys, useSystemStatus } from "@/api/queries";
@@ -121,7 +121,72 @@ export function BackupCard({ onImport }: { onImport?: () => void }) {
           <Line tone="muted">{owner ? t("backup.importHint") : t("backup.ownerOnly")}</Line>
         </div>
       </div>
+      {!owner && <UsbSave disabled={offline || !last || last.status !== "ok"} />}
     </section>
+  );
+}
+
+type Drive = { drive: string; label: string; free: number };
+
+/** «حفظ على فلاشة»: the backups folder is for administrators only, so the service copies the newest backup to the
+ *  stick itself (review 2026-09-29, E-16). One stick: copied at once; several: pick one. */
+function UsbSave({ disabled }: { disabled: boolean }) {
+  const [drives, setDrives] = useState<Drive[] | null>(null);
+  const copy = useMutation({
+    mutationFn: (drive: string) => data(api.POST("/api/v1/backup/usb/copy", { body: { drive } })),
+  });
+  const look = useMutation({
+    mutationFn: () => data(api.GET("/api/v1/backup/usb")),
+    onSuccess: (found) => {
+      setDrives(found);
+      if (found.length === 1) copy.mutate(found[0].drive);
+    },
+  });
+  const busy = look.isPending || copy.isPending;
+  const line = (): ReactNode => {
+    if (copy.isPending) return <Line tone="muted">{t("backup.usbCopying")}</Line>;
+    if (copy.isError) return <Line tone="danger">{(copy.error as ApiError).message}</Line>;
+    if (look.isError) return <Line tone="danger">{(look.error as ApiError).message}</Line>;
+    if (copy.data) {
+      return (
+        <Line tone="success">
+          {t("backup.usbDone")} <span dir="ltr">{copy.data.folder}</span>
+        </Line>
+      );
+    }
+    if (drives && drives.length === 0) return <Line tone="muted">{t("backup.usbNone")}</Line>;
+    return <Line tone="muted">{t("backup.usbHint")}</Line>;
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-t border-border pt-3">
+      <button
+        type="button"
+        disabled={disabled || busy}
+        onClick={() => {
+          copy.reset();
+          look.mutate();
+        }}
+        className="inline-flex h-10 items-center gap-2 rounded-control border border-border-strong bg-bg-surface px-4 font-sans text-body font-semibold text-text-primary hover:bg-bg-surface-2 disabled:text-text-disabled"
+      >
+        <Usb className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
+        {t("backup.usb")}
+      </button>
+      {drives &&
+        drives.length > 1 &&
+        !copy.data &&
+        drives.map((d) => (
+          <button
+            key={d.drive}
+            type="button"
+            disabled={busy}
+            onClick={() => copy.mutate(d.drive)}
+            className="inline-flex h-10 items-center gap-2 rounded-control border border-primary bg-primary-soft px-3 font-sans text-body text-primary"
+          >
+            <span dir="ltr">{d.drive}</span> {d.label} · {formatSize(d.free)}
+          </button>
+        ))}
+      <div className="min-w-0 flex-1">{line()}</div>
+    </div>
   );
 }
 

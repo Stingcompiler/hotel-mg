@@ -134,23 +134,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/auth/setup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** @description First run: create the first manager when the reception PC has no users (login screen «إعداد النظام»). */
-        post: operations["auth_setup_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/auth/users": {
         parameters: {
             query?: never;
@@ -300,6 +283,40 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["backup_settings_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/backup/usb": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description «حفظ على فلاشة»: the USB sticks this PC sees (review 2026-09-29, E-16). */
+        get: operations["backup_usb_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/backup/usb/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Copy the newest backup (and the newest full one) to ``<drive>\SkyTowers``. The files stay encrypted. */
+        post: operations["backup_usb_copy_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/currencies/": {
@@ -3540,13 +3557,6 @@ export interface components {
             reason?: string;
             version?: number;
         };
-        /** @description First manager on a new reception PC. */
-        SetupRequest: {
-            full_name: string;
-            username: string;
-            password: string;
-            pin: string;
-        };
         Shift: {
             /** Format: uuid */
             readonly id: string;
@@ -3960,6 +3970,21 @@ export interface components {
             /** Format: binary */
             file: string;
         };
+        UsbCopyRequestRequest: {
+            /** @description One of GET /backup/usb. */
+            drive: string;
+        };
+        UsbCopyResult: {
+            folder: string;
+            files: string[];
+        };
+        UsbDrive: {
+            /** @description E.g. E:\ */
+            drive: string;
+            label: string;
+            /** @description Free bytes. */
+            free: number;
+        };
         User: {
             /** Format: uuid */
             readonly id: string;
@@ -4215,29 +4240,6 @@ export interface operations {
             };
         };
     };
-    auth_setup_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetupRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Session"];
-                };
-            };
-        };
-    };
     auth_users_list: {
         parameters: {
             query?: never;
@@ -4439,6 +4441,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BackupSettings"];
+                };
+            };
+        };
+    };
+    backup_usb_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsbDrive"][];
+                };
+            };
+        };
+    };
+    backup_usb_copy_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UsbCopyRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["UsbCopyRequestRequest"];
+                "multipart/form-data": components["schemas"]["UsbCopyRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsbCopyResult"];
                 };
             };
         };
