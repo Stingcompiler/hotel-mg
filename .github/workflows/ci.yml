@@ -4,6 +4,7 @@ on:
   push:
     branches: ["**"]  # every branch: CI must be green before merging into main
   pull_request:
+  workflow_call:  # the Windows release runs the same tests before it publishes (review 2026-09-29, E-1)
 
 jobs:
   server:
