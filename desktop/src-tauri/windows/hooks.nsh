@@ -120,10 +120,15 @@ FunctionEnd
 
   ; Hotel data (guests, ID numbers, password hashes, keys) is for Administrators and SYSTEM (the service) only;
   ; other Windows accounts may read the service log (the app window's «فتح سجل الأخطاء»).
+  ; Only the top folder gets explicit rights; everything inside is reset to inherit them. «/inheritance:r … /T» on
+  ; the whole tree left every existing file with an empty ACL (the service could not open its log), tried on a real
+  ; PC with 1.1.9 before release.
   CreateDirectory "${SKYT_DATA}\logs"
-  nsExec::Exec 'icacls "${SKYT_DATA}" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F /T /C /Q'
+  nsExec::Exec 'icacls "${SKYT_DATA}" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F /C /Q'
   Pop $0
-  nsExec::Exec 'icacls "${SKYT_DATA}\logs" /grant *S-1-5-32-545:(OI)(CI)RX /T /C /Q'
+  nsExec::Exec 'icacls "${SKYT_DATA}\*" /reset /T /C /Q'
+  Pop $0
+  nsExec::Exec 'icacls "${SKYT_DATA}\logs" /grant *S-1-5-32-545:(OI)(CI)RX /C /Q'
   Pop $0
 
   ; Defender: skip real-time scanning of the program and data folders (SQLite WAL writes; docs/windows.md).

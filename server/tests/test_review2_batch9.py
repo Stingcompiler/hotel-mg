@@ -90,3 +90,13 @@ def test_the_installer_hooks_use_only_known_nsis_names():
     used = set(re.findall(r"(?<!\$)\$[A-Za-z_]\w*", code))
     assert used <= NSIS_NAMES, used - NSIS_NAMES
     assert r'!define SKYT_DATA "$APPDATA\SkyTowers"' in code
+
+
+def test_the_installer_sets_rights_on_the_top_folder_only():
+    """«icacls /inheritance:r … /T» left every existing data file with an empty ACL: the service could not start."""
+    from pathlib import Path
+
+    hooks = (Path(__file__).resolve().parents[2] / "desktop/src-tauri/windows/hooks.nsh").read_text(encoding="utf-8")
+    lines = [line for line in hooks.splitlines() if "icacls" in line and not line.lstrip().startswith(";")]
+    assert lines and all("/T" not in line for line in lines if "/inheritance:r" in line or "/grant" in line)
+    assert any("/reset /T" in line for line in lines)
