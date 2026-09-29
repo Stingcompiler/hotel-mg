@@ -331,14 +331,40 @@ def record_payment(
 
 
 @transaction.atomic
-def refund(actor, folio_id, *, amount: int, method: str, reason: str, reference: str = "") -> Payment:
-    """Give money back (e.g. unused nights). Needs a reason and cannot exceed what the guest is owed."""
+def refund(
+    actor,
+    folio_id,
+    *,
+    amount: int | None = None,
+    method: str,
+    reason: str,
+    reference: str = "",
+    currency: str = "",
+    foreign_amount: int | None = None,
+) -> Payment:
+    """Give money back (e.g. unused nights). Needs a reason and cannot exceed what the guest is owed. In a foreign
+    currency it goes out of that currency's cash at today's rate: dollars taken in can be paid back in dollars, and
+    the pounds drawer is not charged for them (review 2026-09-29, A-7)."""
     if not reason.strip():
         raise ApiError("reason_required", 400, detail="سبب الردّ مطلوب.")
+    rate = None
+    if currency:
+        amount, rate = in_currency(currency, foreign_amount)
     folio = Folio.objects.select_for_update().select_related("reservation").get(pk=folio_id)
-    if amount <= 0 or amount > -FolioTotals.of(folio).balance:
+    if not amount or amount <= 0 or amount > -FolioTotals.of(folio).balance:
         raise ApiError("refund_exceeds_credit", 400)
-    return take_payment(actor, folio, amount=-amount, method=method, reference=reference, kind="refund", reason=reason)
+    return take_payment(
+        actor,
+        folio,
+        amount=-amount,
+        method=method,
+        reference=reference,
+        kind="refund",
+        reason=reason,
+        currency=currency,
+        foreign_amount=-foreign_amount if currency else None,
+        rate=rate,
+    )
 
 
 @transaction.atomic

@@ -104,7 +104,15 @@ def test_a_dollar_payment_keeps_its_rate_and_stays_out_of_the_pounds_drawer(
 
     totals = reception_api.get("/api/v1/shifts/current").json()["totals"]
     assert totals["receipts"]["cash"] == 0 and totals["expected"] == 5_000_000  # no pounds came in
-    usd_row = {"currency": "USD", "symbol": "$", "cash": 19_000, "total": 19_000, "base": 47_500_000}
+    usd_row = {
+        "currency": "USD",
+        "symbol": "$",
+        "cash": 19_000,
+        "total": 19_000,
+        "base": 47_500_000,
+        "opening": 0,
+        "expected": 19_000,  # dollars in the drawer (A-7)
+    }
     assert totals["foreign"] == [usd_row]
     movements = reception_api.get("/api/v1/shifts/current").json()["movements"]
     assert any("(150 $ بسعر 2,500)" in m["text"] for m in movements)
@@ -141,3 +149,47 @@ def test_inactive_or_unknown_currency_is_refused(owner_api, reception_api, guest
     res = reception_api.post(url, {"method": "cash", "currency": "USD"}, format="json")
     assert res.status_code == 400 and "foreign_amount" in res.json()["errors"]
     assert reception_api.post(url, {"method": "cash"}, format="json").status_code == 400
+
+
+def test_dollars_are_refunded_counted_handed_over_and_carried_to_the_next_shift(
+    reception_api, guest, double, rooms, usd
+):
+    """Review 2026-09-29, A-6/A-7: the dollar drawer is refunded from, counted at close, handed over, and the next
+    opening is checked against what was left."""
+    assert reception_api.post("/api/v1/shifts/open", {"opening": 1_000_000}, format="json").status_code == 201
+    r = book(reception_api, guest, double, rooms["202"], check_in_now=True)
+    folio = f"/api/v1/folios/{r['folio']}"
+    body = {"method": "cash", "currency": "USD", "foreign_amount": 20_000}  # 200 $ = 500,000
+    assert reception_api.post(f"{folio}/payments", body, format="json").status_code == 201
+    back = {"method": "cash", "currency": "USD", "foreign_amount": 4_000, "reason": "دفع زائد"}  # 40 $ back
+    res = reception_api.post(f"{folio}/refunds", back, format="json")
+    assert res.status_code == 201, res.json()
+    assert (res.json()["amount"], res.json()["foreign_amount"]) == (-10_000_000, -4_000)
+
+    usd_row = reception_api.get("/api/v1/shifts/current").json()["totals"]["foreign"][0]
+    assert (usd_row["cash"], usd_row["expected"]) == (16_000, 16_000)
+    assert reception_api.get("/api/v1/shifts/current").json()["totals"]["expected"] == 1_000_000  # pounds untouched
+
+    close = {"counted": 1_000_000, "counted_foreign": {"USD": 15_000}}
+    res = reception_api.post("/api/v1/shifts/close", close, format="json")
+    assert res.json()["code"] == "reason_required" and res.json()["foreign_differences"] == {"USD": -1_000}
+    handover = {"handed_over": 400_000, "handed_over_foreign": {"USD": 10_000}}
+    too_much = {**close, "counted_foreign": {"USD": 16_000}, "handed_over_foreign": {"USD": 20_000}}
+    assert reception_api.post("/api/v1/shifts/close", too_much, format="json").status_code == 400
+    res = reception_api.post(
+        "/api/v1/shifts/close", {**close, **handover, "difference_reason": "10 $ صُرفت خطأ"}, format="json"
+    )
+    assert res.status_code == 200, res.json()
+    shift = res.json()
+    assert shift["expected_foreign"] == {"USD": 16_000} and shift["counted_foreign"] == {"USD": 15_000}
+    assert shift["handed_over"] == 400_000 and shift["handed_over_foreign"] == {"USD": 10_000}
+
+    current = reception_api.get("/api/v1/shifts/current").json()
+    assert current["suggested_opening"] == 600_000 and current["suggested_opening_foreign"] == {"USD": 5_000}
+    res = reception_api.post("/api/v1/shifts/open", {"opening": 600_000}, format="json")
+    assert res.status_code == 400 and res.json()["expected_foreign"] == {"USD": 5_000}  # 50 $ went missing
+    opened = {"opening": 600_000, "opening_foreign": {"USD": 5_000}}
+    res = reception_api.post("/api/v1/shifts/open", opened, format="json")
+    assert res.status_code == 201 and res.json()["opening_expected"] == 600_000
+    usd_row = reception_api.get("/api/v1/shifts/current").json()["totals"]["foreign"][0]
+    assert (usd_row["opening"], usd_row["expected"]) == (5_000, 5_000)

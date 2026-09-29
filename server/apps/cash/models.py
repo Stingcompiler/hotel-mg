@@ -34,6 +34,15 @@ class Shift(BaseModel):
     expected = MoneyField(null=True, blank=True)
     counted = MoneyField(null=True, blank=True)
     difference_reason = models.CharField(max_length=300, blank=True)
+    # The cash chain (review 2026-09-29, A-6, A-7): what the previous shift left in the drawer, why the opening
+    # differs from it, what was handed to the owner at close; foreign cash per currency in its own minor units.
+    opening_expected = MoneyField(null=True, blank=True, help_text="Left in the drawer by the previous shift.")
+    opening_reason = models.CharField(max_length=300, blank=True)
+    handed_over = MoneyField(default=0, help_text="Pounds taken out at close (to the owner or the safe).")
+    opening_foreign = models.JSONField(default=dict, blank=True)
+    expected_foreign = models.JSONField(default=dict, blank=True)
+    counted_foreign = models.JSONField(default=dict, blank=True)
+    handed_over_foreign = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["-opened_at"]
@@ -45,6 +54,7 @@ class Shift(BaseModel):
                 name="one_open_shift_per_device",
             ),
             models.CheckConstraint(condition=models.Q(opening__gte=0), name="shift_opening_not_negative"),
+            models.CheckConstraint(condition=models.Q(handed_over__gte=0), name="shift_handed_over_not_negative"),
         ]
 
     def __str__(self):

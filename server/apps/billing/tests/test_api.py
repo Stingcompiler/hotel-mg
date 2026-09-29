@@ -162,9 +162,9 @@ def test_service_line_and_reversal(reception_api, guest, double, rooms):
 
 
 def test_checkout_with_debt_by_manager_override(reception_api, guest, double, rooms, manager, shift):
-    """Artboard 6.5 C: leaves owing 15,000; the debt stays on the closed folio."""
-    r = book(reception_api, guest, double, rooms["202"], check_in_now=True).json()
-    pay(reception_api, r, 28_500_000)
+    """Artboard 6.5 C: leaves owing 15,000; the debt stays on the closed folio. One night booked, so leaving now is
+    not an early departure (owner decision 4)."""
+    r = book(reception_api, guest, double, rooms["202"], duration_kind="daily", check_in_now=True).json()
     stay = Stay.objects.get(reservation_id=r["id"])
     url = f"/api/v1/stays/{stay.pk}/checkout"
     assert reception_api.post(url, {}, format="json").json()["balance"] == 1_500_000

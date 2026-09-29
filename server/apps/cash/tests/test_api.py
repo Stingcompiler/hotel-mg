@@ -58,7 +58,8 @@ class TestShift:
 
         current = reception_api.get("/api/v1/shifts/current").json()
         assert current["shift"] is None and current["last_closed"]["id"] == body["id"]
-        assert current["suggested_opening"] == 5_000_000
+        # What the shift left in the drawer, not its opening (review 2026-09-29, A-6).
+        assert current["suggested_opening"] == 3_500_000
 
     def test_history(self, reception_api):
         open_shift(reception_api)
