@@ -9,7 +9,9 @@
 
 !define SKYT_SERVICE "SkyTowersServer"
 !define SKYT_EXE "$INSTDIR\server\skytowers-server.exe"
-!define SKYT_DATA "$COMMONAPPDATA\SkyTowers"
+; $APPDATA is C:\ProgramData under SetShellVarContext all (every hook sets it first). NSIS has no $COMMONAPPDATA: up
+; to 1.1.8 that name stayed literal text, so the pre-upgrade copy, the ACLs and the data exclusion never applied.
+!define SKYT_DATA "$APPDATA\SkyTowers"
 ; Oldest WebView2 the interface is tested with (CSS logical properties, :has, color-mix); E-10.
 !define SKYT_MIN_WEBVIEW2 "111.0.1661.41"
 

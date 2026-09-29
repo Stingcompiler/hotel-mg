@@ -72,3 +72,21 @@ def test_the_installer_updates_the_database_and_reads_the_result(capsys):
     assert "boom" in capsys.readouterr().out
     MigrationRecorder(connection).record_applied("billing", "9999_from_the_future")
     assert cli.upgrade_db() == 4
+
+
+# NSIS constants and variables the installer hooks may use. NSIS keeps an unknown ``$NAME`` as literal text (only a
+# build warning): «$COMMONAPPDATA» made every data-folder step of 1.0–1.1.8 act on a folder that does not exist.
+NSIS_NAMES = {"$INSTDIR", "$APPDATA", "$LOCALAPPDATA", "$TEMP", "$PROGRAMFILES", "$SkytPre", "$SkytPrev"}
+
+
+def test_the_installer_hooks_use_only_known_nsis_names():
+    import re
+    from pathlib import Path
+
+    hooks = Path(__file__).resolve().parents[2] / "desktop/src-tauri/windows/hooks.nsh"
+    code = "\n".join(
+        line for line in hooks.read_text(encoding="utf-8").splitlines() if not line.lstrip().startswith(";")
+    )
+    used = set(re.findall(r"(?<!\$)\$[A-Za-z_]\w*", code))
+    assert used <= NSIS_NAMES, used - NSIS_NAMES
+    assert r'!define SKYT_DATA "$APPDATA\SkyTowers"' in code
