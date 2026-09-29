@@ -327,5 +327,8 @@ jobs:
           $sums = "SHA256SUMS.txt"
           (Get-FileHash $name -Algorithm SHA256).Hash.ToLower() + "  $name" | Set-Content $sums -Encoding ascii
           (Get-FileHash $stable -Algorithm SHA256).Hash.ToLower() + "  $stable" | Add-Content $sums -Encoding ascii
-          gh release create $tag $name $stable $sums --title "Sky Towers $version" --notes-file docs/release-notes.md --target $env:GITHUB_SHA
+          # The title says what the version brings: «Sky Towers 1.1.11 — …» from its heading in the release notes.
+          $heading = Select-String -Path docs/release-notes.md -Encoding utf8 -Pattern ("^### \S+ " + [regex]::Escape($version) + " \((.+)\)\s*$") | Select-Object -First 1
+          $title = if ($heading) { "Sky Towers $version — " + $heading.Matches[0].Groups[1].Value } else { "Sky Towers $version" }
+          gh release create $tag $name $stable $sums --title $title --notes-file docs/release-notes.md --target $env:GITHUB_SHA
           "published $tag"
