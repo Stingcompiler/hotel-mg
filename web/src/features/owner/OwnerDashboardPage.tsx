@@ -30,6 +30,9 @@ export function OwnerDashboardPage() {
   const dash = useQuery({
     queryKey: ["reports", "owner-dashboard", period],
     queryFn: () => data(api.GET("/api/v1/reports/owner-dashboard", { params: { query: { period } } })),
+    // The owner PC changes only on an import: no reload each time the window gets focus (review 2026-09-29, F-12).
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
   const d = dash.data;
 

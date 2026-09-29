@@ -1,5 +1,6 @@
 """Cash shifts and expenses (spec §6.4, §6.5)."""
 
+from collections import defaultdict
 from dataclasses import dataclass
 
 from django.conf import settings
@@ -90,15 +91,46 @@ class ShiftTotals:
 
     @classmethod
     def of(cls, shift: Shift) -> "ShiftTotals":
-        receipts = rules.totals_by_method(payment_rows(shift))
-        expenses = rules.totals_by_method(shift.expenses.values_list("method", "amount"))
-        return cls(
-            shift.opening,
-            receipts,
-            expenses,
-            rules.expected_cash(shift.opening, receipts["cash"], expenses["cash"]),
-            foreign_summary(shift),
-        )
+        return cls.for_shifts([shift])[shift.pk]
+
+    @classmethod
+    def for_shifts(cls, shifts) -> dict:
+        """shift id → totals in three queries for any number of shifts; the cash-shifts report ran three per shift
+        (9 s for a year, review 2026-09-29, F-5)."""
+        from apps.billing import rules as billing_rules
+        from apps.billing.models import Currency, Payment
+
+        ids = [s.pk for s in shifts]
+        base, foreign = defaultdict(list), defaultdict(list)
+        for shift_id, currency, method, foreign_amount, amount in Payment.objects.filter(shift_id__in=ids).values_list(
+            "shift_id", "currency", "method", "foreign_amount", "amount"
+        ):
+            if currency:
+                foreign[shift_id].append((currency, method, foreign_amount, amount))
+            else:
+                base[shift_id].append((method, amount))
+        spent = defaultdict(list)
+        for shift_id, method, amount in Expense.objects.filter(shift_id__in=ids).values_list(
+            "shift_id", "method", "amount"
+        ):
+            spent[shift_id].append((method, amount))
+        symbols = dict(Currency.objects.values_list("code", "symbol")) if foreign else {}
+        out = {}
+        for shift in shifts:
+            receipts = rules.totals_by_method(base[shift.pk])
+            expenses = rules.totals_by_method(spent[shift.pk])
+            by_currency = billing_rules.foreign_totals(foreign[shift.pk])
+            out[shift.pk] = cls(
+                shift.opening,
+                receipts,
+                expenses,
+                rules.expected_cash(shift.opening, receipts["cash"], expenses["cash"]),
+                [
+                    {"currency": code, "symbol": symbols.get(code) or code, **row}
+                    for code, row in sorted(by_currency.items())
+                ],
+            )
+        return out
 
 
 # --- Shifts ------------------------------------------------------------------------------

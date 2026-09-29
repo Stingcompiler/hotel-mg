@@ -2,8 +2,8 @@
 
 from django.db.models import Sum
 
-from apps.billing.models import FolioLine, Payment
-from apps.billing.services import balances_by_reservation
+from apps.billing.models import Folio, FolioLine, Payment
+from apps.billing.services import balances_by_folio, balances_by_reservation
 from apps.stays import rules as stay_rules
 from apps.stays.models import Reservation, ReservationStatus
 
@@ -29,9 +29,10 @@ def for_guests(guest_ids) -> dict:
 
 
 def debtor_ids() -> set:
-    stays = list(Reservation.objects.filter(status__in=MAY_OWE).values_list("pk", "guest_id"))
-    balances = balances_by_reservation([pk for pk, _ in stays])
-    return {gid for pk, gid in stays if balances[pk] > 0}
+    """Guests owing on any stay: balances per folio by a subquery, never a list of every reservation (F-7)."""
+    balances = balances_by_folio(Folio.objects.filter(reservation__status__in=MAY_OWE))
+    owing = [pk for pk, balance in balances.items() if balance > 0]
+    return set(Folio.objects.filter(pk__in=owing).values_list("reservation__guest_id", flat=True))
 
 
 def history(guest_id) -> list[dict]:

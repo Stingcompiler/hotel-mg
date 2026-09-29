@@ -98,6 +98,7 @@ class FolioLine(AppendOnlyModel):
 
     class Meta:
         ordering = ["posted_at", "created_at"]
+        indexes = [models.Index(fields=["posted_at"]), models.Index(fields=["folio", "amount"])]
         constraints = [models.CheckConstraint(condition=~models.Q(amount=0), name="folio_line_not_zero")]
 
     def __str__(self):
@@ -131,6 +132,7 @@ class Payment(AppendOnlyModel):
 
     class Meta:
         ordering = ["received_at", "created_at"]
+        indexes = [models.Index(fields=["received_at"]), models.Index(fields=["folio", "amount"])]
         constraints = [
             models.CheckConstraint(condition=~models.Q(amount=0), name="payment_not_zero"),
             models.UniqueConstraint(fields=["hotel_id", "receipt_no"], name="receipt_no_per_hotel"),

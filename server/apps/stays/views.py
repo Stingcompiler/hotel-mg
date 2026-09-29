@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.billing.services import FolioTotals
+from apps.billing.services import FolioTotals, balances_by_reservation, deposits_by_reservation
 from apps.rooms.models import RoomType
 
 from . import rules, services, stay_services
@@ -37,6 +37,11 @@ from .serializers import (
     StaySerializer,
     VersionSerializer,
 )
+
+
+def _page_balances(view) -> dict:
+    """Balances of every reservation of a list in two grouped queries, not two per row (review 2026-09-29, F-8)."""
+    return balances_by_reservation([r.pk for r in view.get_queryset()])
 
 
 def _reservations():
@@ -108,6 +113,9 @@ class ReservationListView(ListAPIView):
             qs = qs.filter(status__in=statuses)
         return qs.order_by("check_in_date", "room__number")
 
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), "balances": _page_balances(self)}
+
     @extend_schema(request=ReservationCreateSerializer, responses={201: ReservationSerializer})
     def post(self, request):
         data = ReservationCreateSerializer(data=request.data)
@@ -171,7 +179,7 @@ class AssignRoomView(APIView):
 
 def _stays():
     return Stay.objects.select_related(
-        "reservation__guest", "reservation__room", "reservation__room_type", "override_by"
+        "reservation__guest", "reservation__room", "reservation__room_type", "reservation__folio", "override_by"
     ).prefetch_related("segments__room")
 
 
@@ -188,6 +196,14 @@ class CurrentStaysView(ListAPIView):
 
     def get_queryset(self):
         return _stays().filter(reservation__status="checked_in").order_by("reservation__room__number")
+
+    def get_serializer_context(self):
+        ids = [s.reservation_id for s in self.get_queryset()]
+        return {
+            **super().get_serializer_context(),
+            "balances": balances_by_reservation(ids),
+            "deposits": deposits_by_reservation(ids),
+        }
 
 
 class CheckInView(APIView):

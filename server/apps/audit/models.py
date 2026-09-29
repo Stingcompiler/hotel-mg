@@ -25,7 +25,7 @@ class AuditLog(AppendOnlyModel):
     class Meta:
         ordering = ["seq"]
         constraints = [models.UniqueConstraint(fields=["hotel_id", "seq"], name="audit_seq_per_hotel")]
-        indexes = [models.Index(fields=["entity", "entity_id"])]
+        indexes = [models.Index(fields=["entity", "entity_id"]), models.Index(fields=["at"])]
 
     def __str__(self):
         return f"#{self.seq} {self.action} {self.entity}:{self.entity_id}"

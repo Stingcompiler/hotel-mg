@@ -109,8 +109,10 @@ class ShiftHistoryView(APIView):
         if user := params.get("user"):
             qs = qs.filter(Q(created_by_id=user) | Q(closed_by_id=user))
         shifts = []
-        for shift in qs.order_by("-opened_at"):
-            totals = services.ShiftTotals.of(shift)
+        found = list(qs.order_by("-opened_at"))
+        all_totals = services.ShiftTotals.for_shifts(found)
+        for shift in found:
+            totals = all_totals[shift.pk]
             shift.receipts, shift.cash_expenses = totals.receipts["cash"], totals.expenses["cash"]
             shifts.append(shift)
         diffs = [s.difference for s in shifts if s.difference]

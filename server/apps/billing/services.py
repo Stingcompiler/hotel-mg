@@ -1,9 +1,10 @@
 """Folios, lines and payments (spec §6.4). Every function runs inside the caller's or its own transaction."""
 
+from collections import defaultdict
 from dataclasses import dataclass
 
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Q, QuerySet, Sum
 from django.utils import timezone
 
 from apps.accounts import rules as account_rules
@@ -74,28 +75,76 @@ class FolioTotals:
 
     @classmethod
     def of(cls, folio: Folio) -> "FolioTotals":
-        # A reversal counts with the kind it reverses: a cancelled discount is no longer shown as a discount on the
-        # invoice and the stay screen (review 2026-09-28, BIZ-7).
-        rows = folio.lines.values_list("kind", "reverses__kind").annotate(s=Sum("amount"))
-        total = sum(s for _, _, s in rows)
-        discounts = sum(s for kind, reversed_kind, s in rows if "discount" in (kind, reversed_kind))
-        paid = folio.payments.aggregate(s=Sum("amount"))["s"] or 0
+        return totals_by_folio(Folio.objects.filter(pk=folio.pk)).get(folio.pk) or cls.make(0, 0, 0)
+
+    @classmethod
+    def make(cls, total: int, discounts: int, paid: int) -> "FolioTotals":
         return cls(total - discounts, discounts, total, paid, rules.balance([total], [paid]))
 
 
-def balances_by_reservation(reservation_ids) -> dict:
-    """Balance per reservation in two queries (room board, lists)."""
+def totals_by_folio(folios: QuerySet | None = None) -> dict:
+    """folio id → FolioTotals in two grouped queries, for every folio or those of ``folios`` (a subquery, never an id
+    list). The debts report, the owner dashboard and the report badges used two queries per folio: 80 s on five
+    years of data (review 2026-09-29, F-1…F-3).
+
+    A reversal counts with the kind it reverses: a cancelled discount is no longer shown as a discount on the invoice
+    and the stay screen (review 2026-09-28, BIZ-7)."""
+    lines, payments = FolioLine.objects.all(), Payment.objects.all()
+    if folios is not None:
+        lines, payments = lines.filter(folio__in=folios.values("pk")), payments.filter(folio__in=folios.values("pk"))
+    sums = defaultdict(lambda: [0, 0, 0])  # total, discounts, paid
+    for folio_id, kind, reversed_kind, s in (
+        lines.order_by().values_list("folio_id", "kind", "reverses__kind").annotate(s=Sum("amount"))
+    ):
+        sums[folio_id][0] += s
+        if "discount" in (kind, reversed_kind):
+            sums[folio_id][1] += s
+    for folio_id, s in payments.order_by().values_list("folio_id").annotate(s=Sum("amount")):
+        sums[folio_id][2] += s
+    return {folio_id: FolioTotals.make(*row) for folio_id, row in sums.items()}
+
+
+def balances_by_folio(folios: QuerySet | None = None) -> dict:
+    """folio id → balance (charges − payments) for every folio with a line or a payment, or those of ``folios`` (a
+    subquery): two grouped queries on the folio column only, no joins (review 2026-09-29, F-1…F-3, F-7)."""
+    lines, payments = FolioLine.objects.all(), Payment.objects.all()
+    if folios is not None:
+        lines, payments = (
+            lines.filter(folio_id__in=folios.values("pk")),
+            payments.filter(folio_id__in=folios.values("pk")),
+        )
+    charged = dict(lines.order_by().values_list("folio_id").annotate(s=Sum("amount")))
+    paid = dict(payments.order_by().values_list("folio_id").annotate(s=Sum("amount")))
+    return {pk: rules.balance([charged.get(pk, 0)], [paid.get(pk, 0)]) for pk in charged.keys() | paid.keys()}
+
+
+def balances_by_reservation(reservations) -> dict:
+    """Balance per reservation in two grouped queries. ``reservations``: a short id list (the board, one page) or a
+    Reservation queryset, matched as a subquery — a long id list passes SQLite's limit of query variables
+    (review 2026-09-29, F-7)."""
+    if isinstance(reservations, QuerySet):
+        folios = Folio.objects.filter(reservation__in=reservations.values("pk"))
+        by_folio = balances_by_folio(folios)
+        balance_of = {rid: by_folio.get(fid, 0) for fid, rid in folios.values_list("pk", "reservation_id")}
+        return {rid: balance_of.get(rid, 0) for rid in reservations.values_list("pk", flat=True)}
+    ids, match = reservations, {"folio__reservation_id__in": reservations}
     charged = dict(
-        FolioLine.objects.filter(folio__reservation_id__in=reservation_ids)
-        .values_list("folio__reservation_id")
-        .annotate(s=Sum("amount"))
+        FolioLine.objects.filter(**match).order_by().values_list("folio__reservation_id").annotate(s=Sum("amount"))
     )
     paid = dict(
-        Payment.objects.filter(folio__reservation_id__in=reservation_ids)
+        Payment.objects.filter(**match).order_by().values_list("folio__reservation_id").annotate(s=Sum("amount"))
+    )
+    return {rid: rules.balance([charged.get(rid, 0)], [paid.get(rid, 0)]) for rid in ids}
+
+
+def deposits_by_reservation(reservation_ids) -> dict:
+    """Deposits paid per reservation in one grouped query (lists)."""
+    return dict(
+        Payment.objects.filter(kind="deposit", folio__reservation_id__in=reservation_ids)
+        .order_by()
         .values_list("folio__reservation_id")
         .annotate(s=Sum("amount"))
     )
-    return {rid: rules.balance([charged.get(rid, 0)], [paid.get(rid, 0)]) for rid in reservation_ids}
 
 
 # --- Lines ----------------------------------------------------------------------------------

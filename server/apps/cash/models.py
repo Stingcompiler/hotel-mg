@@ -37,6 +37,7 @@ class Shift(BaseModel):
 
     class Meta:
         ordering = ["-opened_at"]
+        indexes = [models.Index(fields=["opened_at"]), models.Index(fields=["closed_at"])]
         constraints = [
             models.UniqueConstraint(
                 fields=["hotel_id", "device"],
@@ -71,6 +72,7 @@ class Expense(AppendOnlyModel):
 
     class Meta:
         ordering = ["-spent_at"]
+        indexes = [models.Index(fields=["spent_at"])]
         constraints = [
             models.CheckConstraint(condition=~models.Q(amount=0), name="expense_amount_not_zero"),
             models.UniqueConstraint(fields=["hotel_id", "number"], name="expense_number_per_hotel"),

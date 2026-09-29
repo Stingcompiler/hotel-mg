@@ -43,7 +43,8 @@ class GuestSerializer(serializers.ModelSerializer):
         ]
 
     def get_companions(self, guest) -> list[dict]:
-        return CompanionSerializer(guest.companions.filter(removed=False), many=True).data
+        # From the list's prefetch; a filter() here was one query per guest (F-8).
+        return CompanionSerializer([c for c in guest.companions.all() if not c.removed], many=True).data
 
     def get_id_number(self, guest) -> str:
         user = self.context["request"].user
