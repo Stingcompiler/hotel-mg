@@ -4,13 +4,13 @@ import { Link } from "react-router-dom";
 
 import { t } from "@/i18n/t";
 
-type Kind = "password" | "pin" | "email";
+type Kind = "password" | "pin" | "recovery";
 const DISMISSED: Record<Kind, string> = {
   password: "skytowers.defaultPasswordLater",
   pin: "skytowers.defaultPinLater",
-  email: "skytowers.noEmailLater",
+  recovery: "skytowers.noRecoveryLater",
 };
-const TEXT: Record<Kind, string> = { password: "account.defaultPassword", pin: "account.defaultPin", email: "account.noEmail" };
+const TEXT: Record<Kind, string> = { password: "account.defaultPassword", pin: "account.defaultPin", recovery: "account.noRecovery" };
 
 function dismissed(kind: Kind): boolean {
   try {

@@ -19,6 +19,17 @@ class LoginUserSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    has_recovery_code = serializers.SerializerMethodField(help_text="The owner has a one-time recovery code.")
+    recovery_code = serializers.SerializerMethodField(
+        help_text="Only in the answer that created it (the owner's password was set): write it down, it is not stored."
+    )
+
+    def get_has_recovery_code(self, obj) -> bool:
+        return bool(obj.recovery_code_hash)
+
+    def get_recovery_code(self, obj) -> str | None:
+        return getattr(obj, "new_recovery_code", None)
+
     class Meta:
         model = User
         fields = [
@@ -32,6 +43,8 @@ class UserSerializer(serializers.ModelSerializer):
             "default_password",
             "default_pin",
             "email",
+            "has_recovery_code",
+            "recovery_code",
             "version",
             "created_at",
             "updated_at",
@@ -54,7 +67,7 @@ class SetupSerializer(serializers.Serializer):
 
     full_name = serializers.CharField(max_length=120)
     username = serializers.CharField(max_length=64)
-    password = serializers.CharField(min_length=6, max_length=128, style={"input_type": "password"})
+    password = serializers.CharField(min_length=8, max_length=128, style={"input_type": "password"})
     pin = serializers.CharField(max_length=6, validators=[_validate_pin])
 
 
@@ -77,7 +90,7 @@ class UserCreateSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=120)
     role = serializers.ChoiceField(choices=Role.choices)
     pin = serializers.CharField(max_length=6, validators=[_validate_pin])
-    password = serializers.CharField(max_length=128, required=False, allow_blank=False)
+    password = serializers.CharField(min_length=8, max_length=128, required=False, allow_blank=False)
     email = serializers.EmailField(required=False, allow_blank=True, default="", help_text="For «نسيت كلمة المرور؟».")
 
     def validate_username(self, value):
@@ -97,14 +110,25 @@ class UserUpdateSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=120, required=False)
     role = serializers.ChoiceField(choices=Role.choices, required=False)
     is_active = serializers.BooleanField(required=False)
-    password = serializers.CharField(max_length=128, required=False, allow_blank=False)
+    password = serializers.CharField(min_length=8, max_length=128, required=False, allow_blank=False)
     email = serializers.EmailField(required=False, allow_blank=True, help_text="Empty removes it.")
 
 
 class RecoverPasswordSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=64)
-    email = serializers.EmailField()
-    password = serializers.CharField(max_length=128, style={"input_type": "password"}, help_text="The new password.")
+    email = serializers.CharField(
+        max_length=254, required=False, allow_blank=True, default="", help_text="Staff accounts."
+    )
+    recovery_code = serializers.CharField(
+        max_length=40, required=False, allow_blank=True, default="", help_text="The owner's one-time recovery code."
+    )
+    password = serializers.CharField(
+        min_length=8, max_length=128, style={"input_type": "password"}, help_text="The new password."
+    )
+
+
+class RecoveryCodeSerializer(serializers.Serializer):
+    recovery_code = serializers.CharField(allow_null=True, help_text="A new one for the owner; null for staff.")
 
 
 class ResetPinSerializer(serializers.Serializer):

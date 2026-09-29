@@ -149,12 +149,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PasswordLoginRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PasswordLoginRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PasswordLoginRequest'
         required: true
       security:
       - {}
@@ -173,12 +167,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PinLoginRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PinLoginRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PinLoginRequest'
         required: true
@@ -203,18 +191,16 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/RecoverPasswordRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/RecoverPasswordRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/RecoverPasswordRequest'
         required: true
       security:
       - {}
       responses:
-        '204':
-          description: No response body
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecoveryCode'
+          description: ''
   /api/v1/auth/setup:
     post:
       operationId: auth_setup_create
@@ -225,12 +211,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/SetupRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SetupRequest'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/SetupRequest'
         required: true
@@ -3182,6 +3162,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
+  /api/v1/users/{id}/recovery-code:
+    post:
+      operationId: users_recovery_code_create
+      description: '«رمز استعادة جديد»: the owner, for his own account, after re-entering
+        his password (X-Confirm-Token).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecoveryCode'
+          description: ''
   /api/v1/users/{id}/reset-pin:
     post:
       operationId: users_reset_pin_create
@@ -6123,7 +6127,7 @@ components:
           type: boolean
         password:
           type: string
-          minLength: 1
+          minLength: 8
           maxLength: 128
         email:
           description: Empty removes it.
@@ -6524,17 +6528,31 @@ components:
           maxLength: 64
         email:
           type: string
-          format: email
-          minLength: 1
+          default: ''
+          description: Staff accounts.
+          maxLength: 254
+        recovery_code:
+          type: string
+          default: ''
+          description: The owner's one-time recovery code.
+          maxLength: 40
         password:
           type: string
-          minLength: 1
+          minLength: 8
           description: The new password.
           maxLength: 128
       required:
-      - email
       - password
       - username
+    RecoveryCode:
+      type: object
+      properties:
+        recovery_code:
+          type: string
+          nullable: true
+          description: A new one for the owner; null for staff.
+      required:
+      - recovery_code
     RefundRequest:
       type: object
       properties:
@@ -7308,7 +7326,7 @@ components:
           maxLength: 64
         password:
           type: string
-          minLength: 6
+          minLength: 8
           maxLength: 128
         pin:
           type: string
@@ -8286,6 +8304,16 @@ components:
           readOnly: true
           description: 'Reference email: «نسيت كلمة المرور؟» on the reception PC asks
             for it (offline, nothing is sent).'
+        has_recovery_code:
+          type: boolean
+          readOnly: true
+          description: The owner has a one-time recovery code.
+        recovery_code:
+          type: string
+          nullable: true
+          readOnly: true
+          description: 'Only in the answer that created it (the owner''s password
+            was set): write it down, it is not stored.'
         version:
           type: integer
           readOnly: true
@@ -8308,6 +8336,8 @@ components:
       - default_password
       - default_pin
       - email
+      - has_recovery_code
+      - recovery_code
       - version
       - created_at
       - updated_at
@@ -8330,7 +8360,7 @@ components:
           maxLength: 6
         password:
           type: string
-          minLength: 1
+          minLength: 8
           maxLength: 128
         email:
           description: For «نسيت كلمة المرور؟».

@@ -1633,6 +1633,23 @@ export interface paths {
         patch: operations["users_partial_update"];
         trace?: never;
     };
+    "/api/v1/users/{id}/recovery-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description «رمز استعادة جديد»: the owner, for his own account, after re-entering his password (X-Confirm-Token). */
+        post: operations["users_recovery_code_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/{id}/reset-pin": {
         parameters: {
             query?: never;
@@ -3118,10 +3135,22 @@ export interface components {
         };
         RecoverPasswordRequest: {
             username: string;
-            /** Format: email */
-            email: string;
+            /**
+             * @description Staff accounts.
+             * @default
+             */
+            email?: string;
+            /**
+             * @description The owner's one-time recovery code.
+             * @default
+             */
+            recovery_code?: string;
             /** @description The new password. */
             password: string;
+        };
+        RecoveryCode: {
+            /** @description A new one for the owner; null for staff. */
+            recovery_code: string | null;
         };
         RefundRequest: {
             amount: number;
@@ -3829,6 +3858,10 @@ export interface components {
              * @description Reference email: «نسيت كلمة المرور؟» on the reception PC asks for it (offline, nothing is sent).
              */
             readonly email: string;
+            /** @description The owner has a one-time recovery code. */
+            readonly has_recovery_code: boolean;
+            /** @description Only in the answer that created it (the owner's password was set): write it down, it is not stored. */
+            readonly recovery_code: string | null;
             readonly version: number;
             /** Format: date-time */
             readonly created_at: string;
@@ -3998,8 +4031,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PasswordLoginRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PasswordLoginRequest"];
-                "multipart/form-data": components["schemas"]["PasswordLoginRequest"];
             };
         };
         responses: {
@@ -4023,8 +4054,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PinLoginRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["PinLoginRequest"];
-                "multipart/form-data": components["schemas"]["PinLoginRequest"];
             };
         };
         responses: {
@@ -4048,17 +4077,16 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RecoverPasswordRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["RecoverPasswordRequest"];
-                "multipart/form-data": components["schemas"]["RecoverPasswordRequest"];
             };
         };
         responses: {
-            /** @description No response body */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RecoveryCode"];
+                };
             };
         };
     };
@@ -4072,8 +4100,6 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SetupRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["SetupRequest"];
-                "multipart/form-data": components["schemas"]["SetupRequest"];
             };
         };
         responses: {
@@ -6602,6 +6628,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["User"];
+                };
+            };
+        };
+    };
+    users_recovery_code_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecoveryCode"];
                 };
             };
         };

@@ -269,6 +269,8 @@ class AlertSoundView(APIView):
         data = AlertSoundUploadSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         upload = data.validated_data["file"]
+        if upload.size > rules.ALERT_SOUND_MAX_BYTES:  # before reading it into memory (review 2026-09-29, C-17)
+            raise ApiError("validation_error", 400, detail="ملف الصوت أكبر من 1 ميغابايت.")
         set_alert_sound(request.user, name=upload.name, raw=upload.read())
         return Response(status=status.HTTP_204_NO_CONTENT)
 

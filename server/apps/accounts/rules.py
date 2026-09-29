@@ -57,3 +57,38 @@ def can_manage_user(actor_role: str, target_role: str) -> bool:
 
 def token_expired(created: datetime, now: datetime) -> bool:
     return now >= created + SESSION_LIFETIME
+
+
+# --- Recovery (owner decision 2026-09-29, review C-1) -----------------------------------------------------
+
+MIN_PASSWORD_LENGTH = 8
+RECOVERY_ALPHABET = "ABCDEFGHJKMNPQRSTVWXYZ23456789"  # no 0/O, 1/I/L: read from paper without mistakes
+RECOVERY_LENGTH = 12
+RECOVERY_BASE_LOCK = timedelta(minutes=15)
+RECOVERY_MAX_LOCK = timedelta(hours=24)
+
+
+def password_long_enough(password: str) -> bool:
+    return len(password or "") >= MIN_PASSWORD_LENGTH
+
+
+def format_recovery_code(raw: str) -> str:
+    """«ABCD2345EFGH» → «ABCD-2345-EFGH» (easier to write down and read back)."""
+    return "-".join(raw[i : i + 4] for i in range(0, len(raw), 4))
+
+
+def normalize_recovery_code(text: str) -> str:
+    """What the owner typed → the stored form: capitals, no spaces or dashes; O/I/L read as the digits they look like
+    are not in the alphabet, so they are mapped to the letters that are."""
+    cleaned = "".join(ch for ch in (text or "").upper() if ch.isalnum())
+    return cleaned.replace("0", "Q").replace("O", "Q").replace("1", "J").replace("I", "J").replace("L", "J")
+
+
+def recovery_failure(failed: int, locks: int, now: datetime) -> tuple[int, int, datetime | None]:
+    """(failed, locks, locked_until) after one more wrong recovery attempt: 5 wrong attempts lock recovery for
+    15 minutes, then 1 hour, 4 hours… up to a day — guessing never gets faster (C-1)."""
+    failed += 1
+    if failed < MAX_FAILED_ATTEMPTS:
+        return failed, locks, None
+    lock = min(RECOVERY_BASE_LOCK * (4**locks), RECOVERY_MAX_LOCK)
+    return 0, locks + 1, now + lock

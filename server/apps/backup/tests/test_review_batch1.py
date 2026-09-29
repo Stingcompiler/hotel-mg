@@ -89,7 +89,7 @@ def test_the_owner_who_forgot_the_password_gets_a_new_one_and_backups_follow(hot
     assert user.check_password("brand-new-1") and user.locked_until is None
     [slot] = keyslots.for_export()
     assert keyslots.unwrap(slot["wrapped"], "brand-new-1") == str(keys.hotel_identity())
-    with pytest.raises(Exception, match="6"):
+    with pytest.raises(Exception, match="8"):
         call_command("reset_password", "manager", password="123", stdout=io.StringIO())
 
 
