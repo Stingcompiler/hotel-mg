@@ -17,7 +17,7 @@ import { t } from "@/i18n/t";
 
 type Report = components["schemas"]["Report"];
 type Column = Report["columns"][number];
-type Tile = { label: string; value: number | string; type?: string; hint?: string };
+type Tile = { label: string; value: number | string; type?: string; hint?: string; tone?: "danger" };
 
 /** Report-specific controls (the framework accepts them as query parameters). */
 const CONTROLS: Record<string, "debts" | "when" | "days" | "none" | "period"> = {
@@ -274,7 +274,7 @@ export function ReportsPage() {
                 {meta.tiles.slice(0, 4).map((tile) => (
                   <div key={tile.label} className="rounded-card border border-border bg-bg-surface p-4 max-[1599px]:px-4 max-[1599px]:py-3">
                     <div className="text-label text-text-secondary">{tile.label}</div>
-                    <div className={`mt-1 text-headline-number ${tile.type === "money" && typeof tile.value === "number" && /دين|ديون|فرق/.test(tile.label) && tile.value > 0 ? "text-danger" : ""}`}>
+                    <div className={`mt-1 text-headline-number ${tile.tone === "danger" && typeof tile.value === "number" && tile.value !== 0 ? "text-danger" : ""}`}>
                       {formatCell(tile.value, tile.type ?? "text")}
                       {tile.type === "money" && <span className="text-[16px] font-semibold text-text-secondary"> {t("money.currency")}</span>}
                     </div>

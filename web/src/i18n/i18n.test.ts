@@ -1,7 +1,7 @@
 import { formatDate, formatWhen } from "./dates";
 import { digits, setDigits, toWestern } from "./digits";
 import { formatMoney, parseMoney, toBase } from "./money";
-import { errorMessage, t } from "./t";
+import { errorMessage, t, tList } from "./t";
 
 afterEach(() => setDigits("western"));
 
@@ -40,7 +40,9 @@ test("dates use Arabic month names", () => {
 test("strings come from ar.json with variables", () => {
   expect(t("topbar.shiftOpen", { name: "أحمد", time: "08:00" })).toBe("وردية مفتوحة · أحمد · منذ 08:00");
   expect(t("nope.missing")).toBe("nope.missing");
-  expect(errorMessage("no_open_shift")).toBe("لا توجد وردية مفتوحة على هذا الجهاز.");
+  expect(errorMessage("no_open_shift")).toBe("لا توجد وردية مفتوحة على هذا الجهاز — افتح وردية من «الصندوق» ثم أعد المحاولة.");
+  expect(tList("lists.weekdays")).toHaveLength(7);
+  expect(tList("nope")).toEqual([]);
   expect(errorMessage("weird_code")).toBe("حدث خطأ غير متوقع.");
   expect(errorMessage("x", "من الخادم")).toBe("من الخادم");
 });

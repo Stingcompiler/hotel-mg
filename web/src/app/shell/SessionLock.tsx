@@ -1,10 +1,11 @@
 import { Lock } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { api, ApiError, data } from "@/api/client";
 import { useCurrentShift, useHotelSettings, useMe } from "@/api/queries";
 import { session } from "@/api/session";
-import { PIN_LENGTH, PinDots, PinPad } from "@/components/ui/PinPad";
+import { PIN_LENGTH, PIN_MIN, PinDots, PinPad } from "@/components/ui/PinPad";
 import { formatTime } from "@/i18n/dates";
 import { digits, toWestern } from "@/i18n/digits";
 import { t } from "@/i18n/t";
@@ -95,8 +96,20 @@ export function SessionLock() {
     return () => window.removeEventListener("keydown", onKey);
   }, [locked, press, pin, submit]);
 
+  // The page underneath stays mounted (unsaved forms survive) but takes no focus, click or key while locked: Enter on
+  // a button focused before the lock opened a dialog behind it (review 2026-09-28, UI-2).
+  useEffect(() => {
+    const root = document.getElementById("root");
+    if (!locked || !root) return;
+    (document.activeElement as HTMLElement | null)?.blur();
+    root.inert = true;
+    return () => {
+      root.inert = false;
+    };
+  }, [locked]);
+
   if (!locked || !me) return null;
-  return (
+  return createPortal(
     <div className="scrim-48 fixed inset-0 z-50 flex items-center justify-center">
       <div role="dialog" aria-modal="true" aria-labelledby="lock-title" className="flex w-[400px] flex-col items-center gap-5 rounded-modal bg-bg-surface p-8 shadow-elevated">
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-primary">
@@ -114,7 +127,14 @@ export function SessionLock() {
         </div>
         <PinDots count={pin.length} />
         {error && <div className="text-center text-body font-medium text-danger">{error}</div>}
-        <PinPad disabled={busy} onDigit={press} onClear={() => setPin("")} onBackspace={() => setPin((p) => p.slice(0, -1))} />
+        <PinPad
+          disabled={busy}
+          onDigit={press}
+          onClear={() => setPin("")}
+          onBackspace={() => setPin((p) => p.slice(0, -1))}
+          onEnter={() => void submit(pin)}
+          canEnter={pin.length >= PIN_MIN}
+        />
         <div className="flex w-full items-center justify-between text-label">
           <button type="button" onClick={() => session.signOut()} className="border-0 bg-transparent p-0 font-sans text-label font-medium text-primary">
             {t("lock.switchUser")}
@@ -122,6 +142,7 @@ export function SessionLock() {
           <span className="text-text-secondary">{t("lock.kept")}</span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

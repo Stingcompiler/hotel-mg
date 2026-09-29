@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
 
 from apps.core.clock import observe_clock
-from apps.core.errors import ApiError, api_exception_handler
+from apps.core.errors import MESSAGES, ApiError, api_exception_handler
 from apps.core.models import SCHEMA_VERSION
 
 pytestmark = pytest.mark.django_db
@@ -80,7 +80,7 @@ def test_clock_guard_lets_approval_path_through(api):
 def test_handler_shapes_api_error():
     res = api_exception_handler(ApiError("no_open_shift", 409), {})
     assert res.status_code == 409
-    assert res.data == {"code": "no_open_shift", "detail": "لا توجد وردية مفتوحة على هذا الجهاز."}
+    assert res.data == {"code": "no_open_shift", "detail": MESSAGES["no_open_shift"]}
 
 
 def test_handler_keeps_field_errors_for_validation():

@@ -38,9 +38,11 @@ def build_manifest(
     full,
     audit_seq,
     files: dict[str, bytes],
+    device: str = "",
 ) -> dict:
     return {
         "hotel_id": str(hotel_id),
+        "device": device,
         "seq": seq,
         "created_at": created_at.isoformat(),
         "schema_version": schema_version,
@@ -93,6 +95,17 @@ def is_due(last_at: datetime | None, interval_hours: int, now: datetime) -> bool
 def unknown_migrations(incoming: set[tuple[str, str]], known: set[tuple[str, str]]) -> set[tuple[str, str]]:
     """Migrations in the backup that this app does not have: the backup comes from a newer version."""
     return {m for m in incoming - known if m[0] in {k[0] for k in known}}
+
+
+TWO_DEVICES_WINDOW = timedelta(days=14)
+
+
+def two_devices(last_device: str, last_at: datetime | None, device: str, at: datetime) -> bool:
+    """A backup from another reception PC than an import of the last two weeks: two PCs may be working the same hotel
+    (review 2026-09-29, E-17). Moving to a new PC changes the device once; this warns, it does not refuse."""
+    if not (last_device and device and last_at) or last_device == device:
+        return False
+    return abs(at - last_at) <= TWO_DEVICES_WINDOW
 
 
 def check(key: str, label: str, detail: str, status: str) -> dict:

@@ -1,6 +1,7 @@
 import { t } from "@/i18n/t";
 
 export const PIN_LENGTH = 6;
+export const PIN_MIN = 4;
 
 /** Six dots: filled for each digit typed (login 6.1, session lock 6.14). */
 export function PinDots({ count }: { count: number }) {
@@ -16,13 +17,21 @@ export function PinDots({ count }: { count: number }) {
   );
 }
 
-type Props = { onDigit: (digit: string) => void; onClear: () => void; onBackspace: () => void; disabled?: boolean };
+type Props = {
+  onDigit: (digit: string) => void;
+  onClear: () => void;
+  onBackspace: () => void;
+  /** «دخول»: a PIN of 4 or 5 digits is sent with it; six digits go by themselves (review 2026-09-28, UI-5). */
+  onEnter?: () => void;
+  canEnter?: boolean;
+  disabled?: boolean;
+};
 
 /**
  * 1-2-3 grid laid out left to right like a calculator or phone keypad: `dir="ltr"` on the grid only
  * (RTL notes «لوحة الأرقام»), with «مسح» and ⌫ on the last row.
  */
-export function PinPad({ onDigit, onClear, onBackspace, disabled = false }: Props) {
+export function PinPad({ onDigit, onClear, onBackspace, onEnter, canEnter = false, disabled = false }: Props) {
   const digit = disabled
     ? "border border-border bg-bg-surface-2 text-text-disabled"
     : "border border-border-strong bg-bg-surface text-text-primary hover:bg-bg-surface-2";
@@ -44,6 +53,16 @@ export function PinPad({ onDigit, onClear, onBackspace, disabled = false }: Prop
       <button type="button" disabled={disabled} onClick={onBackspace} aria-label={t("login.backspace")} className={`${key} ${action}`}>
         ⌫
       </button>
+      {onEnter && (
+        <button
+          type="button"
+          disabled={disabled || !canEnter}
+          onClick={onEnter}
+          className="col-span-3 flex h-12 items-center justify-center rounded-control border-0 bg-primary font-sans text-body font-semibold text-primary-text-on disabled:bg-bg-surface-2 disabled:text-text-disabled"
+        >
+          {t("login.enterPin")}
+        </button>
+      )}
     </div>
   );
 }

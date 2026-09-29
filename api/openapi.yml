@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Sky Towers API
-  version: 1.0.0
+  version: '1.11'
   description: Local API of the Sky Towers hotel management system.
 paths:
   /api/v1/audit/:
@@ -201,28 +201,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/RecoveryCode'
           description: ''
-  /api/v1/auth/setup:
-    post:
-      operationId: auth_setup_create
-      description: 'First run: create the first manager when the reception PC has
-        no users (login screen «إعداد النظام»).'
-      tags:
-      - auth
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SetupRequest'
-        required: true
-      security:
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Session'
-          description: ''
   /api/v1/auth/users:
     get:
       operationId: auth_users_list
@@ -413,6 +391,54 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BackupSettings'
+          description: ''
+  /api/v1/backup/usb:
+    get:
+      operationId: backup_usb_list
+      description: '«حفظ على فلاشة»: the USB sticks this PC sees (review 2026-09-29,
+        E-16).'
+      tags:
+      - backup
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsbDrive'
+          description: ''
+  /api/v1/backup/usb/copy:
+    post:
+      operationId: backup_usb_copy_create
+      description: Copy the newest backup (and the newest full one) to ``<drive>\SkyTowers``.
+        The files stay encrypted.
+      tags:
+      - backup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsbCopyRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UsbCopyRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UsbCopyRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsbCopyResult'
           description: ''
   /api/v1/currencies/:
     get:
@@ -7445,31 +7471,6 @@ components:
           minimum: 1
       required:
       - status
-    SetupRequest:
-      type: object
-      description: First manager on a new reception PC.
-      properties:
-        full_name:
-          type: string
-          minLength: 1
-          maxLength: 120
-        username:
-          type: string
-          minLength: 1
-          maxLength: 64
-        password:
-          type: string
-          minLength: 8
-          maxLength: 128
-        pin:
-          type: string
-          minLength: 1
-          maxLength: 6
-      required:
-      - full_name
-      - password
-      - pin
-      - username
     Shift:
       type: object
       properties:
@@ -8526,6 +8527,43 @@ components:
           format: binary
       required:
       - file
+    UsbCopyRequestRequest:
+      type: object
+      properties:
+        drive:
+          type: string
+          minLength: 1
+          description: One of GET /backup/usb.
+          maxLength: 260
+      required:
+      - drive
+    UsbCopyResult:
+      type: object
+      properties:
+        folder:
+          type: string
+        files:
+          type: array
+          items:
+            type: string
+      required:
+      - folder
+      - files
+    UsbDrive:
+      type: object
+      properties:
+        drive:
+          type: string
+          description: E.g. E:\
+        label:
+          type: string
+        free:
+          type: integer
+          description: Free bytes.
+      required:
+      - drive
+      - label
+      - free
     User:
       type: object
       properties:

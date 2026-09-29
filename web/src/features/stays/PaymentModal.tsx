@@ -10,6 +10,7 @@ import { digits } from "@/i18n/digits";
 import { formatMoney, parseMoney, toBase } from "@/i18n/money";
 import { t } from "@/i18n/t";
 import { notice } from "@/lib/notices";
+import { useSingleFlight } from "@/lib/useSingleFlight";
 
 type Method = "cash" | "bankak" | "transfer";
 type Props = { folioId: string; room: string; balance: number; onClose: () => void; onDone: () => void };
@@ -35,7 +36,9 @@ export function PaymentModal({ folioId, room, balance, onClose, onDone }: Props)
   const overpay = base !== null && balance > 0 && base > balance ? base - balance : 0;
   const sign = currency ? currency.symbol || currency.code : t("money.currency");
 
-  const save = async () => {
+  const once = useSingleFlight();
+  const save = () => once(saveNow);
+  const saveNow = async () => {
     if (minor === null || minor <= 0) return setError(t("payment.errAmount"));
     if (needsReference) return setError(t("payment.errReference"));
     setBusy(true);

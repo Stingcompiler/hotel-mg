@@ -67,8 +67,19 @@ start (exit 4, logged) on a database with migrations it does not know. Uninstall
 delete `data\hotel.db-wal` and `data\hotel.db-shm`, copy the files of the newest `backups\pre-upgrade-…` folder into
 `data\`, and run the previous version's installer.
 
+### Copying a backup to a USB stick
+
+Settings › النسخ الاحتياطي › «حفظ على فلاشة»: the service (SYSTEM) lists removable drives and copies the newest
+backup to `<drive>\SkyTowers\`. The data folder stays for Administrators only.
+
+### One reception PC
+
+Every reception PC keeps its own database. Two PCs working at the same time are two separate copies of the hotel;
+the owner PC's import warns («جهاز الاستقبال») when backups come from two devices within 14 days.
+
 ### Code signing
 
+Each release also has `SHA256SUMS.txt`: `Get-FileHash SkyTowers-Setup.exe` must print the same value.
 The installer is unsigned, so SmartScreen shows «Windows protected your PC» (More info → Run anyway). The release
 workflow signs the installer by itself once the repository has two secrets: `WINDOWS_CERT_PFX` (the `.pfx`
 certificate, base64) and `WINDOWS_CERT_PASSWORD`. Options: an OV code-signing certificate (the warning fades as
@@ -110,7 +121,7 @@ It asks for the new password twice, unlocks the account and rewrites its backup 
 on another PC with the new password (audited as `user.reset_password_offline`). Use the account's own login name.
 ### Starting over with an empty program
 
-A new install is empty and opens on the login page with the default owner account (dmin / 123456).
+A new install is empty and opens on the login page with the default owner account (`admin` / `123456`).
 Uninstalling keeps `%ProgramData%\SkyTowers`, so a PC that was used for a trial (the demo hotel, test bookings)
 keeps that data through a reinstall. To empty it, from an administrator command prompt:
 

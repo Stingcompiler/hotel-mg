@@ -146,6 +146,7 @@ def run_backup(actor=None, kind: str = BackupRun.Kind.MANUAL, now: datetime | No
                 full=True,
                 audit_seq=audit_seq,
                 files=files,
+                device=settings.RUNTIME.device_name,
             )
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:

@@ -5,6 +5,8 @@ from . import views
 backup_urls = [
     path("run", views.BackupRunView.as_view(), name="backup-run"),
     path("runs", views.BackupRunListView.as_view(), name="backup-runs"),
+    path("usb", views.UsbDrivesView.as_view(), name="backup-usb-drives"),
+    path("usb/copy", views.UsbCopyView.as_view(), name="backup-usb-copy"),
     path("settings", views.BackupSettingsView.as_view(), name="backup-settings"),
     path("drive/status", views.DriveStatusView.as_view(), name="backup-drive-status"),
     path("drive/auth-url", views.DriveAuthUrlView.as_view(), name="backup-drive-auth-url"),

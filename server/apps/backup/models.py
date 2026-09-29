@@ -85,6 +85,7 @@ class ImportRun(AppendOnlyModel):
 
     source = models.CharField(max_length=10, choices=Source.choices)
     file_name = models.CharField(max_length=200)
+    device = models.CharField(max_length=64, blank=True, help_text="Reception PC the backup came from (1.1.12+).")
     backup_seq = models.PositiveIntegerField(null=True, blank=True)
     data_as_of = models.DateTimeField(null=True, blank=True, help_text="created_at in the imported manifest.")
     status = models.CharField(max_length=10, choices=Status.choices)

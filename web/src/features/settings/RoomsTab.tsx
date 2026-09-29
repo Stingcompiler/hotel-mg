@@ -6,7 +6,7 @@ import type { components } from "@api/schema";
 
 import { api, data } from "@/api/client";
 import { keys } from "@/api/queries";
-import { ErrorBanner, Select, TextInput } from "@/components/ui/form";
+import { ErrorBanner, Field, Select, TextInput } from "@/components/ui/form";
 import { Toggle } from "@/components/ui/Toggle";
 import { stateColor } from "@/design/state";
 import { digits, toWestern } from "@/i18n/digits";
@@ -105,41 +105,46 @@ export function RoomsTab({ readOnly }: { readOnly: boolean }) {
           const chip = r && <StateChip room={r} />;
           const note = r ? (r.status === "maintenance" && r.maintenance_reason ? r.maintenance_reason : r.note) : "";
           if (isEditing) {
+            // A labelled form under the row: the in-row inputs were too narrow at 1100 px (the type list had 16 px of
+            // text, the name hint was cut) — review 2026-09-29, D-2.
             return (
-              <div key={r?.id ?? "new"} className={`${GRID} min-h-[60px] border-b border-border bg-primary-soft py-2 text-table-cell`}>
-                <TextInput aria-label={t("settings.rooms.col_number")} value={draft.number} onChange={(e) => setDraft({ ...draft, number: toWestern(e.target.value) })} />
-                <div className="flex flex-col gap-1.5">
-                  <Select aria-label={t("settings.rooms.col_type")} value={draft.room_type} onChange={(e) => setDraft({ ...draft, room_type: e.target.value })}>
-                    {(types.data ?? []).map((ty) => (
-                      <option key={ty.id} value={ty.id}>
-                        {ty.name}
-                      </option>
-                    ))}
-                  </Select>
-                  <TextInput
-                    aria-label={t("settings.rooms.name")}
-                    placeholder={t("settings.rooms.name")}
-                    maxLength={60}
-                    value={draft.name}
-                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                  />
+              <div key={r?.id ?? "new"} className="flex flex-col gap-3 border-b border-border bg-primary-soft px-4 py-3 text-table-cell">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] items-end gap-3">
+                  <Field label={t("settings.rooms.col_number")} required>
+                    <TextInput value={draft.number} onChange={(e) => setDraft({ ...draft, number: toWestern(e.target.value) })} />
+                  </Field>
+                  <Field label={t("settings.rooms.col_type")} required>
+                    <Select value={draft.room_type} onChange={(e) => setDraft({ ...draft, room_type: e.target.value })}>
+                      {(types.data ?? []).map((ty) => (
+                        <option key={ty.id} value={ty.id}>
+                          {ty.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+                  <Field label={t("settings.rooms.name")}>
+                    <TextInput maxLength={60} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+                  </Field>
+                  <Field label={t("settings.rooms.col_floor")} required>
+                    <TextInput
+                      inputMode="numeric"
+                      value={draft.floor}
+                      onChange={(e) => setDraft({ ...draft, floor: toWestern(e.target.value).replace(/[^\d-]/g, "") })}
+                    />
+                  </Field>
+                  <Field label={t("settings.rooms.col_note")}>
+                    <TextInput value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} />
+                  </Field>
                 </div>
-                <TextInput
-                  aria-label={t("settings.rooms.col_floor")}
-                  inputMode="numeric"
-                  value={draft.floor}
-                  onChange={(e) => setDraft({ ...draft, floor: toWestern(e.target.value).replace(/[^\d-]/g, "") })}
-                />
-                <div>{chip}</div>
-                <TextInput aria-label={t("settings.rooms.col_note")} value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} />
-                <div>
-                  {r ? (
-                    <Toggle checked={draft.in_service} label={t("settings.rooms.col_service")} onChange={(in_service) => setDraft({ ...draft, in_service })} />
-                  ) : (
-                    t("settings.yes")
+                <div className="flex flex-wrap items-center gap-3">
+                  {chip}
+                  {r && (
+                    <span className="flex items-center gap-2">
+                      <Toggle checked={draft.in_service} label={t("settings.rooms.col_service")} onChange={(in_service) => setDraft({ ...draft, in_service })} />
+                      <span className="text-body">{t("settings.rooms.col_service")}</span>
+                    </span>
                   )}
-                </div>
-                <div className="flex gap-2">
+                  <div className="flex-1" />
                   <button type="button" disabled={!valid || save.isPending} onClick={() => save.mutate()} className={smallButton("primary")}>
                     {t("settings.save")}
                   </button>

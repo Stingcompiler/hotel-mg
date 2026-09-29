@@ -6,7 +6,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { api, ApiError, data } from "@/api/client";
 import { useSystemStatus } from "@/api/queries";
 import { session } from "@/api/session";
-import { PIN_LENGTH, PinDots, PinPad } from "@/components/ui/PinPad";
+import { PIN_LENGTH, PIN_MIN, PinDots, PinPad } from "@/components/ui/PinPad";
 import { formatDayDate, formatTime } from "@/i18n/dates";
 import { digits, toWestern } from "@/i18n/digits";
 import { t } from "@/i18n/t";
@@ -575,7 +575,14 @@ function PinLogin({
         </div>
       )}
 
-      <PinPad disabled={locked || busy || !selected} onDigit={press} onClear={() => setPin("")} onBackspace={() => setPin((p) => p.slice(0, -1))} />
+      <PinPad
+        disabled={locked || busy || !selected}
+        onDigit={press}
+        onClear={() => setPin("")}
+        onBackspace={() => setPin((p) => p.slice(0, -1))}
+        onEnter={() => void submitPin(pin)}
+        canEnter={pin.length >= PIN_MIN}
+      />
 
       <button type="button" onClick={onPassword} className="border-0 bg-transparent font-sans text-body font-medium text-primary hover:text-primary-hover">
         {locked ? t("login.askManager") : t("login.backToPassword")}

@@ -195,3 +195,18 @@ class DriveImportSerializer(serializers.Serializer):
         if not attrs.get("drive_file_id") and not attrs.get("name"):
             raise serializers.ValidationError("حدّد ملفًا من Drive أو من مجلد الوارد.")
         return attrs
+
+
+class UsbDriveSerializer(serializers.Serializer):
+    drive = serializers.CharField(help_text="E.g. E:\\")
+    label = serializers.CharField(allow_blank=True)
+    free = serializers.IntegerField(help_text="Free bytes.")
+
+
+class UsbCopyRequestSerializer(serializers.Serializer):
+    drive = serializers.CharField(max_length=260, help_text="One of GET /backup/usb.")
+
+
+class UsbCopyResultSerializer(serializers.Serializer):
+    folder = serializers.CharField()
+    files = serializers.ListField(child=serializers.CharField())

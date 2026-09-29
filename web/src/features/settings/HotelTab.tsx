@@ -169,9 +169,9 @@ export function HotelTab({ readOnly }: { readOnly: boolean }) {
       </div>
       <Card title={t("settings.hotel.printing")}>
         <div className="grid grid-cols-[1fr_1fr] items-end gap-4 p-4">
-          <Field label={t("settings.hotel.printer")} hint={t("settings.hotel.printerHint")}>
-            <TextInput readOnly={readOnly} dir="ltr" value={draft.thermal_printer} onChange={(e) => set({ thermal_printer: e.target.value })} />
-          </Field>
+          {/* The printer is chosen in Windows' print dialog; the stored printer name was never used (review 2026-09-28,
+              UI-9) and the field is gone until printing goes straight to a named printer. */}
+          <div className="text-body text-text-secondary">{t("settings.hotel.printerHint")}</div>
           <div className="flex h-9 items-center gap-3">
             <Toggle checked={draft.auto_print_receipt} disabled={readOnly} label={t("settings.hotel.autoPrint")} onChange={(v) => set({ auto_print_receipt: v })} />
             <span className="text-body">{t("settings.hotel.autoPrint")}</span>

@@ -123,7 +123,7 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Sky Towers API",
     "DESCRIPTION": "Local API of the Sky Towers hotel management system.",
-    "VERSION": "1.0.0",
+    "VERSION": "1.11",  # the API contract version: api/VERSION (review 2026-09-29, F-22)
     "SERVE_INCLUDE_SCHEMA": False,
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAuthenticated"],
     "SCHEMA_PATH_PREFIX": r"/api/v1",
@@ -146,7 +146,7 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-APP_VERSION = "1.1.11"
+APP_VERSION = "1.1.12"
 
 LOGGING = {
     "version": 1,

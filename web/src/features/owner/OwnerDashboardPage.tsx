@@ -309,9 +309,18 @@ function WeeksChart({ weeks }: { weeks: Dashboard["weeks"] }) {
               <Bar value={w.revenue} max={max} dense={dense} className="bg-primary" />
               <Bar value={w.collected} max={max} dense={dense} className="bg-chart-secondary" />
             </div>
-            {/* Dense: the week's first day only (29/6); the full range is in the tooltip. */}
-            <div className="max-w-full truncate whitespace-nowrap text-label font-normal text-text-secondary" dir={dense ? "ltr" : undefined}>
-              {digits(dense ? w.label.split("–")[0] : w.label)}
+            {/* Dense: the week's first day only (29/6); the full range is in the tooltip. A month's weeks show
+                «الأسبوع 1» over «(1–7)»: on one line it was cut at 1100 px (review 2026-09-29, D-4). */}
+            <div className="max-w-full text-center text-label font-normal leading-tight text-text-secondary" dir={dense ? "ltr" : undefined}>
+              {dense ? (
+                <span className="block truncate whitespace-nowrap">{digits(w.label.split("–")[0])}</span>
+              ) : (
+                w.label.split(" (").map((part, i) => (
+                  <span key={i} className="block whitespace-nowrap">
+                    {digits(i ? `(${part}` : part)}
+                  </span>
+                ))
+              )}
             </div>
           </div>
         ))}
