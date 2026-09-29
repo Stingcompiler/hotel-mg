@@ -278,3 +278,27 @@ class AlertSoundView(APIView):
     def delete(self, request):
         reset_alert_sound(request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SupportBundleRequestSerializer(serializers.Serializer):
+    drive = serializers.CharField(max_length=260, help_text="One of GET /backup/usb.")
+
+
+class SupportBundleSerializer(serializers.Serializer):
+    path = serializers.CharField()
+
+
+class SupportBundleView(APIView):
+    """«حزمة الدعم»: the service log, versions and backup/import history on a USB stick for support; no hotel data,
+    keys or secrets (review 2026-09-29 enhancements)."""
+
+    permission_classes = [IsManager]
+
+    @extend_schema(request=SupportBundleRequestSerializer, responses=SupportBundleSerializer)
+    def post(self, request):
+        from . import support
+
+        data = SupportBundleRequestSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        path = support.write_to(data.validated_data["drive"])
+        return Response(SupportBundleSerializer({"path": str(path)}).data)

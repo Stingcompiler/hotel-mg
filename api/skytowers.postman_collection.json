@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Sky Towers API 1.11",
+    "name": "Sky Towers API 1.12",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "description": "Generated from api/openapi.yml by build/postman_collection.py. Sign in with auth/password or auth/pin, then set the `token` variable."
   },
@@ -545,7 +545,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"owner_recipient\": \"\",\n  \"interval_hours\": 0,\n  \"keep_count\": 0,\n  \"keep_days\": 0,\n  \"on_shift_close\": false,\n  \"auto_drive\": false,\n  \"second_dir\": \"\",\n  \"version\": 0\n}"
+              "raw": "{\n  \"owner_recipient\": \"\",\n  \"interval_hours\": 0,\n  \"keep_count\": 0,\n  \"keep_days\": 0,\n  \"max_total_mb\": 0,\n  \"on_shift_close\": false,\n  \"auto_drive\": false,\n  \"second_dir\": \"\",\n  \"version\": 0\n}"
             }
           }
         },
@@ -2003,7 +2003,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"owner_recipient\": \"\",\n  \"interval_hours\": 0,\n  \"keep_count\": 0,\n  \"keep_days\": 0,\n  \"on_shift_close\": false,\n  \"auto_drive\": false,\n  \"second_dir\": \"\",\n  \"version\": 0\n}"
+              "raw": "{\n  \"owner_recipient\": \"\",\n  \"interval_hours\": 0,\n  \"keep_count\": 0,\n  \"keep_days\": 0,\n  \"max_total_mb\": 0,\n  \"on_shift_close\": false,\n  \"auto_drive\": false,\n  \"second_dir\": \"\",\n  \"version\": 0\n}"
             }
           }
         },
@@ -3693,6 +3693,37 @@
               "variable": []
             },
             "description": "Read before login: the SPA picks the reception or owner shell from ``role`` (spec §10.4)."
+          }
+        },
+        {
+          "name": "system_support_bundle_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/system/support-bundle",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system",
+                "support-bundle"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "description": "«حزمة الدعم»: the service log, versions and backup/import history on a USB stick for support; no hotel data,\nkeys or secrets (review 2026-09-29 enhancements).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"drive\": \"\"\n}"
+            }
           }
         }
       ]

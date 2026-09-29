@@ -88,6 +88,20 @@ def too_old(stamps_newest_first: list[tuple[str, datetime]], keep_days: int, now
     return [path for path, at in stamps_newest_first[KEEP_NEWEST_BY_AGE:] if at < limit]
 
 
+def too_big(sizes_newest_first: list[tuple[str, int]], max_bytes: int) -> list[str]:
+    """Retention by size: the oldest files beyond ``max_bytes`` in all; 0 = no limit. The newest three always stay.
+    Every backup carries every attachment, so 30 copies of a hotel with many ID scans could fill the disk
+    (review 2026-09-29, E-12)."""
+    if max_bytes <= 0:
+        return []
+    total, out = 0, []
+    for i, (path, size) in enumerate(sizes_newest_first):
+        total += size
+        if i >= KEEP_NEWEST_BY_AGE and total > max_bytes:
+            out.append(path)
+    return out
+
+
 def is_due(last_at: datetime | None, interval_hours: int, now: datetime) -> bool:
     return interval_hours > 0 and (last_at is None or now - last_at >= timedelta(hours=interval_hours))
 

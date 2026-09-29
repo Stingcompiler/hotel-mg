@@ -13,6 +13,7 @@ class BackupSettingsSerializer(serializers.ModelSerializer):
             "interval_hours",
             "keep_count",
             "keep_days",
+            "max_total_mb",
             "on_shift_close",
             "auto_drive",
             "second_dir",

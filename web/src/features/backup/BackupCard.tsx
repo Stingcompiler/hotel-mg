@@ -3,7 +3,7 @@ import { Check, CloudUpload, DatabaseBackup, Download, TriangleAlert, Usb } from
 import { type ReactNode, useState } from "react";
 
 import { api, ApiError, data } from "@/api/client";
-import { keys, useSystemStatus } from "@/api/queries";
+import { keys, useMe, useSystemStatus } from "@/api/queries";
 import { formatWhen } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
 import { t } from "@/i18n/t";
@@ -131,9 +131,16 @@ type Drive = { drive: string; label: string; free: number };
 /** «حفظ على فلاشة»: the backups folder is for administrators only, so the service copies the newest backup to the
  *  stick itself (review 2026-09-29, E-16). One stick: copied at once; several: pick one. */
 function UsbSave({ disabled }: { disabled: boolean }) {
+  const me = useMe().data;
+  const manager = me?.role === "manager" || me?.role === "owner";
   const [drives, setDrives] = useState<Drive[] | null>(null);
+  // «حفظ على فلاشة» copies the newest backup; «حزمة الدعم» writes the logs and versions for a support call.
+  const [what, setWhat] = useState<"backup" | "support">("backup");
   const copy = useMutation({
-    mutationFn: (drive: string) => data(api.POST("/api/v1/backup/usb/copy", { body: { drive } })),
+    mutationFn: async (drive: string) =>
+      what === "backup"
+        ? data(api.POST("/api/v1/backup/usb/copy", { body: { drive } })).then((r) => r.folder)
+        : data(api.POST("/api/v1/system/support-bundle", { body: { drive } })).then((r) => r.path),
   });
   const look = useMutation({
     mutationFn: () => data(api.GET("/api/v1/backup/usb")),
@@ -142,6 +149,11 @@ function UsbSave({ disabled }: { disabled: boolean }) {
       if (found.length === 1) copy.mutate(found[0].drive);
     },
   });
+  const start = (kind: "backup" | "support") => {
+    setWhat(kind);
+    copy.reset();
+    look.mutate();
+  };
   const busy = look.isPending || copy.isPending;
   const line = (): ReactNode => {
     if (copy.isPending) return <Line tone="muted">{t("backup.usbCopying")}</Line>;
@@ -150,7 +162,7 @@ function UsbSave({ disabled }: { disabled: boolean }) {
     if (copy.data) {
       return (
         <Line tone="success">
-          {t("backup.usbDone")} <span dir="ltr">{copy.data.folder}</span>
+          {t(what === "backup" ? "backup.usbDone" : "backup.supportDone")} <span dir="ltr">{copy.data}</span>
         </Line>
       );
     }
@@ -162,15 +174,17 @@ function UsbSave({ disabled }: { disabled: boolean }) {
       <button
         type="button"
         disabled={disabled || busy}
-        onClick={() => {
-          copy.reset();
-          look.mutate();
-        }}
+        onClick={() => start("backup")}
         className="inline-flex h-10 items-center gap-2 rounded-control border border-border-strong bg-bg-surface px-4 font-sans text-body font-semibold text-text-primary hover:bg-bg-surface-2 disabled:text-text-disabled"
       >
         <Usb className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
         {t("backup.usb")}
       </button>
+      {manager && (
+        <button type="button" disabled={busy} onClick={() => start("support")} className="border-0 bg-transparent p-0 font-sans text-body font-medium text-primary disabled:text-text-disabled">
+          {t("backup.support")}
+        </button>
+      )}
       {drives &&
         drives.length > 1 &&
         !copy.data &&
