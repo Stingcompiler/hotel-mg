@@ -32,7 +32,7 @@ export function CashPage() {
   // «طباعة كشف الوردية»: the open shift, or the last closed one when none is open.
   const printable = current?.shift?.id ?? current?.last_closed?.id;
   return (
-    <div className="flex h-full min-h-[620px] flex-col gap-4 p-6 max-[1599px]:gap-3">
+    <div className="flex min-h-full flex-col gap-4 p-6 max-[1599px]:gap-3">
       <div className="flex h-9 items-center gap-4">
         <h1 className="m-0 text-page-title">{t("cash.title")}</h1>
         <Segmented
@@ -326,8 +326,10 @@ function Movements({ current }: { current: Current }) {
     handover: "bg-warning-soft text-warning-text",
   };
   const kindLabel = { in: "cash.typeIn", out: "cash.typeOut", open: "cash.typeOpen", handover: "cash.typeHandover" } as const;
+  // At least ~8 rows: with the close form (handover, currencies) the page is taller than a laptop screen, so the page
+  // scrolls instead of squeezing the movements to one row (owner feedback 2026-10-02).
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
+    <section className="flex min-h-[420px] flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
       <div className="flex h-12 flex-none items-center gap-3 border-b border-border px-4">
         <h2 className="m-0 text-section-title">{t("cash.moves")}</h2>
         <span className="text-body text-text-secondary">{t("cash.movesCount", { n: digits(String(current.movements.length)) })}</span>
