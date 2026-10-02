@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Download, Printer } from "lucide-react";
+import { ArrowDown, ArrowUp, Download, FileText, Printer } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 
@@ -98,13 +98,17 @@ export function ReportsPage() {
   const r = report.data;
   const title = index.data?.find((x) => x.name === current)?.title ?? "";
 
-  const exportAs = async (format: "xlsx" | "csv") => {
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const exportAs = async (format: "xlsx" | "pdf") => {
+    if (format === "pdf") setPdfBusy(true);
     setError(null);
     const qs = new URLSearchParams({ ...query, format });
     try {
       await download(`/api/v1/reports/${current}/export?${qs}`, `${current}.${format}`);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t("errors.error"));
+    } finally {
+      setPdfBusy(false);
     }
   };
 
@@ -234,8 +238,10 @@ export function ReportsPage() {
           <Download className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
           {t("reports.exportExcel")}
         </button>
-        <button type="button" disabled={!r} onClick={() => void exportAs("csv")} className={`${buttons.secondary} h-9 px-3`}>
-          {t("reports.csv")}
+        {/* PDF like the printed page; Excel for the accountant. CSV left the screen: Excel covers it (owner, 2026-10-02). */}
+        <button type="button" disabled={!r || pdfBusy} onClick={() => void exportAs("pdf")} className={`${buttons.secondary} h-9 px-4`}>
+          <FileText className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
+          {pdfBusy ? t("reports.pdfBusy") : t("reports.exportPdf")}
         </button>
       </div>
 

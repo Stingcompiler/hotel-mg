@@ -113,7 +113,9 @@ def test_adjustments_collects_discounts_and_reversals(api_as_manager):
 def test_bad_requests(api_as_manager):
     assert api_as_manager.get("/api/v1/reports/nope").status_code == 404
     assert api_as_manager.get("/api/v1/reports/debts", {"date_from": "26-09-2026"}).json()["code"] == "validation_error"
-    assert api_as_manager.get("/api/v1/reports/debts/export", {"format": "pdf"}).status_code == 400
+    assert (
+        api_as_manager.get("/api/v1/reports/debts/export", {"format": "docx"}).status_code == 400
+    )  # pdf is a format since 1.1.14
 
 
 def test_xlsx_export_is_rtl_with_numeric_money(api_as_manager):
