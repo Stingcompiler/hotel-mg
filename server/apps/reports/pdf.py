@@ -2,6 +2,7 @@
 HTML and turned into PDF by Microsoft Edge (every Windows 10/11 has it). The browser shapes the Arabic and lays out the
 right-to-left table; a PDF library would need its own Arabic shaping and would not match the print."""
 
+import logging
 import os
 import re
 import subprocess
@@ -17,7 +18,21 @@ from apps.core.errors import ApiError
 from . import rules
 from .framework import Column, Report
 
-EDGE_TIMEOUT = 90
+EDGE_TIMEOUT = 60
+log = logging.getLogger("skytowers.pdf")
+# Tried in order. The service runs as SYSTEM in session 0: the second set is for that case (the old headless mode,
+# no crash reporter, no de-elevation relaunch, no GPU process).
+EDGE_MODES = (
+    ["--headless=new", "--disable-gpu"],
+    [
+        "--headless",
+        "--disable-gpu",
+        "--do-not-de-elevate",
+        "--disable-crash-reporter",
+        "--no-zygote",
+        "--single-process",
+    ],
+)
 
 
 def _text(value, column_type: str, decimals: int) -> str:
@@ -126,25 +141,34 @@ def to_pdf(html: str) -> bytes:
     """Print the page with Edge in headless mode; 503 ``pdf_unavailable`` when it cannot (no Edge, a failure)."""
     edge = edge_path()
     if edge is None:
+        log.warning("PDF: Microsoft Edge not found (ProgramFiles=%s)", os.environ.get("ProgramFiles"))
         raise ApiError("pdf_unavailable", 503)
     with tempfile.TemporaryDirectory(prefix="skytowers-pdf-") as tmp:
-        page, out = Path(tmp) / "report.html", Path(tmp) / "report.pdf"
+        page = Path(tmp) / "report.html"
         page.write_text(html, encoding="utf-8")
-        command = [
-            str(edge),
-            "--headless=new",
-            "--disable-gpu",
-            "--no-sandbox",  # the service runs as SYSTEM
-            "--no-first-run",
-            "--no-pdf-header-footer",
-            f"--user-data-dir={Path(tmp) / 'profile'}",
-            f"--print-to-pdf={out}",
-            page.as_uri(),
-        ]
-        try:
-            subprocess.run(command, capture_output=True, timeout=EDGE_TIMEOUT, check=False)
-        except (OSError, subprocess.TimeoutExpired):
-            raise ApiError("pdf_unavailable", 503) from None
-        if not out.is_file() or out.stat().st_size == 0:
-            raise ApiError("pdf_unavailable", 503)
-        return out.read_bytes()
+        for attempt, mode in enumerate(EDGE_MODES, start=1):
+            out = Path(tmp) / f"report-{attempt}.pdf"
+            command = [
+                str(edge),
+                *mode,
+                "--no-sandbox",  # the service runs as SYSTEM
+                "--no-first-run",
+                "--no-pdf-header-footer",
+                f"--user-data-dir={Path(tmp) / f'profile-{attempt}'}",
+                f"--print-to-pdf={out}",
+                page.as_uri(),
+            ]
+            try:
+                done = subprocess.run(command, capture_output=True, timeout=EDGE_TIMEOUT, check=False)
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                log.warning("PDF: Edge attempt %s did not finish: %r", attempt, exc)
+                continue
+            if out.is_file() and out.stat().st_size > 0:
+                return out.read_bytes()
+            log.warning(
+                "PDF: Edge attempt %s wrote nothing (exit %s): %s",
+                attempt,
+                done.returncode,
+                (done.stderr or done.stdout or b"")[-800:].decode("utf-8", "replace"),
+            )
+        raise ApiError("pdf_unavailable", 503)
