@@ -1,23 +1,25 @@
-"""PDF export of a Report (owner request 2026-10-02): an A4 landscape RTL page like the printed report, written as
-HTML and turned into PDF by Microsoft Edge (every Windows 10/11 has it). The browser shapes the Arabic and lays out the
-right-to-left table; a PDF library would need its own Arabic shaping and would not match the print."""
+"""PDF export of a Report (owner request 2026-10-02): A4 landscape, right to left, like the printed report — title,
+hotel, period, filters, tiles, table with a heading on every page, totals, formula, page numbers.
 
-import os
-import re
-import subprocess
-import tempfile
+Written in-process with fpdf2: HarfBuzz shapes the Arabic (IBM Plex Sans Arabic, the app's font, embedded) and the
+columns run from the right. A headless browser was tried first; it did not run under the SYSTEM service account.
+"""
+
+import logging
 from datetime import date, datetime
-from html import escape
 from pathlib import Path
 
 from django.utils import timezone
-
-from apps.core.errors import ApiError
+from fpdf import FPDF
+from fpdf.fonts import FontFace
 
 from . import rules
 from .framework import Column, Report
 
-EDGE_TIMEOUT = 90
+FONTS = Path(__file__).resolve().parent / "fonts"
+logging.getLogger("fontTools").setLevel(logging.WARNING)  # its font subsetting logs every glyph at INFO
+NUMERIC = ("money", "int", "percent")
+INK, MUTED, RULE = (27, 36, 48), (85, 85, 85), (201, 206, 214)
 
 
 def _text(value, column_type: str, decimals: int) -> str:
@@ -36,115 +38,99 @@ def _text(value, column_type: str, decimals: int) -> str:
     return str(value)
 
 
-ARABIC = re.compile("[؀-ۿ]")
+class _Sheet(FPDF):
+    def footer(self):
+        self.set_y(-10)
+        self.set_font("Plex", "", 8)
+        self.set_text_color(*MUTED)
+        self.cell(0, 5, f"صفحة {self.page_no()} من {{nb}}", align="C")
 
 
-def _cell(value, column: Column, decimals: int) -> str:
-    numeric = column.type in ("money", "int", "percent")
-    text = escape(_text(value, column.type, decimals))
-    if not numeric and not ARABIC.search(text):
-        text = f'<span dir="ltr">{text}</span>'  # «28/09 – 30/09» would read backwards in a right-to-left cell
-    return f'<td class="{"num" if numeric else ""}">{text}</td>'
+def _sheet() -> _Sheet:
+    pdf = _Sheet(orientation="L", unit="mm", format="A4")
+    pdf.set_margins(12, 12, 12)
+    pdf.set_auto_page_break(True, margin=14)
+    pdf.add_font("Plex", "", str(FONTS / "IBMPlexSansArabic-Regular.ttf"))
+    pdf.add_font("Plex", "B", str(FONTS / "IBMPlexSansArabic-Bold.ttf"))
+    pdf.set_text_shaping(use_shaping_engine=True)  # Arabic letter forms and right-to-left runs
+    pdf.set_draw_color(*RULE)
+    return pdf
 
 
-def to_html(report: Report, *, decimals: int, hotel_name: str) -> str:
-    period = f"{report.period[0]:%Y-%m-%d} – {report.period[1]:%Y-%m-%d}" if report.period else ""
+def _widths(columns: list[Column]) -> list[float]:
+    return [1.0 if c.type in NUMERIC else 1.6 for c in columns]
+
+
+def to_pdf(report: Report, *, decimals: int, hotel_name: str) -> bytes:
+    pdf = _sheet()
+    pdf.add_page()
+
+    pdf.set_text_color(*INK)
+    pdf.set_font("Plex", "B", 16)
+    pdf.cell(0, 9, report.title, align="R", new_x="LMARGIN", new_y="NEXT")
+    period = f"الفترة: {report.period[0]:%Y-%m-%d} – {report.period[1]:%Y-%m-%d}" if report.period else ""
     subtitle = " · ".join(
-        [escape(hotel_name)]
-        + ([f"الفترة: {period}"] if period else [])
-        + [escape(f"{f['label']}: {f['value']}") for f in report.filters]
+        [hotel_name, *([period] if period else []), *(f"{f['label']}: {f['value']}" for f in report.filters)]
     )
-    tiles = "".join(
-        f'<div class="tile"><div class="label">{escape(str(t["label"]))}</div>'
-        f'<div class="value">{escape(_text(t["value"], t.get("type") or "text", decimals))}</div></div>'
-        for t in report.tiles
-    )
-    head = "".join(
-        f'<th class="{"num" if c.type in ("money", "int", "percent") else ""}">{escape(c.label)}</th>'
-        for c in report.columns
-    )
-    rows = "".join(
-        "<tr>" + "".join(_cell(row.get(c.key), c, decimals) for c in report.columns) + "</tr>" for row in report.rows
-    )
-    totals = ""
-    if report.totals:
-        cells = []
-        for i, c in enumerate(report.columns):
-            if c.key in report.totals:
-                cells.append(_cell(report.totals[c.key], c, decimals))
-            else:
-                cells.append(f"<td>{'الإجمالي' if i == 0 else ''}</td>")
-        totals = f'<tfoot><tr class="totals">{"".join(cells)}</tr></tfoot>'
-    empty = "" if report.rows else '<p class="empty">لا توجد بيانات في هذه الفترة.</p>'
-    return f"""<!doctype html>
-<html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>{escape(report.title)}</title>
-<style>
-  @page {{ size: A4 landscape; margin: 12mm; }}
-  body {{ font-family: "Segoe UI", Tahoma, Arial, sans-serif; font-size: 10.5pt; color: #1B2430; margin: 0; }}
-  header {{ display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1B2430;
-           padding-bottom: 6px; margin-bottom: 8px; }}
-  h1 {{ font-size: 16pt; margin: 0; }}
-  .sub {{ color: #555; font-size: 9.5pt; }}
-  .tiles {{ display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }}
-  .tile {{ border: 1px solid #c9ced6; border-radius: 4px; padding: 4px 10px; min-width: 120px; }}
-  .tile .label {{ color: #555; font-size: 9pt; }}
-  .tile .value {{ font-weight: 700; font-size: 12pt; }}
-  table {{ width: 100%; border-collapse: collapse; }}
-  thead {{ display: table-header-group; }}
-  tr {{ page-break-inside: avoid; }}
-  th {{ text-align: start; border-top: 1.5px solid #1B2430; border-bottom: 1.5px solid #1B2430; padding: 4px 6px;
-        font-size: 9.5pt; }}
-  td {{ border-bottom: 1px solid #d8dce2; padding: 3px 6px; }}
-  .num {{ text-align: left; direction: ltr; white-space: nowrap; }}
-  tr.totals td {{ font-weight: 700; border-top: 1.5px solid #1B2430; }}
-  .formula {{ margin-top: 8px; color: #555; font-size: 9pt; white-space: pre-line; }}
-  .empty {{ color: #555; }}
-</style></head>
-<body>
-<header>
-  <div><h1>{escape(report.title)}</h1>
-    <div class="sub">{subtitle}</div></div>
-  <div class="sub">بيانات حتى {timezone.localtime():%Y-%m-%d %H:%M}</div>
-</header>
-{f'<div class="tiles">{tiles}</div>' if tiles else ""}
-<table><thead><tr>{head}</tr></thead><tbody>{rows}</tbody>{totals}</table>
-{empty}
-{f'<div class="formula">{escape(report.formula)}</div>' if report.formula else ""}
-</body></html>"""
+    pdf.set_font("Plex", "", 9.5)
+    pdf.set_text_color(*MUTED)
+    pdf.cell(0, 6, subtitle, align="R", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 5, f"بيانات حتى {timezone.localtime():%Y-%m-%d %H:%M}", align="R", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_draw_color(*INK)
+    pdf.line(pdf.l_margin, pdf.get_y() + 1, pdf.w - pdf.r_margin, pdf.get_y() + 1)
+    pdf.set_draw_color(*RULE)
+    pdf.ln(4)
 
+    if report.tiles:
+        pdf.set_text_color(*INK)
+        with pdf.table(
+            borders_layout="ALL",
+            text_align="RIGHT",
+            first_row_as_headings=False,
+            line_height=5.5,
+            width=min(len(report.tiles) * 55, pdf.epw),
+            align="RIGHT",
+        ) as tiles:
+            row = tiles.row()
+            for tile in reversed(report.tiles):  # the first tile on the right
+                value = _text(tile["value"], tile.get("type") or "text", decimals)
+                row.cell(f"{tile['label']}\n{value}")
+        pdf.ln(3)
 
-def edge_path() -> Path | None:
-    for base in (os.environ.get("ProgramFiles(x86)"), os.environ.get("ProgramFiles")):
-        if base:
-            candidate = Path(base) / "Microsoft" / "Edge" / "Application" / "msedge.exe"
-            if candidate.is_file():
-                return candidate
-    return None
-
-
-def to_pdf(html: str) -> bytes:
-    """Print the page with Edge in headless mode; 503 ``pdf_unavailable`` when it cannot (no Edge, a failure)."""
-    edge = edge_path()
-    if edge is None:
-        raise ApiError("pdf_unavailable", 503)
-    with tempfile.TemporaryDirectory(prefix="skytowers-pdf-") as tmp:
-        page, out = Path(tmp) / "report.html", Path(tmp) / "report.pdf"
-        page.write_text(html, encoding="utf-8")
-        command = [
-            str(edge),
-            "--headless=new",
-            "--disable-gpu",
-            "--no-sandbox",  # the service runs as SYSTEM
-            "--no-first-run",
-            "--no-pdf-header-footer",
-            f"--user-data-dir={Path(tmp) / 'profile'}",
-            f"--print-to-pdf={out}",
-            page.as_uri(),
-        ]
-        try:
-            subprocess.run(command, capture_output=True, timeout=EDGE_TIMEOUT, check=False)
-        except (OSError, subprocess.TimeoutExpired):
-            raise ApiError("pdf_unavailable", 503) from None
-        if not out.is_file() or out.stat().st_size == 0:
-            raise ApiError("pdf_unavailable", 503)
-        return out.read_bytes()
+    columns = list(reversed(report.columns))  # the first column on the right
+    align = ["LEFT" if c.type in NUMERIC else "RIGHT" for c in columns]
+    pdf.set_text_color(*INK)
+    pdf.set_font("Plex", "", 9)
+    with pdf.table(
+        col_widths=_widths(columns),
+        text_align=align,
+        borders_layout="HORIZONTAL_LINES",
+        headings_style=FontFace(emphasis="BOLD", color=INK),
+        line_height=5.5,
+        repeat_headings=1,
+    ) as table:
+        head = table.row()
+        for c in columns:
+            head.cell(c.label)
+        for item in report.rows:
+            row = table.row()
+            for c in columns:
+                row.cell(_text(item.get(c.key), c.type, decimals))
+        if report.totals:
+            row = table.row(style=FontFace(emphasis="BOLD"))
+            first = report.columns[0].key
+            for c in columns:
+                if c.key in report.totals:
+                    row.cell(_text(report.totals[c.key], c.type, decimals))
+                else:
+                    row.cell("الإجمالي" if c.key == first else "")
+    if not report.rows:
+        pdf.ln(2)
+        pdf.set_text_color(*MUTED)
+        pdf.cell(0, 6, "لا توجد بيانات في هذه الفترة.", align="R", new_x="LMARGIN", new_y="NEXT")
+    if report.formula:
+        pdf.ln(3)
+        pdf.set_font("Plex", "", 8.5)
+        pdf.set_text_color(*MUTED)
+        pdf.multi_cell(0, 4.5, report.formula, align="R")
+    return bytes(pdf.output())

@@ -25,11 +25,14 @@ hidden = [name for package in ("apps", "config", "service") for name in source_m
 for package in ("rest_framework", "drf_spectacular", "django.contrib"):
     hidden += collect_submodules(package)
 hidden += ["win32timezone", "waitress", "openpyxl", "pyrage", "googleapiclient", "google_auth_oauthlib"]
+hidden += ["fpdf", "uharfbuzz", "fontTools.subset", "fontTools.ttLib"]  # report PDFs (shaping is imported lazily)
 
 datas = []
 for package in ("django", "rest_framework", "drf_spectacular"):
     datas += collect_data_files(package)
 datas += [(str(SERVER / "static_spa"), "static_spa")]
+datas += collect_data_files("fpdf")
+datas += [(str(SERVER / "apps" / "reports" / "fonts"), "apps/reports/fonts")]  # IBM Plex Sans Arabic for report PDFs
 
 a = Analysis(
     [str(SERVER / "service" / "cli.py")],

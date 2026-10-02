@@ -201,7 +201,11 @@ jobs:
       - name: Install with the built installer and check the installed app end to end
         run: |
           function Fail([string]$message) {
-            $log = Get-Content "$env:ProgramData\SkyTowers\logs\server.log" -Tail 40 -ErrorAction SilentlyContinue | Out-String
+            # The service writes its log as SYSTEM: read it through a copy so a held file or a missing right says why.
+            $log = try {
+              Copy-Item "$env:ProgramData\SkyTowers\logs\server.log" "$env:RUNNER_TEMP\server-copy.log" -Force -ErrorAction Stop
+              Get-Content "$env:RUNNER_TEMP\server-copy.log" -Tail 60 | Out-String
+            } catch { "could not read server.log: $($_.Exception.Message)" }
             $query = sc.exe query SkyTowersServer 2>&1 | Out-String
             $tree = Get-ChildItem "$env:ProgramFiles\Sky Towers" -Recurse -Depth 2 -ErrorAction SilentlyContinue | Select-Object -First 40 | ForEach-Object { $_.FullName } | Out-String
             $text = "$message`n--- sc query`n$query`n--- server.log`n$log`n--- install dir`n$tree"
@@ -235,7 +239,7 @@ jobs:
             "installed app serves the SPA"
             # Report PDF from the installed service (it runs as SYSTEM): Edge in headless mode must work there too.
             $login = Invoke-RestMethod -Method Post http://127.0.0.1:8471/api/v1/auth/password -ContentType "application/json" -Body '{"username":"admin","password":"123456"}'
-            $pdfFile = "$env:RUNNER_TEMPeport.pdf"
+            $pdfFile = Join-Path $env:RUNNER_TEMP "report.pdf"
             Invoke-WebRequest "http://127.0.0.1:8471/api/v1/reports/occupancy/export?format=pdf" -Headers @{ Authorization = "Token $($login.token)" } -OutFile $pdfFile -UseBasicParsing
             $magic = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes($pdfFile)[0..3])
             if ($magic -ne "%PDF") { Fail "the installed service did not return a PDF report (got '$magic')" }
