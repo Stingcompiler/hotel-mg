@@ -105,8 +105,8 @@ class ReportExportView(APIView):
         settings = HotelSettings.load()
         stamp = timezone.localtime().strftime("%Y%m%d-%H%M")
         if fmt == "pdf":
-            html = pdf.to_html(report, decimals=settings.money_decimals, hotel_name=settings.name_ar)
-            response = HttpResponse(pdf.to_pdf(html), content_type="application/pdf")
+            data = pdf.to_pdf(report, decimals=settings.money_decimals, hotel_name=settings.name_ar)
+            response = HttpResponse(data, content_type="application/pdf")
         elif fmt == "xlsx":
             data = exporters.to_xlsx(report, decimals=settings.money_decimals, hotel_name=settings.name_ar)
             response = HttpResponse(data, content_type=exporters.XLSX_TYPE)
