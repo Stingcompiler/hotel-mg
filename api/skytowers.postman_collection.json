@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Sky Towers API 1.12",
+    "name": "Sky Towers API 1.13",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "description": "Generated from api/openapi.yml by build/postman_collection.py. Sign in with auth/password or auth/pin, then set the `token` variable."
   },

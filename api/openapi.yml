@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Sky Towers API
-  version: '1.12'
+  version: '1.13'
   description: Local API of the Sky Towers hotel management system.
 paths:
   /api/v1/audit/:
@@ -1875,6 +1875,7 @@ paths:
           type: string
           enum:
           - csv
+          - pdf
           - xlsx
         required: true
       - in: query
@@ -1932,6 +1933,10 @@ paths:
                 type: string
                 format: binary
             text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
               schema:
                 type: string
                 format: binary

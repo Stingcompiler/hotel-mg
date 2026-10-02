@@ -10,6 +10,7 @@ from rest_framework.views import exception_handler
 MESSAGES = {
     "clock_rollback": "تم اكتشاف رجوع في ساعة الجهاز. العمليات موقوفة حتى يوافق المدير.",
     "version_conflict": "عُدِّل هذا السجل من مكان آخر. أعد التحميل وحاول مرة أخرى.",
+    "pdf_unavailable": "تعذّر إنشاء ملف PDF على هذا الجهاز — استعمل «طباعة» واختر الطابعة «Microsoft Print to PDF».",
     "owner_read_only": "جهاز المالك للعرض فقط.",
     "username_taken": "اسم المستخدم مستخدم من قبل.",
     "adopt_not_fresh": "هذا الجهاز فيه بيانات فندق بالفعل؛ فتح نسخة بهذه الطريقة متاح على جهاز جديد فقط.",

@@ -16,7 +16,7 @@ from apps.cash.models import Expense, Shift
 from apps.core.errors import ApiError
 from apps.core.models import HotelSettings
 
-from . import documents, exporters, queries  # noqa: F401  (queries registers the reports)
+from . import documents, exporters, pdf, queries  # noqa: F401  (queries registers the reports)
 from .dashboard import owner_dashboard
 from .dashboard_serializers import OwnerDashboardSerializer
 from .document_serializers import (
@@ -90,20 +90,24 @@ class ReportExportView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        parameters=[*REPORT_PARAMS, OpenApiParameter("format", str, enum=["xlsx", "csv"], required=True)],
+        parameters=[*REPORT_PARAMS, OpenApiParameter("format", str, enum=["xlsx", "csv", "pdf"], required=True)],
         responses={
             (200, exporters.XLSX_TYPE): OpenApiResponse(OpenApiTypes.BINARY),
             (200, "text/csv"): OpenApiResponse(OpenApiTypes.BINARY),
+            (200, "application/pdf"): OpenApiResponse(OpenApiTypes.BINARY),
         },
     )
     def get(self, request, name):
         fmt = request.query_params.get("format")
-        if fmt not in ("xlsx", "csv"):
-            raise ApiError("validation_error", 400, detail="الصيغة يجب أن تكون xlsx أو csv.")
+        if fmt not in ("xlsx", "csv", "pdf"):
+            raise ApiError("validation_error", 400, detail="الصيغة يجب أن تكون pdf أو xlsx أو csv.")
         report = build(name, request.query_params, is_manager=_is_manager(request))
         settings = HotelSettings.load()
         stamp = timezone.localtime().strftime("%Y%m%d-%H%M")
-        if fmt == "xlsx":
+        if fmt == "pdf":
+            html = pdf.to_html(report, decimals=settings.money_decimals, hotel_name=settings.name_ar)
+            response = HttpResponse(pdf.to_pdf(html), content_type="application/pdf")
+        elif fmt == "xlsx":
             data = exporters.to_xlsx(report, decimals=settings.money_decimals, hotel_name=settings.name_ar)
             response = HttpResponse(data, content_type=exporters.XLSX_TYPE)
         else:

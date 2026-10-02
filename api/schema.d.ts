@@ -5718,7 +5718,7 @@ export interface operations {
                 days?: number;
                 /** @description expenses: supplies … other */
                 expense_category?: string;
-                format: "csv" | "xlsx";
+                format: "csv" | "pdf" | "xlsx";
                 /** @description revenue (collected), expenses */
                 method?: "bankak" | "cash" | "transfer";
                 /** @description audit_log: user, action, entity or id */
@@ -5745,6 +5745,7 @@ export interface operations {
                 content: {
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
                     "text/csv": string;
+                    "application/pdf": string;
                 };
             };
         };

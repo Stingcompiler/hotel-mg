@@ -233,6 +233,13 @@ jobs:
             $page = Invoke-WebRequest http://127.0.0.1:8471/reservations -UseBasicParsing -SkipHttpErrorCheck
             if ($page.StatusCode -ne 200 -or $page.Content -notmatch 'id="root"') { Fail "the installed service does not serve the SPA: HTTP $($page.StatusCode)`n$($page.Content.Substring(0, [Math]::Min(600, $page.Content.Length)))" }
             "installed app serves the SPA"
+            # Report PDF from the installed service (it runs as SYSTEM): Edge in headless mode must work there too.
+            $login = Invoke-RestMethod -Method Post http://127.0.0.1:8471/api/v1/auth/password -ContentType "application/json" -Body '{"username":"admin","password":"123456"}'
+            $pdfFile = "$env:RUNNER_TEMPeport.pdf"
+            Invoke-WebRequest "http://127.0.0.1:8471/api/v1/reports/occupancy/export?format=pdf" -Headers @{ Authorization = "Token $($login.token)" } -OutFile $pdfFile -UseBasicParsing
+            $magic = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes($pdfFile)[0..3])
+            if ($magic -ne "%PDF") { Fail "the installed service did not return a PDF report (got '$magic')" }
+            "installed service writes report PDFs ($((Get-Item $pdfFile).Length) bytes)"
             # An update over the installed build (the same installer again): copy of the database first, the
             # database updated by the installer, the previous server folder gone, the service answering (E-4…E-7).
             $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
