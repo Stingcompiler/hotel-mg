@@ -6,12 +6,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { api, ApiError, data } from "@/api/client";
 import { Timeline } from "@/components/ui/Timeline";
 import { keys } from "@/api/queries";
-import { stateColor, stateSolid } from "@/design/state";
+import { stateSolid } from "@/design/state";
 import { days } from "@/i18n/counts";
 import { formatDayMonth, formatRange, formatTime } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
+import { StatusPill } from "@/components/ui/StatusPill";
 
 import type { BoardRoom } from "./roomText";
 
@@ -25,7 +26,6 @@ const secondary =
 /** 6.2 B: 480 px drawer sliding from the end (left) side over a 24 % scrim. */
 export function RoomDrawer({ room, boardDate, offline, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
-  const color = stateColor(room.display_status);
   const stay = room.stay;
 
   useEffect(() => {
@@ -51,9 +51,7 @@ export function RoomDrawer({ room, boardDate, offline, onClose }: Props) {
               <span className="text-body text-text-secondary">
                 {t("roomDrawer.typeFloor", { type: room.room_type_name, floor: digits(String(room.floor)) })}
               </span>
-              <span className={`inline-flex h-6 items-center rounded-control px-2 text-label ${color.soft} ${color.text}`}>
-                {t(`roomState.${room.display_status}`)}
-              </span>
+              <StatusPill state={room.display_status} label={t(`roomState.${room.display_status}`)} pulse={room.display_status === "overdue"} />
             </div>
             <button
               ref={closeRef}

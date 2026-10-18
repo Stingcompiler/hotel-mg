@@ -48,10 +48,15 @@ def _rejected(exc: merge.ImportRejected) -> ApiError:
     return ApiError(code, 400, detail=str(exc))
 
 
-def prepare(raw: bytes, file_name: str, credentials: tuple[str, str] | None, mode: str) -> dict:
+def prepare(raw: bytes, file_name: str, credentials: tuple[str, str] | None, mode: str, replace: bool = False) -> dict:
+    """``replace``: a reception PC that already holds data is restored from the backup (work mode only, owner request
+    2026-10-18, decision 231). Its current database and attachments go to ``backups/pre-import-<stamp>/`` as for a
+    new PC; nothing is merged or deleted."""
     if mode not in MODES:
         raise ApiError("validation_error", 400)
-    if not is_fresh():
+    if settings.SKYTOWERS_ROLE != "reception":
+        raise ApiError("adopt_not_fresh", 409)
+    if not is_fresh() and not (replace and mode == "work"):
         raise ApiError("adopt_not_fresh", 409)
     try:
         manifest, files, adopted = merge.open_backup(raw, keys.local_identities(), credentials)

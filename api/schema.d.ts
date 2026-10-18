@@ -1762,6 +1762,11 @@ export interface components {
             mode: components["schemas"]["ModeEnum"];
             username?: string;
             password?: string;
+            /**
+             * @description Reception PC that already holds data: replace it with the backup (work only); the current data is set aside in backups/pre-import-<stamp>/.
+             * @default false
+             */
+            replace?: boolean;
         };
         AdoptResult: {
             mode: components["schemas"]["ModeEnum"];

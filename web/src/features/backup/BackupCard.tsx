@@ -33,9 +33,11 @@ export function BackupCard({ onImport }: { onImport?: () => void }) {
   const status = useSystemStatus();
   const offline = status.isError;
   const owner = !!onImport;
-  // A reception PC with no hotel records yet may open a hotel from a backup (decision 230); managers only (the API's rule).
+  // Reception: a manager or the owner may open a backup here — on a clean PC as a new PC (decision 230), otherwise as a
+  // confirmed restore that sets the current data aside (decision 231). The API allows managers only.
   const me = useMe().data;
-  const canAdopt = !owner && !!status.data?.can_adopt && (me?.role === "manager" || me?.role === "owner");
+  const canAdopt = !owner && (me?.role === "manager" || me?.role === "owner");
+  const fresh = !!status.data?.can_adopt;
   const [adopting, setAdopting] = useState(false);
   const runs = useQuery({ queryKey: BACKUP_RUNS, queryFn: () => data(api.GET("/api/v1/backup/runs")) });
   const drive = useQuery({
@@ -131,11 +133,13 @@ export function BackupCard({ onImport }: { onImport?: () => void }) {
             <Download className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
             {t("backup.import")}
           </button>
-          <Line tone="muted">{owner ? t("backup.importHint") : canAdopt ? t("backup.adoptHint") : t("backup.ownerOnly")}</Line>
+          <Line tone="muted">
+            {owner ? t("backup.importHint") : !canAdopt ? t("backup.ownerOnly") : fresh ? t("backup.adoptHint") : t("backup.restoreHint")}
+          </Line>
         </div>
       </div>
       {!owner && <UsbSave disabled={offline || !last || last.status !== "ok"} />}
-      {adopting && <AdoptModal onClose={() => setAdopting(false)} />}
+      {adopting && <AdoptModal replace={!fresh} onClose={() => setAdopting(false)} />}
     </section>
   );
 }

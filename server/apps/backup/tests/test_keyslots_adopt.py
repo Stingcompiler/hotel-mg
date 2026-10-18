@@ -171,3 +171,33 @@ def _upload(path: Path):
     from django.core.files.uploadedfile import SimpleUploadedFile
 
     return SimpleUploadedFile(path.name, path.read_bytes())
+
+
+def test_a_reception_pc_with_data_is_restored_only_when_asked_and_only_to_work_on(hotel, monkeypatch, tmp_path):
+    """Owner request 2026-10-18 (decision 231): «استيراد نسخة» at reception replaces this PC's data after a confirm."""
+    from rest_framework.test import APIClient
+
+    from apps.audit.models import AuditLog
+
+    monkeypatch.setattr(adopt, "schedule_restart", lambda: None)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Token {accounts.login_with_password('manager', 'pw-123456').token}")
+    path = backup(hotel)
+
+    def post(**extra):
+        return client.post("/api/v1/backup/adopt", {"file": _upload(path), **extra}, format="multipart")
+
+    assert post(mode="work").json()["code"] == "adopt_not_fresh"  # no confirmation
+    assert post(mode="view", replace="true").json()["code"] == "adopt_not_fresh"  # a restore never makes an owner PC
+    res = post(mode="work", replace="true", username="manager", password="pw-123456")
+    assert res.status_code == 202 and res.json() == {"mode": "work", "restarting": True}
+    plan = pending_import.read_plan(settings.RUNTIME.home)
+    assert plan["mode"] == "work" and plan["hotel_id"] == str(settings.RUNTIME.hotel_id)
+    assert AuditLog.objects.filter(action="backup.restore").count() == 1
+
+
+def test_the_owner_pc_never_restores_this_way(hotel, monkeypatch):
+    monkeypatch.setattr(settings, "SKYTOWERS_ROLE", "owner")
+    with pytest.raises(Exception) as refused:
+        adopt.prepare(b"x", "b.age", None, "work", replace=True)
+    assert getattr(refused.value, "error_code", "") == "adopt_not_fresh"

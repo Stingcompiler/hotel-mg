@@ -8,13 +8,13 @@ import { useSystemStatus } from "@/api/queries";
 import { buttons } from "@/components/ui/Modal";
 import { Tabs } from "@/components/ui/Tabs";
 import { Timeline } from "@/components/ui/Timeline";
-import { stateColor } from "@/design/state";
 import { openPrint } from "@/features/print/PrintPage";
 import { days, nights } from "@/i18n/counts";
 import { formatDayDate, formatDayMonth, formatRange, formatTime } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
 import { formatMoney } from "@/i18n/money";
 import { t } from "@/i18n/t";
+import { StatusPill } from "@/components/ui/StatusPill";
 
 import { CancelStayModal } from "./CancelStayModal";
 import { ChangeRoomModal } from "./ChangeRoomModal";
@@ -65,7 +65,6 @@ export function StayDetailPage() {
   const r = stay.reservation;
   const open = stay.checked_out_at === null;
   const room = stay.room;
-  const color = stateColor(room?.display_status ?? "occupied");
   const totals = folio.totals;
   const writable = open && !offline;
   const ledger = folio.ledger;
@@ -106,7 +105,6 @@ export function StayDetailPage() {
 
       <section className="flex items-center gap-6 rounded-card border border-border bg-bg-surface px-6 py-4">
         <div className="flex items-center gap-4 border-e border-border pe-6">
-          <div className={`h-16 w-1.5 rounded-full ${color.solid}`} />
           <div>
             <div className="text-headline-number">{digits(room?.number ?? r.room_number)}</div>
             <div className="text-body text-text-secondary">
@@ -117,9 +115,7 @@ export function StayDetailPage() {
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-center gap-3">
             <span className="text-section-title">{stay.guest.full_name}</span>
-            <span className={`inline-flex h-6 items-center rounded-control px-2 text-label ${color.soft} ${color.text}`}>
-              {t(`roomState.${room?.display_status ?? "occupied"}`)}
-            </span>
+            <StatusPill state={room?.display_status ?? "occupied"} label={t(`roomState.${room?.display_status ?? "occupied"}`)} />
             <span className="inline-flex h-6 items-center rounded-control bg-bg-surface-2 px-2 text-label text-text-primary">{t(`duration.${r.duration_kind}`)}</span>
           </div>
           <div className="text-body text-text-secondary">
