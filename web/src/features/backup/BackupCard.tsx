@@ -8,6 +8,8 @@ import { formatWhen } from "@/i18n/dates";
 import { digits } from "@/i18n/digits";
 import { t } from "@/i18n/t";
 
+import { AdoptModal } from "./AdoptModal";
+
 export const BACKUP_RUNS = ["backup", "runs"] as const;
 export const DRIVE_STATUS = ["backup", "drive"] as const;
 
@@ -28,8 +30,13 @@ const button = (primary: boolean) =>
  */
 export function BackupCard({ onImport }: { onImport?: () => void }) {
   const queryClient = useQueryClient();
-  const offline = useSystemStatus().isError;
+  const status = useSystemStatus();
+  const offline = status.isError;
   const owner = !!onImport;
+  // A reception PC with no hotel records yet may open a hotel from a backup (decision 230); managers only (the API's rule).
+  const me = useMe().data;
+  const canAdopt = !owner && !!status.data?.can_adopt && (me?.role === "manager" || me?.role === "owner");
+  const [adopting, setAdopting] = useState(false);
   const runs = useQuery({ queryKey: BACKUP_RUNS, queryFn: () => data(api.GET("/api/v1/backup/runs")) });
   const drive = useQuery({
     queryKey: DRIVE_STATUS,
@@ -114,14 +121,21 @@ export function BackupCard({ onImport }: { onImport?: () => void }) {
           {syncLine()}
         </div>
         <div className="flex flex-col gap-2">
-          <button type="button" disabled={!onImport} title={onImport ? undefined : t("backup.ownerOnly")} onClick={onImport} className={button(owner)}>
+          <button
+            type="button"
+            disabled={!onImport && !canAdopt}
+            title={onImport || canAdopt ? undefined : t("backup.ownerOnly")}
+            onClick={onImport ?? (() => setAdopting(true))}
+            className={button(owner)}
+          >
             <Download className="h-icon w-icon" strokeWidth={1.75} aria-hidden />
             {t("backup.import")}
           </button>
-          <Line tone="muted">{owner ? t("backup.importHint") : t("backup.ownerOnly")}</Line>
+          <Line tone="muted">{owner ? t("backup.importHint") : canAdopt ? t("backup.adoptHint") : t("backup.ownerOnly")}</Line>
         </div>
       </div>
       {!owner && <UsbSave disabled={offline || !last || last.status !== "ok"} />}
+      {adopting && <AdoptModal onClose={() => setAdopting(false)} />}
     </section>
   );
 }

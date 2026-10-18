@@ -67,6 +67,7 @@ export function AdoptModal({ onClose }: { onClose: () => void }) {
     >
       <form id="adopt-form" onSubmit={submit} className="flex flex-col gap-5">
         <div className="text-body text-text-secondary">{t("adopt.intro")}</div>
+        <div className="text-label font-normal text-text-secondary">{t("adopt.replaces")}</div>
         {error && <ErrorBanner>{error}</ErrorBanner>}
 
         <section className="flex flex-col gap-2">

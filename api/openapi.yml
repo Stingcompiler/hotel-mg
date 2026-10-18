@@ -8320,8 +8320,9 @@ components:
             open only here (the system bar warns). Owner PC: null.'
         can_adopt:
           type: boolean
-          description: '1.1: a new PC (only the untouched default account): «استيراد
-            نسخة» may open a hotel here.'
+          description: 'A reception PC with no hotel records yet (no guest, booking,
+            stay, payment, shift or expense): «استيراد نسخة» may open a hotel here
+            (decision 230).'
         default_login:
           allOf:
           - $ref: '#/components/schemas/DefaultLogin'

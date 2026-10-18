@@ -84,7 +84,8 @@ class SystemStatusSerializer(serializers.Serializer):
         "they open on another PC. False = they open only here (the system bar warns). Owner PC: null.",
     )
     can_adopt = serializers.BooleanField(
-        help_text="1.1: a new PC (only the untouched default account): «استيراد نسخة» may open a hotel here."
+        help_text="A reception PC with no hotel records yet (no guest, booking, stay, payment, shift or expense): "
+        "«استيراد نسخة» may open a hotel here (decision 230)."
     )
     default_login = DefaultLoginSerializer(
         allow_null=True,
