@@ -32,7 +32,7 @@ export function ReservationsPage() {
   const [view, setView] = useState<"timeline" | "list">(params.get("focus") ? "list" : "timeline");
   const [focus, setFocus] = useState<string | null>(params.get("focus"));
   return (
-    <div className="flex h-full min-h-[620px] flex-col gap-4 p-6 max-[1599px]:gap-3">
+    <div className="stagger flex h-full min-h-[620px] flex-col gap-4 p-6 max-[1599px]:gap-3">
       {view === "timeline" ? (
         <Timeline
           header={<ViewSwitch view={view} onChange={setView} />}

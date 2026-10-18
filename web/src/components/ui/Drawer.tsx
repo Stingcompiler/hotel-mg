@@ -16,7 +16,7 @@ export function Drawer({ title, onClose, footer, children }: { title: ReactNode;
   return (
     <div className="fixed inset-0 z-40">
       <div className="scrim-24 absolute inset-0" onClick={onClose} aria-hidden />
-      <aside ref={panel} role="dialog" aria-modal="true" aria-labelledby={titleId} className="absolute inset-y-0 end-0 flex w-drawer flex-col rounded-s-modal bg-bg-surface shadow-elevated">
+      <aside ref={panel} role="dialog" aria-modal="true" aria-labelledby={titleId} className="fade-in absolute inset-y-0 end-0 flex w-drawer flex-col rounded-s-modal bg-bg-surface shadow-elevated">
         <div className="flex items-center justify-between border-b border-border px-6 py-5">
           <h2 id={titleId} className="m-0 text-page-title">
             {title}

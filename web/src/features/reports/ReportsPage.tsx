@@ -127,7 +127,7 @@ export function ReportsPage() {
     | undefined;
 
   return (
-    <div className="grid h-full min-h-[620px] grid-cols-[280px_1fr] grid-rows-[auto_1fr] gap-4 p-6 max-[1599px]:grid-cols-[220px_1fr] max-[1599px]:gap-3 max-[1399px]:grid-cols-[210px_1fr]">
+    <div className="stagger grid h-full min-h-[620px] grid-cols-[280px_1fr] grid-rows-[auto_1fr] gap-4 p-6 max-[1599px]:grid-cols-[220px_1fr] max-[1599px]:gap-3 max-[1399px]:grid-cols-[210px_1fr]">
       <div className="col-span-2 flex flex-wrap items-center gap-3">
         <h1 className="m-0 whitespace-nowrap text-page-title">{t("reports.title")}</h1>
         {title && (

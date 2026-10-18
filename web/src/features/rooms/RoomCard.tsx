@@ -14,15 +14,15 @@ export function RoomCard({ room, boardDate, now, selected, onOpen }: Props) {
     ? "border-primary outline outline-2 -outline-offset-2 outline-primary"
     : reservedSoon(room, boardDate)
       ? `border-border ${reservedSoonStyle.outline}`
-      : "border-border hover:border-border-strong";
+      : "border-border hover:bg-bg-page";
   return (
     <button
       type="button"
       onClick={onOpen}
-      className={`relative flex h-room-card-h flex-col overflow-hidden rounded-card border bg-bg-surface py-3 pe-3 ps-4 text-start font-sans text-text-primary ${outline}`}
+      className={`relative flex h-room-card-h flex-col overflow-hidden rounded-card border bg-bg-surface py-3 pe-3 ps-4 text-start font-sans text-text-primary transition-colors duration-150 ${outline}`}
     >
       {/* State stripe on the start (right) edge: the card's only state colour (owner request 2026-10-18, decision 228). */}
-      <span className={`absolute inset-y-0 start-0 w-1 ${color.solid}`} />
+      <span className={`absolute inset-y-0 start-0 w-1 ${color.solid} ${room.display_status === "overdue" ? "attention" : ""}`} />
       <span className="flex w-full items-baseline justify-between gap-2">
         <span className="flex min-w-0 items-baseline gap-2">
           <span className="text-room-number">{digits(room.number)}</span>

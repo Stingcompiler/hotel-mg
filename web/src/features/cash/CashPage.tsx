@@ -32,7 +32,7 @@ export function CashPage() {
   // «طباعة كشف الوردية»: the open shift, or the last closed one when none is open.
   const printable = current?.shift?.id ?? current?.last_closed?.id;
   return (
-    <div className="flex min-h-full flex-col gap-4 p-6 max-[1599px]:gap-3">
+    <div className="stagger flex min-h-full flex-col gap-4 p-6 max-[1599px]:gap-3">
       <div className="flex h-9 items-center gap-4">
         <h1 className="m-0 text-page-title">{t("cash.title")}</h1>
         <Segmented

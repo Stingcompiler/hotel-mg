@@ -17,7 +17,7 @@ export function Modal({ title, onClose, width = 560, footer, children }: Props) 
   useDialogFocus(panel, onClose);
   return (
     <div className="scrim-32 fixed inset-0 z-50 flex items-center justify-center" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={panel} role="dialog" aria-modal="true" aria-labelledby={titleId} style={{ width }} className="flex max-h-[90vh] flex-col rounded-modal bg-bg-surface shadow-elevated">
+      <div ref={panel} role="dialog" aria-modal="true" aria-labelledby={titleId} style={{ width }} className="rise-in flex max-h-[90vh] flex-col rounded-modal bg-bg-surface shadow-elevated">
         <div className="flex items-center justify-between border-b border-border px-6 py-5">
           <h2 id={titleId} className="m-0 text-page-title">
             {title}
@@ -41,9 +41,9 @@ export function Modal({ title, onClose, width = 560, footer, children }: Props) 
 
 export const buttons = {
   primary:
-    "inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap gap-2 rounded-control border-0 bg-primary px-6 font-sans text-body font-semibold text-primary-text-on hover:bg-primary-hover disabled:bg-bg-surface-2 disabled:text-text-disabled",
+    "inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap gap-2 rounded-control border-0 bg-primary px-6 font-sans transition-colors duration-150 text-body font-semibold text-primary-text-on hover:bg-primary-hover disabled:bg-bg-surface-2 disabled:text-text-disabled",
   secondary:
-    "inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap gap-2 rounded-control border border-border-strong bg-bg-surface px-6 font-sans text-body font-semibold text-text-primary hover:bg-bg-surface-2 disabled:text-text-disabled",
+    "inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap gap-2 rounded-control border border-border-strong bg-bg-surface px-6 font-sans transition-colors duration-150 text-body font-semibold text-text-primary hover:bg-bg-surface-2 disabled:text-text-disabled",
   danger:
     "inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap gap-2 rounded-control border-0 bg-danger px-6 font-sans text-body font-semibold text-primary-text-on disabled:bg-bg-surface-2 disabled:text-text-disabled",
   ghost:
