@@ -31,7 +31,7 @@ export function cardLines(room: BoardRoom, boardDate: string, now: Date): { main
       tone: "reserved",
     };
   }
-  // The status label already says «جاهزة»: no second «متاحة» line (owner request 2026-10-18, decision 226).
+  // The status label already says «جاهزة»: no second «متاحة» line (owner request 2026-10-18, decision 228).
   return { main: "", sub: "", tone: "muted" };
 }
 

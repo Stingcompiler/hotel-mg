@@ -1,7 +1,7 @@
 // Generates web/src/design/tokens.css and web/tailwind.preset.ts from design-package/project/tokens.json
 // (spec §10.1–10.2: every token 1:1 to a CSS variable; Tailwind reads only the variables).
 // build/tokens-overrides.json is merged on top: the owner's later colour changes, kept out of the read-only
-// design package (decision 226).
+// design package (decision 228).
 // Run: node build/tokens-to-tailwind.ts   (Node 22 strips the types)
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";

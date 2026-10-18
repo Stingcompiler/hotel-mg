@@ -21,7 +21,7 @@ export function RoomCard({ room, boardDate, now, selected, onOpen }: Props) {
       onClick={onOpen}
       className={`relative flex h-room-card-h flex-col overflow-hidden rounded-card border bg-bg-surface py-3 pe-3 ps-4 text-start font-sans text-text-primary ${outline}`}
     >
-      {/* State stripe on the start (right) edge: the card's only state colour (owner request 2026-10-18, decision 226). */}
+      {/* State stripe on the start (right) edge: the card's only state colour (owner request 2026-10-18, decision 228). */}
       <span className={`absolute inset-y-0 start-0 w-1 ${color.solid}`} />
       <span className="flex w-full items-baseline justify-between gap-2">
         <span className="flex min-w-0 items-baseline gap-2">
