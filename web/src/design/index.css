@@ -44,7 +44,7 @@
 }
 
 /*
- * Motion (owner redesign brief 2026-10-18, decision 227): short, operational, never a bounce or a lift.
+ * Motion (owner redesign brief 2026-10-18, decision 229): short, operational, never a bounce or a lift.
  * `.stagger` fades its children up one after another (header → summary → content; cards in a grid);
  * `.attention` is a slow pulse for what needs action (overdue stripe, a failing bar); `.bar-in` slides a system bar
  * down; `.reveal` items fade up once when scrolled into view (Timeline). Reduced motion keeps everything still.

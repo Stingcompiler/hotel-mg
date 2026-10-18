@@ -13,7 +13,7 @@ import { t } from "@/i18n/t";
 type Bar = { key: string; tone: "solid" | "danger" | "warning"; icon: ReactNode; text: ReactNode; action?: ReactNode };
 // «الحد الأقصى ثلاثة أشرطة؛ الرابع يُطوى في الجرس» (6.14 B).
 const MAX_BARS = 3;
-// Calm rows (owner request 2026-10-18, decision 226): white row, a thin coloured start stripe and icon; only the
+// Calm rows (owner request 2026-10-18, decision 228): white row, a thin coloured start stripe and icon; only the
 // server-down bar stays a solid red alert.
 const TONE = {
   solid: { row: "bg-danger text-primary-text-on", stripe: "", icon: "" },

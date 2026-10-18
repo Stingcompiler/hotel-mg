@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useRef } from "react";
 export type TimelineItem = { key: string; time: ReactNode; title: ReactNode; meta?: ReactNode; dot?: string };
 
 /**
- * History as a timeline (owner redesign brief 2026-10-18, decision 227): one thin teal line, a dot per event, the time
+ * History as a timeline (owner redesign brief 2026-10-18, decision 229): one thin teal line, a dot per event, the time
  * as a chip. Items fade up once when they scroll into view (`.reveal` in index.css; still under reduced motion).
  */
 export function Timeline({ items }: { items: TimelineItem[] }) {

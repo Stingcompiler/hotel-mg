@@ -178,7 +178,7 @@ function TaskLine({ row, late = false, offline }: { row: TaskRow; late?: boolean
   useEffect(() => {
     if (focused) line.current?.scrollIntoView({ block: "center" });
   }, [focused]);
-  const [pop, setPop] = useState<null | "snooze" | "waiting">(null);
+  const [pop, setPop] = useState<null | "snooze" | "waiting" | "done">(null);
   const [error, setError] = useState<string | null>(null);
   const act = useMutation({
     mutationFn: (body: { action: "snooze" | "waiting" | "done"; until?: string | null; note?: string }) =>
@@ -236,7 +236,13 @@ function TaskLine({ row, late = false, offline }: { row: TaskRow; late?: boolean
             </button>
           </>
         ) : (
-          <button type="button" disabled={disabled} onClick={() => act.mutate({ action: "done" })} className={btn}>
+          <button
+            type="button"
+            disabled={disabled}
+            aria-expanded={pop === "done"}
+            onClick={() => setPop(pop === "done" ? null : "done")}
+            className={`${btn} ${pop === "done" ? "border-primary bg-primary-soft text-primary" : ""}`}
+          >
             {t("followups.done")}
           </button>
         )}
@@ -250,7 +256,8 @@ function TaskLine({ row, late = false, offline }: { row: TaskRow; late?: boolean
           {digits(row.snooze_label)}
         </button>
       </div>
-      {pop && (
+      {pop === "done" && <DonePopover busy={act.isPending} onSave={(note) => act.mutate({ action: "done", note })} onClose={() => setPop(null)} />}
+      {(pop === "snooze" || pop === "waiting") && (
         <WhenPopover
           kind={pop}
           heading={pop === "snooze" ? t("followups.snoozeTo", { n: digits(String(row.snooze_count + 1)), max: digits(String(row.max_snoozes)) }) : t("followups.waitingTitle")}
@@ -289,7 +296,50 @@ function UpcomingLine({ row }: { row: UpcomingRow }) {
 const pad = (n: number) => String(n).padStart(2, "0");
 const localInput = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
-/** «تأجيل إلى» / «بانتظار الرد» choices, anchored under the row's action buttons on the end (left) side. */
+/** A row's popover, anchored under its action buttons on the end (left) side; closes on outside click or Escape. */
+function Popover({ heading, onClose, children }: { heading: string; onClose: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+  return (
+    <div ref={ref} role="dialog" aria-label={heading} className="absolute end-4 top-14 z-30 flex w-72 flex-col rounded-card border border-border bg-bg-surface p-1 shadow-elevated">
+      <div className="px-3 py-1.5 text-label text-text-secondary">{heading}</div>
+      {children}
+    </div>
+  );
+}
+
+/** «تم»: the server closes a task only with a note of what was done (decision 69). */
+function DonePopover({ busy, onSave, onClose }: { busy: boolean; onSave: (note: string) => void; onClose: () => void }) {
+  const [note, setNote] = useState("");
+  const ready = note.trim() !== "";
+  return (
+    <Popover heading={t("followups.doneTitle")} onClose={onClose}>
+      <form
+        className="flex gap-2 px-2 pb-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (ready && !busy) onSave(note.trim());
+        }}
+      >
+        <TextInput autoFocus maxLength={300} aria-label={t("followups.doneNote")} placeholder={t("followups.doneNote")} value={note} onChange={(e) => setNote(e.target.value)} />
+        <button type="submit" disabled={busy || !ready} className={btn}>
+          {t("followups.save")}
+        </button>
+      </form>
+    </Popover>
+  );
+}
+
+/** «تأجيل إلى» / «بانتظار الرد» choices; waiting needs what the guest said (server `reason_required`). */
 function WhenPopover({
   kind,
   heading,
@@ -303,19 +353,9 @@ function WhenPopover({
   onPick: (untilIso: string, note: string) => void;
   onClose: () => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
   const [custom, setCustom] = useState<string | null>(null);
   const [note, setNote] = useState("");
-  useEffect(() => {
-    const onDown = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && onClose();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("mousedown", onDown);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [onClose]);
+  const blocked = busy || (kind === "waiting" && note.trim() === "");
 
   const now = new Date();
   const inHours = (h: number) => new Date(now.getTime() + h * 3_600_000);
@@ -328,15 +368,14 @@ function WhenPopover({
   const item = "flex h-9 w-full items-center justify-between rounded-control border-0 bg-transparent px-3 text-start font-sans text-body text-text-primary hover:bg-bg-surface-2 disabled:text-text-disabled";
 
   return (
-    <div ref={ref} role="dialog" aria-label={heading} className="absolute end-4 top-14 z-30 flex w-72 flex-col rounded-card border border-border bg-bg-surface p-1 shadow-elevated">
-      <div className="px-3 py-1.5 text-label text-text-secondary">{heading}</div>
+    <Popover heading={heading} onClose={onClose}>
       {kind === "waiting" && (
         <div className="px-2 pb-2">
-          <TextInput aria-label={t("followups.waitingNote")} placeholder={t("followups.waitingNote")} value={note} onChange={(e) => setNote(e.target.value)} />
+          <TextInput autoFocus maxLength={300} aria-label={t("followups.waitingNote")} placeholder={t("followups.waitingNote")} value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
       )}
       {choices.map(([label, when]) => (
-        <button key={label} type="button" disabled={busy} onClick={() => onPick(when.toISOString(), note.trim())} className={item}>
+        <button key={label} type="button" disabled={blocked} onClick={() => onPick(when.toISOString(), note.trim())} className={item}>
           <span>{label}</span>
           <span dir="ltr" className="text-label font-normal text-text-secondary">
             {formatTime(when)}
@@ -350,13 +389,13 @@ function WhenPopover({
       ) : (
         <div className="flex gap-2 px-2 py-1">
           <TextInput type="datetime-local" value={custom} onChange={(e) => setCustom(e.target.value)} />
-          <button type="button" disabled={busy || !custom} onClick={() => onPick(new Date(custom).toISOString(), note.trim())} className={btn}>
+          <button type="button" disabled={blocked || !custom} onClick={() => onPick(new Date(custom).toISOString(), note.trim())} className={btn}>
             {t("followups.apply")}
           </button>
         </div>
       )}
       {kind === "snooze" && <div className="mt-1 border-t border-border px-3 pb-1 pt-2 text-label font-normal text-text-secondary">{t("followups.snoozeNote")}</div>}
-    </div>
+    </Popover>
   );
 }
 
