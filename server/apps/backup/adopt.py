@@ -1,6 +1,6 @@
 """Open a hotel's backup on a new PC (1.1) — only when the owner chooses to, never as a setup step.
 
-On a PC that holds nothing but the untouched default account, «استيراد نسخة» asks one question: view only (the
+On a reception PC with no hotel records yet (``is_fresh``), «استيراد نسخة» asks one question: view only (the
 owner's PC, read-only) or work on this PC (it replaces a reception PC). The file opens with this PC's key or with
 the owner's or a manager's own login (key slots); it is checked like any import, the data waits in
 ``pending-import/`` and the service restarts to take it (service/pending_import.py, then ``finish_pending``).
@@ -14,8 +14,6 @@ import threading
 
 from django.conf import settings
 
-from apps.accounts import rules as account_rules
-from apps.accounts.models import User
 from apps.core.errors import ApiError
 from service import pending_import
 
@@ -28,14 +26,20 @@ log = logging.getLogger(__name__)
 
 
 def is_fresh() -> bool:
-    """A hotel PC with no hotel yet: only the untouched default owner account, no rooms, no stays."""
-    from apps.rooms.models import Room
-    from apps.stays.models import Reservation
+    """A reception PC that holds no hotel records yet: no guest, booking, stay, payment, shift or expense.
+
+    Accounts, a changed password, room types, rooms and settings do not count (owner report 2026-10-18,
+    decision 230): changing the default password — which the app asks for first — used to close this door on a
+    PC with nothing on it. Opening a backup moves everything here to ``backups/pre-import-<stamp>/`` first.
+    """
+    from apps.billing.models import Payment
+    from apps.cash.models import Expense, Shift
+    from apps.guests.models import Guest
+    from apps.stays.models import Reservation, Stay
 
     if settings.SKYTOWERS_ROLE != "reception":
         return False
-    others = User.objects.exclude(username=account_rules.DEFAULT_USERNAME, default_password=True)
-    return not others.exists() and not Room.objects.exists() and not Reservation.objects.exists()
+    return not any(model.objects.exists() for model in (Guest, Reservation, Stay, Payment, Shift, Expense))
 
 
 def _rejected(exc: merge.ImportRejected) -> ApiError:

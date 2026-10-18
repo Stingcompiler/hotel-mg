@@ -3894,7 +3894,7 @@ export interface components {
             owner_public_key: string | null;
             /** @description Reception PC: new backups carry a key slot (an owner/manager changed the default password), so they open on another PC. False = they open only here (the system bar warns). Owner PC: null. */
             backup_opens_elsewhere: boolean | null;
-            /** @description 1.1: a new PC (only the untouched default account): «استيراد نسخة» may open a hotel here. */
+            /** @description A reception PC with no hotel records yet (no guest, booking, stay, payment, shift or expense): «استيراد نسخة» may open a hotel here (decision 230). */
             can_adopt: boolean;
             /** @description The install's default owner account while its password is unchanged (the login page shows it). */
             default_login: components["schemas"]["DefaultLogin"] | null;
