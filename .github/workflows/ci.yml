@@ -92,7 +92,7 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci --no-audit --no-fund
-      - name: Tokens are generated from design-package/tokens.json
+      - name: Tokens are generated from design-package/tokens.json + build/tokens-overrides.json
         run: |
           node ../build/tokens-to-tailwind.ts
           git diff --exit-code -- src/design/tokens.css tailwind.preset.ts || {

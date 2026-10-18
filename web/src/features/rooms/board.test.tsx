@@ -47,7 +47,7 @@ const stay = (days_left: number) => ({
 });
 
 test.each([
-  [room({}), "", "متاحة"],
+  [room({}), "", ""],
   [room({ status: "occupied", display_status: "occupied", stay: stay(0) }), "عبدالله حسن موسى", "تنتهي اليوم"],
   [room({ status: "occupied", display_status: "occupied", stay: stay(1) }), "عبدالله حسن موسى", "تنتهي غدًا"],
   [room({ status: "occupied", display_status: "occupied", stay: stay(5) }), "عبدالله حسن موسى", "تنتهي بعد 5 أيام"],

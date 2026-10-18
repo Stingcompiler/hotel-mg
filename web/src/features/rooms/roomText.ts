@@ -31,7 +31,8 @@ export function cardLines(room: BoardRoom, boardDate: string, now: Date): { main
       tone: "reserved",
     };
   }
-  return { main: "", sub: t("board.available"), tone: "ready" };
+  // The status label already says «جاهزة»: no second «متاحة» line (owner request 2026-10-18, decision 228).
+  return { main: "", sub: "", tone: "muted" };
 }
 
 /** A ready room booked for today or tomorrow gets the «محجوزة قريبًا» outline. */

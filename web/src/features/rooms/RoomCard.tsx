@@ -21,20 +21,22 @@ export function RoomCard({ room, boardDate, now, selected, onOpen }: Props) {
       onClick={onOpen}
       className={`relative flex h-room-card-h flex-col overflow-hidden rounded-card border bg-bg-surface py-3 pe-3 ps-4 text-start font-sans text-text-primary ${outline}`}
     >
-      {/* State stripe on the start (right) edge. */}
+      {/* State stripe on the start (right) edge: the card's only state colour (owner request 2026-10-18, decision 228). */}
       <span className={`absolute inset-y-0 start-0 w-1 ${color.solid}`} />
-      <span className="flex w-full items-start justify-between gap-2">
-        <span className="text-room-number">{digits(room.number)}</span>
-        <span className={`inline-flex h-6 items-center whitespace-nowrap rounded-control px-2 text-label ${color.soft} ${color.text}`}>
+      <span className="flex w-full items-baseline justify-between gap-2">
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="text-room-number">{digits(room.number)}</span>
+          <span className="truncate text-label font-normal text-text-secondary" title={room.name || undefined}>
+            {room.name ? `${room.room_type_name} · ${room.name}` : room.room_type_name}
+          </span>
+        </span>
+        <span className={`whitespace-nowrap text-label ${room.display_status === "overdue" ? "text-danger" : "text-text-secondary"}`}>
           {t(`roomState.${room.display_status}`)}
         </span>
       </span>
-      <span className="-mt-0.5 truncate text-label font-normal text-text-secondary" title={room.name || undefined}>
-        {room.name ? `${room.room_type_name} · ${room.name}` : room.room_type_name}
-      </span>
       <span className="mt-auto flex w-full flex-col">
-        <span className="truncate text-body font-medium leading-5">{lines.main || " "}</span>
-        <span className={`text-label ${TONE_CLASS[lines.tone]}`}>{lines.sub}</span>
+        <span className="truncate text-body font-medium leading-5">{lines.main || " "}</span>
+        <span className={`text-label font-normal ${TONE_CLASS[lines.tone]}`}>{lines.sub || " "}</span>
       </span>
     </button>
   );
