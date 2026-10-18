@@ -175,6 +175,19 @@ def test_confirm_checkout_from_the_task(monthly_stay, reception_api, reception):
     assert act(reception_api, task, "done", at(20, 12), note="x").json()["code"] == "task_closed"
 
 
+def test_done_needs_what_was_done(monthly_stay, reception_api):
+    tick(at(20))
+    task = the_task()
+    for note in (None, "", "   "):
+        body = {} if note is None else {"note": note}
+        res = act(reception_api, task, "done", at(20, 10), **body)
+        assert res.status_code == 400 and res.json() == {"code": "reason_required", "detail": "اكتب ما تم."}
+    assert the_task().status == "open" and not TaskAction.objects.filter(task=task).exists()
+    res = act(reception_api, task, "done", at(20, 10), note="  اتصلنا بالنزيل وسيغادر في موعده ")
+    assert res.status_code == 200 and res.json()["status"] == "done"
+    assert TaskAction.objects.get(task=task).note == "اتصلنا بالنزيل وسيغادر في موعده"
+
+
 def test_overdue_stay_shows_once_in_late_group(reception_api, guest, single, rooms):
     payload = {
         "guest": str(guest.pk),
