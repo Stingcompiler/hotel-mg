@@ -1,0 +1,20 @@
+{
+  "_why": "Owner request 2026-10-18: the design-package colours read as too loud at reception. Same hues, less saturation; text-on-soft keeps AA contrast. design-package stays untouched (decision 226, design gap 23).",
+  "color": {
+    "primary-soft": "#DDEFEC",
+    "state": {
+      "ready":       { "solid": "#3A8A5E", "soft": "#E3F1E8", "text-on-soft": "#1E4A33" },
+      "occupied":    { "solid": "#4A6FA5", "soft": "#E4EBF5", "text-on-soft": "#233B5E" },
+      "cleaning":    { "solid": "#B7832B", "soft": "#F8EEDB", "text-on-soft": "#6A4A12" },
+      "maintenance": { "solid": "#7A8290", "soft": "#ECEDF0", "text-on-soft": "#2F3540" },
+      "overdue":     { "solid": "#B9433A", "soft": "#F8E4E1", "text-on-soft": "#7A2620" },
+      "reserved-soon": { "outline": "#7E5FB0" }
+    },
+    "success": "#3A8A5E",
+    "warning": "#B7832B",
+    "danger": "#B9433A",
+    "info": "#4A6FA5",
+    "owner-banner-bg": "#FBEEDD",
+    "owner-banner-text": "#8F5512"
+  }
+}

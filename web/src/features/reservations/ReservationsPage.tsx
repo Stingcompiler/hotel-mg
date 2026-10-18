@@ -115,7 +115,7 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
             ? `bg-bg-surface ${reservedSoon.border} ${reservedSoon.text}`
             : r.status === "checked_out"
               ? "bg-bg-surface-2 text-text-secondary opacity-40"
-              : `${stateColor(overdue ? "overdue" : "occupied").solid} text-primary-text-on`;
+              : calmBar(overdue ? "overdue" : "occupied");
         return {
           key: r.id,
           from: Math.max(diffDays(r.check_in_date, start), 0),
@@ -176,9 +176,9 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
         </div>
         <div className="flex-1" />
         <div className="flex items-center gap-4 text-label font-normal text-text-secondary max-[1599px]:hidden">
-          <Legend tone={stateColor("occupied").solid} label={t("reservations.legendIn")} />
+          <Legend tone={calmBar("occupied")} label={t("reservations.legendIn")} />
           <Legend tone={reservedSoon.border} label={t("reservations.legendConfirmed")} />
-          <Legend tone={stateColor("overdue").solid} label={t("reservations.legendOverdue")} />
+          <Legend tone={calmBar("overdue")} label={t("reservations.legendOverdue")} />
           <Legend tone={stateColor("maintenance").soft} label={t("reservations.legendMaintenance")} />
         </div>
         <NewButton />
@@ -260,6 +260,12 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
   );
 }
 
+/** A stay bar or chip: soft fill, dark text and a solid start edge — calmer than a solid fill (owner request 2026-10-18, decision 226). */
+function calmBar(state: "occupied" | "overdue"): string {
+  const c = stateColor(state);
+  return `${c.soft} ${c.text} border-0 border-s-[3px] border-solid ${c.border}`;
+}
+
 function Legend({ tone, label }: { tone: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5">
@@ -321,7 +327,7 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
     "grid grid-cols-[104px_64px_minmax(140px,1.5fr)_minmax(96px,1fr)_minmax(96px,1fr)_64px_96px_112px_112px] items-center gap-3 px-4";
   const chip: Record<string, string> = {
     confirmed: `bg-bg-surface ${reservedSoon.border} ${reservedSoon.text}`,
-    checked_in: `${stateColor("occupied").solid} text-primary-text-on`,
+    checked_in: calmBar("occupied"),
     checked_out: "bg-bg-surface-2 text-text-secondary",
     cancelled: "bg-bg-surface-2 text-text-disabled",
     no_show: "bg-bg-surface-2 text-text-disabled",

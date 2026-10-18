@@ -294,7 +294,7 @@ function ReverseCell({ entry, reversed, onReverse }: ReverseProps & { entry: Ent
       <button
         type="button"
         onClick={() => onReverse(entry)}
-        className="h-9 rounded-control border-0 bg-transparent px-2 font-sans text-label font-medium text-danger hover:bg-danger-soft"
+        className="h-9 rounded-control border-0 bg-transparent px-2 font-sans text-label font-medium text-text-secondary hover:bg-danger-soft hover:text-danger"
       >
         {t("folioAction.reverse")}
       </button>

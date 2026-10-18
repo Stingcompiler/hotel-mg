@@ -306,7 +306,7 @@ function ExpenseTable({
               <div className="text-text-secondary">{e.by}</div>
               <div>
                 {!correction && !e.reversed && (
-                  <button type="button" disabled={offline} onClick={() => onReverse(e)} className="h-9 rounded-control border-0 bg-transparent px-2 font-sans text-label font-medium text-danger hover:bg-danger-soft disabled:text-text-disabled disabled:hover:bg-transparent">
+                  <button type="button" disabled={offline} onClick={() => onReverse(e)} className="h-9 rounded-control border-0 bg-transparent px-2 font-sans text-label font-medium text-text-secondary hover:bg-danger-soft hover:text-danger disabled:text-text-disabled disabled:hover:bg-transparent">
                     {t("expenses.reverse")}
                   </button>
                 )}

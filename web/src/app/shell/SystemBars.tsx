@@ -13,10 +13,12 @@ import { t } from "@/i18n/t";
 type Bar = { key: string; tone: "solid" | "danger" | "warning"; icon: ReactNode; text: ReactNode; action?: ReactNode };
 // «الحد الأقصى ثلاثة أشرطة؛ الرابع يُطوى في الجرس» (6.14 B).
 const MAX_BARS = 3;
+// Calm rows (owner request 2026-10-18, decision 226): white row, a thin coloured start stripe and icon; only the
+// server-down bar stays a solid red alert.
 const TONE = {
-  solid: "bg-danger text-primary-text-on",
-  danger: "bg-danger-soft text-danger-text",
-  warning: "bg-warning-soft text-warning-text",
+  solid: { row: "bg-danger text-primary-text-on", stripe: "", icon: "" },
+  danger: { row: "bg-bg-surface text-text-primary", stripe: "bg-danger", icon: "text-danger" },
+  warning: { row: "bg-bg-surface text-text-primary", stripe: "bg-warning", icon: "text-warning" },
 };
 
 /**
@@ -67,7 +69,7 @@ export function SystemBars({ reception = true }: { reception?: boolean }) {
         </>
       ),
       action: (
-        <button type="button" disabled={backup.isPending} onClick={() => backup.mutate()} className={`${link} border-0 bg-transparent p-0 text-danger-text`}>
+        <button type="button" disabled={backup.isPending} onClick={() => backup.mutate()} className={`${link} border-0 bg-transparent p-0 text-primary`}>
           {backup.isPending ? t("backup.running") : t("backup.now")}
         </button>
       ),
@@ -82,7 +84,7 @@ export function SystemBars({ reception = true }: { reception?: boolean }) {
       icon: icon(DatabaseBackup),
       text: t("system.backupLocalOnly"),
       action: (
-        <Link to="/settings/users" className={`${link} text-warning-text`}>
+        <Link to="/settings/users" className={`${link} text-primary`}>
           {t("system.changePassword")}
         </Link>
       ),
@@ -95,7 +97,7 @@ export function SystemBars({ reception = true }: { reception?: boolean }) {
       icon: icon(HardDrive),
       text: t("system.diskLow"),
       action: reception && (
-        <Link to="/settings/backup" className={`${link} text-warning-text`}>
+        <Link to="/settings/backup" className={`${link} text-primary`}>
           {t("system.backupSettings")}
         </Link>
       ),
@@ -108,7 +110,7 @@ export function SystemBars({ reception = true }: { reception?: boolean }) {
       icon: icon(TriangleAlert),
       text: overdue === 1 ? t("board.overdueBannerOne") : t("board.overdueBanner", { n: digits(String(overdue)) }),
       action: (
-        <Link to="/?filter=overdue" className={`${link} text-danger-text`}>
+        <Link to="/?filter=overdue" className={`${link} text-primary`}>
           {t("system.view")}
         </Link>
       ),
@@ -122,9 +124,10 @@ export function SystemBars({ reception = true }: { reception?: boolean }) {
         <div
           key={bar.key}
           role={bar.tone === "solid" ? "alert" : "status"}
-          className={`flex h-11 items-center gap-3 border-b border-bg-surface px-6 text-body font-medium ${TONE[bar.tone]}`}
+          className={`relative flex h-10 items-center gap-3 border-b border-border px-6 text-body ${TONE[bar.tone].row}`}
         >
-          {bar.icon}
+          {TONE[bar.tone].stripe && <span className={`absolute inset-y-0 start-0 w-[3px] ${TONE[bar.tone].stripe}`} aria-hidden />}
+          <span className={`flex ${TONE[bar.tone].icon}`}>{bar.icon}</span>
           <span className="min-w-0 flex-1 truncate">{bar.text}</span>
           {bar.action}
         </div>
