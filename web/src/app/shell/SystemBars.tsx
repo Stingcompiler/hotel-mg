@@ -124,9 +124,9 @@ export function SystemBars({ reception = true }: { reception?: boolean }) {
         <div
           key={bar.key}
           role={bar.tone === "solid" ? "alert" : "status"}
-          className={`relative flex h-10 items-center gap-3 border-b border-border px-6 text-body ${TONE[bar.tone].row}`}
+          className={`bar-in relative flex h-10 items-center gap-3 border-b border-border px-6 text-body font-medium ${TONE[bar.tone].row}`}
         >
-          {TONE[bar.tone].stripe && <span className={`absolute inset-y-0 start-0 w-[3px] ${TONE[bar.tone].stripe}`} aria-hidden />}
+          {TONE[bar.tone].stripe && <span className={`absolute inset-y-0 start-0 w-1 ${TONE[bar.tone].stripe} ${bar.tone === "danger" ? "attention" : ""}`} aria-hidden />}
           <span className={`flex ${TONE[bar.tone].icon}`}>{bar.icon}</span>
           <span className="min-w-0 flex-1 truncate">{bar.text}</span>
           {bar.action}

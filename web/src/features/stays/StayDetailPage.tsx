@@ -7,6 +7,7 @@ import type { components } from "@api/schema";
 import { useSystemStatus } from "@/api/queries";
 import { buttons } from "@/components/ui/Modal";
 import { Tabs } from "@/components/ui/Tabs";
+import { Timeline } from "@/components/ui/Timeline";
 import { stateColor } from "@/design/state";
 import { openPrint } from "@/features/print/PrintPage";
 import { days, nights } from "@/i18n/counts";
@@ -91,7 +92,7 @@ export function StayDetailPage() {
   ];
 
   return (
-    <div className="flex h-full min-h-[620px] flex-col gap-4 p-6">
+    <div className="stagger flex h-full min-h-[620px] flex-col gap-4 p-6">
       <div className="flex h-9 items-center gap-3">
         <Link to="/" className="inline-flex items-center gap-1 text-body text-text-secondary">
           <ChevronRight className="h-icon-inline w-icon-inline" strokeWidth={1.75} aria-hidden />
@@ -459,14 +460,8 @@ function NotesTab({ items }: { items: [string, string][] }) {
 function LogTab({ log }: { log: components["schemas"]["StayLogEntry"][] }) {
   if (!log.length) return <Empty text={t("stay.noLog")} />;
   return (
-    <div className="min-h-0 flex-1 overflow-auto">
-      {log.map((e, i) => (
-        <div key={i} className="grid h-10 grid-cols-[180px_1fr_160px] items-center gap-4 border-b border-border px-4 text-table-cell">
-          <div className="text-label font-normal text-text-secondary">{when(e.at)}</div>
-          <div>{e.label}</div>
-          <div className="text-text-secondary">{e.by ?? ""}</div>
-        </div>
-      ))}
+    <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
+      <Timeline items={log.map((e, i) => ({ key: String(i), time: when(e.at), title: e.label, meta: e.by ?? undefined }))} />
     </div>
   );
 }

@@ -51,8 +51,8 @@
   --text-label: 500 12px/16px var(--font-family);
   --text-headline-number: 700 28px/34px var(--font-family);
   --text-room-number: 700 22px/28px var(--font-family);
-  --radius-control: 6px;
-  --radius-card: 8px;
+  --radius-control: 8px;
+  --radius-card: 10px;
   --radius-modal: 12px;
   --shadow-card: none;
   --shadow-elevated: 0 8px 24px rgba(27,36,48,0.12);

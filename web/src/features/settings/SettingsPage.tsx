@@ -32,7 +32,7 @@ export function SettingsPage() {
   if (!active) return <Navigate to={`/settings/${visible[0]}`} replace />;
 
   return (
-    <div className="grid h-full grid-cols-[240px_1fr] grid-rows-[36px_1fr] gap-4 p-6 max-[1599px]:grid-cols-[200px_1fr] max-[1599px]:gap-3">
+    <div className="stagger grid h-full grid-cols-[240px_1fr] grid-rows-[36px_1fr] gap-4 p-6 max-[1599px]:grid-cols-[200px_1fr] max-[1599px]:gap-3">
       <div className="col-span-2 flex items-center gap-3">
         <h1 className="m-0 text-page-title">{t("nav.settings")}</h1>
         <span className="text-text-disabled">/</span>

@@ -70,7 +70,7 @@ export function GuestsPage() {
   const wide = "max-[1399px]:hidden";
 
   return (
-    <div className="grid h-full min-h-[620px] grid-cols-[1fr_520px] grid-rows-[auto_1fr] gap-4 p-6 max-[1599px]:grid-cols-[1fr_440px] max-[1599px]:gap-3 max-[1399px]:grid-cols-[1fr_360px]">
+    <div className="stagger grid h-full min-h-[620px] grid-cols-[1fr_520px] grid-rows-[auto_1fr] gap-4 p-6 max-[1599px]:grid-cols-[1fr_440px] max-[1599px]:gap-3 max-[1399px]:grid-cols-[1fr_360px]">
       <div className="col-span-2 flex flex-wrap items-center gap-3">
         <h1 className="m-0 text-page-title">{t("guests.title")}</h1>
         {allCount !== undefined && <span className="text-body text-text-secondary">{t("guests.total", { n: digits(String(allCount)) })}</span>}

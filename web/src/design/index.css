@@ -43,6 +43,84 @@
   }
 }
 
+/*
+ * Motion (owner redesign brief 2026-10-18, decision 227): short, operational, never a bounce or a lift.
+ * `.stagger` fades its children up one after another (header → summary → content; cards in a grid);
+ * `.attention` is a slow pulse for what needs action (overdue stripe, a failing bar); `.bar-in` slides a system bar
+ * down; `.reveal` items fade up once when scrolled into view (Timeline). Reduced motion keeps everything still.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .stagger > * {
+    animation: fade-up 320ms ease-out both;
+  }
+  .stagger > :nth-child(2) { animation-delay: 50ms; }
+  .stagger > :nth-child(3) { animation-delay: 100ms; }
+  .stagger > :nth-child(4) { animation-delay: 150ms; }
+  .stagger > :nth-child(5) { animation-delay: 200ms; }
+  .stagger > :nth-child(6) { animation-delay: 250ms; }
+  .stagger > :nth-child(7) { animation-delay: 300ms; }
+  .stagger > :nth-child(n + 8) { animation-delay: 350ms; }
+  .attention {
+    animation: attention-pulse 2.4s ease-in-out infinite;
+  }
+  .bar-in {
+    animation: bar-in 250ms ease-out both;
+  }
+  .rise-in {
+    animation: fade-up 240ms ease-out both;
+  }
+  .fade-in {
+    animation: fade-in 200ms ease-out both;
+  }
+  .reveal:not(.is-in) {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  .reveal {
+    transition:
+      opacity 320ms ease-out,
+      transform 320ms ease-out;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes attention-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes skeleton-shimmer {
   0% {
     background-position: 100% 0;

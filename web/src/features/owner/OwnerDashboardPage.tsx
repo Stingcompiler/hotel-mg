@@ -37,7 +37,7 @@ export function OwnerDashboardPage() {
   const d = dash.data;
 
   return (
-    <div className="flex flex-col gap-4 p-6 max-[1599px]:gap-3">
+    <div className="stagger flex flex-col gap-4 p-6 max-[1599px]:gap-3">
       <NewPcCard onSetup={() => navigate("/settings/roomTypes")} />
       <DeviceNotices />
       <div className="flex h-9 items-center gap-3">

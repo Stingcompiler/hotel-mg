@@ -37,8 +37,8 @@ export function DefaultPasswordNotice({ kind = "password" }: { kind?: Kind }) {
     setHidden(true);
   };
   return (
-    <div role="status" className="relative flex min-h-10 items-center gap-3 border-b border-border bg-bg-surface px-6 py-2 text-body text-text-primary">
-      <span className="absolute inset-y-0 start-0 w-[3px] bg-warning" aria-hidden />
+    <div role="status" className="bar-in relative flex min-h-10 items-center gap-3 border-b border-border bg-bg-surface px-6 py-2 text-body font-medium text-text-primary">
+      <span className="absolute inset-y-0 start-0 w-1 bg-warning" aria-hidden />
       <KeyRound className="h-icon w-icon flex-none text-warning" strokeWidth={1.75} aria-hidden />
       <span className="flex-1">{t(TEXT[kind])}</span>
       <Link to="/settings/users" className="font-semibold text-primary underline underline-offset-2">

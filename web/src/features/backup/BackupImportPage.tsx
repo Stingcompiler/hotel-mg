@@ -37,7 +37,7 @@ export function BackupImportPage() {
   const publicKey = useSystemStatus().data?.owner_public_key;
 
   return (
-    <div className="flex flex-col gap-4 p-6 max-[1599px]:gap-3">
+    <div className="stagger flex flex-col gap-4 p-6 max-[1599px]:gap-3">
       <div className="flex h-9 items-center gap-3">
         <h1 className="m-0 text-page-title">{t("nav.backup")}</h1>
         <span className="text-body text-text-secondary">{t("ownerBackup.subtitle")}</span>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { api, ApiError, data } from "@/api/client";
+import { Timeline } from "@/components/ui/Timeline";
 import { keys } from "@/api/queries";
 import { stateColor, stateSolid } from "@/design/state";
 import { days } from "@/i18n/counts";
@@ -41,7 +42,7 @@ export function RoomDrawer({ room, boardDate, offline, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label={digits(room.number)}
-        className="absolute inset-y-0 end-0 flex w-drawer flex-col rounded-s-modal bg-bg-surface shadow-elevated"
+        className="fade-in absolute inset-y-0 end-0 flex w-drawer flex-col rounded-s-modal bg-bg-surface shadow-elevated"
       >
         <div className="flex flex-col gap-3 border-b border-border px-6 py-5">
           <div className="flex items-center justify-between">
@@ -263,21 +264,24 @@ function History({ roomId }: { roomId: string }) {
     <div className="flex flex-1 flex-col gap-3 overflow-auto px-6 py-4">
       <div className="text-section-title">{t("roomDrawer.history")}</div>
       {history.isSuccess && rows.length === 0 && <div className="text-body text-text-secondary">{t("roomDrawer.historyEmpty")}</div>}
-      {rows.map((h) => (
-        <div key={h.id} className="flex items-start gap-3">
-          <span className={`mt-1.5 h-2.5 w-2.5 flex-none rounded-full ${stateSolid(h.to_status)}`} />
-          <div className="min-w-0 flex-1">
-            <div className="text-body leading-5">
+      <Timeline
+        items={rows.map((h) => ({
+          key: h.id,
+          dot: stateSolid(h.to_status),
+          time: (
+            <>
+              {formatDayMonth(h.at)} · <span dir="ltr">{formatTime(h.at)}</span>
+            </>
+          ),
+          title: (
+            <>
               {t("roomDrawer.historyTo", { state: t(`roomState.${h.to_status}`) })}
               {h.reason ? ` — ${h.reason}` : ""}
-            </div>
-            <div className="text-label font-normal text-text-secondary">
-              {formatDayMonth(h.at)} · <span dir="ltr">{formatTime(h.at)}</span>
-              {h.by_name ? ` · ${h.by_name}` : ""}
-            </div>
-          </div>
-        </div>
-      ))}
+            </>
+          ),
+          meta: h.by_name || undefined,
+        }))}
+      />
     </div>
   );
 }

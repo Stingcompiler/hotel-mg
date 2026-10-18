@@ -121,13 +121,13 @@ export function RoomBoardPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex min-h-0 flex-1 flex-col gap-4 p-6 max-[1599px]:gap-3">
+      <div className="stagger flex min-h-0 flex-1 flex-col gap-4 p-6 max-[1599px]:gap-3">
         <div className="flex h-9 items-center justify-between">
           <h1 className="m-0 text-page-title">{t("board.title")}</h1>
           {newButton}
         </div>
 
-        <div className="grid grid-cols-4 gap-4 max-[1599px]:gap-3">
+        <div className="stagger grid grid-cols-4 gap-4 max-[1599px]:gap-3">
           {kpis
             ? kpis.map((k) => (
                 <button
@@ -135,7 +135,7 @@ export function RoomBoardPage() {
                   type="button"
                   onClick={k.onClick}
                   aria-pressed={k.active ?? undefined}
-                  className={`rounded-card border bg-bg-surface p-4 text-start font-sans text-text-primary hover:border-border-strong max-[1599px]:flex max-[1599px]:items-baseline max-[1599px]:justify-between max-[1599px]:gap-2 max-[1599px]:px-4 max-[1599px]:py-3 ${
+                  className={`rounded-card border bg-bg-surface p-4 text-start font-sans text-text-primary transition-colors duration-150 hover:bg-bg-page max-[1599px]:flex max-[1599px]:items-baseline max-[1599px]:justify-between max-[1599px]:gap-2 max-[1599px]:px-4 max-[1599px]:py-3 ${
                     k.active ? "border-primary outline outline-1 -outline-offset-1 outline-primary" : "border-border"
                   }`}
                 >
@@ -273,7 +273,7 @@ export function RoomBoardPage() {
             </button>
           </div>
         ) : view === "grid" ? (
-          <div className="grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(190px,1fr))] content-start gap-3 overflow-auto">
+          <div className="stagger grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(190px,1fr))] content-start gap-3 overflow-auto">
             {shown.map((room) => (
               <RoomCard
                 key={room.id}
