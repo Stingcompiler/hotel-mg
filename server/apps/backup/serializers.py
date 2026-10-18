@@ -146,6 +146,12 @@ class AdoptRequestSerializer(serializers.Serializer):
     )
     username = serializers.CharField(required=False, allow_blank=True)
     password = serializers.CharField(required=False, allow_blank=True, style={"input_type": "password"})
+    replace = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Reception PC that already holds data: replace it with the backup (work only); the current data is "
+        "set aside in backups/pre-import-<stamp>/.",
+    )
 
 
 class AdoptResultSerializer(serializers.Serializer):

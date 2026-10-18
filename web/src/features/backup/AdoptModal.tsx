@@ -15,11 +15,16 @@ type Mode = "view" | "work";
  * owner's or a manager's login as on the reception PC (it unlocks the file), then view only or work on this PC.
  * The service restarts to take the data; the page waits for it and returns to the login page.
  */
-export function AdoptModal({ onClose }: { onClose: () => void }) {
+/**
+ * ``replace``: a reception PC that already holds data is restored from the backup — work mode only, behind an explicit
+ * confirmation; its current data is set aside, not deleted (decision 231).
+ */
+export function AdoptModal({ onClose, replace = false }: { onClose: () => void; replace?: boolean }) {
   const [file, setFile] = useState<File | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<Mode>("view");
+  const [mode, setMode] = useState<Mode>(replace ? "work" : "view");
+  const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [restarting, setRestarting] = useState(false);
@@ -36,6 +41,7 @@ export function AdoptModal({ onClose }: { onClose: () => void }) {
       body.append("mode", mode);
       body.append("username", username.trim());
       body.append("password", password);
+      if (replace) body.append("replace", "true");
       await data(api.POST("/api/v1/backup/adopt", { body: body as never, bodySerializer: (b: unknown) => b as FormData }));
       setRestarting(true);
     } catch (err) {
@@ -50,13 +56,18 @@ export function AdoptModal({ onClose }: { onClose: () => void }) {
   const field = "h-11 w-full rounded-control border border-border-strong bg-bg-surface px-3 font-sans text-body";
   return (
     <Modal
-      title={t("adopt.title")}
+      title={replace ? t("adopt.restoreTitle") : t("adopt.title")}
       width={640}
       onClose={() => !busy && onClose()}
       footer={
         <>
-          <button type="submit" form="adopt-form" disabled={!file || !username.trim() || !password || busy} className={buttons.primary}>
-            {busy ? t("adopt.opening") : t("adopt.open")}
+          <button
+            type="submit"
+            form="adopt-form"
+            disabled={!file || !username.trim() || !password || busy || (replace && !confirmed)}
+            className={replace ? buttons.danger : buttons.primary}
+          >
+            {busy ? t("adopt.opening") : replace ? t("adopt.restore") : t("adopt.open")}
           </button>
           <div className="flex-1" />
           <button type="button" className={buttons.ghost} disabled={busy} onClick={onClose}>
@@ -66,8 +77,18 @@ export function AdoptModal({ onClose }: { onClose: () => void }) {
       }
     >
       <form id="adopt-form" onSubmit={submit} className="flex flex-col gap-5">
-        <div className="text-body text-text-secondary">{t("adopt.intro")}</div>
-        <div className="text-label font-normal text-text-secondary">{t("adopt.replaces")}</div>
+        <div className="text-body text-text-secondary">{replace ? t("adopt.restoreIntro") : t("adopt.intro")}</div>
+        {replace ? (
+          <div className="flex flex-col gap-3 rounded-card border border-danger bg-danger-soft p-4 text-danger-text">
+            <div className="text-body font-medium">{t("adopt.restoreWarn")}</div>
+            <label className="flex items-center gap-2 text-body font-semibold">
+              <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="h-4 w-4" />
+              {t("adopt.restoreConfirm")}
+            </label>
+          </div>
+        ) : (
+          <div className="text-label font-normal text-text-secondary">{t("adopt.replaces")}</div>
+        )}
         {error && <ErrorBanner>{error}</ErrorBanner>}
 
         <section className="flex flex-col gap-2">
@@ -103,33 +124,35 @@ export function AdoptModal({ onClose }: { onClose: () => void }) {
           </div>
         </section>
 
-        <section className="flex flex-col gap-2">
-          <div className="text-body font-semibold">{t("adopt.step3")}</div>
-          <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label={t("adopt.step3")}>
-            {(["view", "work"] as Mode[]).map((m) => {
-              const active = mode === m;
-              const Icon = m === "view" ? Eye : MonitorCog;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => setMode(m)}
-                  className={`flex flex-col items-start gap-2 rounded-card border-2 p-4 text-start font-sans ${
-                    active ? "border-primary bg-primary-soft" : "border-border bg-bg-surface hover:bg-bg-surface-2"
-                  }`}
-                >
-                  <span className="flex items-center gap-2 text-body font-semibold">
-                    <Icon className="h-icon w-icon text-primary" strokeWidth={1.75} aria-hidden />
-                    {t(`adopt.${m}Title`)}
-                  </span>
-                  <span className="text-label font-normal text-text-secondary">{t(`adopt.${m}Text`)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        {!replace && (
+          <section className="flex flex-col gap-2">
+            <div className="text-body font-semibold">{t("adopt.step3")}</div>
+            <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label={t("adopt.step3")}>
+              {(["view", "work"] as Mode[]).map((m) => {
+                const active = mode === m;
+                const Icon = m === "view" ? Eye : MonitorCog;
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setMode(m)}
+                    className={`flex flex-col items-start gap-2 rounded-card border-2 p-4 text-start font-sans ${
+                      active ? "border-primary bg-primary-soft" : "border-border bg-bg-surface hover:bg-bg-surface-2"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2 text-body font-semibold">
+                      <Icon className="h-icon w-icon text-primary" strokeWidth={1.75} aria-hidden />
+                      {t(`adopt.${m}Title`)}
+                    </span>
+                    <span className="text-label font-normal text-text-secondary">{t(`adopt.${m}Text`)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </form>
     </Modal>
   );

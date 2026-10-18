@@ -5,12 +5,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { api, data } from "@/api/client";
 import { keys, useSystemStatus } from "@/api/queries";
-import { stateColor } from "@/design/state";
 import { digits } from "@/i18n/digits";
 import { formatMoney } from "@/i18n/money";
 import { NewPcCard } from "@/features/backup/AdoptModal";
 import { t } from "@/i18n/t";
 import { useNow } from "@/lib/useNow";
+import { StatusPill } from "@/components/ui/StatusPill";
 
 import { RoomCard, RoomCardSkeleton } from "./RoomCard";
 import { RoomDrawer } from "./RoomDrawer";
@@ -325,7 +325,6 @@ function RoomTable({
         </thead>
         <tbody>
           {rooms.map((room) => {
-            const color = stateColor(room.display_status);
             const lines = cardLines(room, boardDate, now);
             return (
               <tr
@@ -336,9 +335,7 @@ function RoomTable({
                 <td className="px-3 font-semibold">{digits(room.number)}</td>
                 <td className="px-3 text-text-secondary">{room.room_type_name}</td>
                 <td className="px-3">
-                  <span className={`inline-flex h-6 items-center rounded-control px-2 text-label ${color.soft} ${color.text}`}>
-                    {t(`roomState.${room.display_status}`)}
-                  </span>
+                  <StatusPill state={room.display_status} label={t(`roomState.${room.display_status}`)} />
                 </td>
                 <td className="px-3">{lines.main}</td>
                 <td className={`px-3 ${TONE_CLASS[lines.tone]}`}>{lines.sub}</td>

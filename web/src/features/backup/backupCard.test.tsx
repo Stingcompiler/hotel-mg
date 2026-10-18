@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import { session } from "@/api/session";
@@ -47,9 +47,15 @@ test("a reception PC with no hotel records lets a manager open a backup (decisio
   expect(screen.getByRole("button", { name: "استيراد نسخة" })).toBeEnabled();
 });
 
-test("once the PC holds hotel records, import stays on the owner PC", async () => {
+test("a reception PC with data offers a confirmed restore instead (decision 231)", async () => {
   canAdopt = false;
   renderCard();
-  await waitFor(() => expect(screen.getByText("متاح على جهاز المالك، أو على جهاز استقبال لم تُسجَّل فيه بيانات فندق بعد")).toBeInTheDocument());
-  expect(screen.getByRole("button", { name: "استيراد نسخة" })).toBeDisabled();
+  await screen.findByText("يستبدل بيانات هذا الجهاز بنسخة احتياطية؛ تُحفظ البيانات الحالية جانبًا");
+  fireEvent.click(screen.getByRole("button", { name: "استيراد نسخة" }));
+  await screen.findByText("استعادة هذا الجهاز من نسخة احتياطية");
+  expect(screen.queryByText("3. كيف ستستخدم هذا الجهاز؟")).toBeNull(); // a restore is always «للعمل عليه»
+  const restore = screen.getByRole("button", { name: "استعادة الجهاز" });
+  expect(restore).toBeDisabled();
+  fireEvent.click(screen.getByLabelText("أفهم أن بيانات هذا الجهاز الحالية ستُستبدل بالنسخة"));
+  expect(restore).toBeDisabled(); // still needs the file and the login
 });

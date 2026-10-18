@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Sky Towers API
-  version: '1.13'
+  version: '1.14'
   description: Local API of the Sky Towers hotel management system.
 paths:
   /api/v1/audit/:
@@ -3385,6 +3385,11 @@ components:
           type: string
         password:
           type: string
+        replace:
+          type: boolean
+          default: false
+          description: 'Reception PC that already holds data: replace it with the
+            backup (work only); the current data is set aside in backups/pre-import-<stamp>/.'
       required:
       - file
       - mode

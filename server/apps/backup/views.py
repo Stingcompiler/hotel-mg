@@ -225,9 +225,19 @@ class AdoptView(APIView):
         data = AdoptRequestSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         upload = data.validated_data["file"]
+        replace = data.validated_data["replace"]
+        fresh = adopt.is_fresh()
         result = adopt.prepare(
-            upload.read(), upload.name, _credentials(data.validated_data), data.validated_data["mode"]
+            upload.read(), upload.name, _credentials(data.validated_data), data.validated_data["mode"], replace
         )
+        if replace and not fresh:  # recorded in the database that is about to be set aside
+            with transaction.atomic():
+                audit.record(
+                    actor=request.user,
+                    action="backup.restore",
+                    entity="backup_file",
+                    after={"file": upload.name, "mode": result["mode"]},
+                )
         return Response(AdoptResultSerializer(result).data, status=status.HTTP_202_ACCEPTED)
 
 

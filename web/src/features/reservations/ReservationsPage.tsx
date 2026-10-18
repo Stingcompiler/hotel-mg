@@ -260,10 +260,10 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
   );
 }
 
-/** A stay bar or chip: soft fill, dark text and a solid start edge — calmer than a solid fill (owner request 2026-10-18, decision 228). */
+/** A stay bar or chip: soft fill and dark text, no edge stripe (owner requests 2026-10-18, decisions 228 and 231). */
 function calmBar(state: "occupied" | "overdue"): string {
   const c = stateColor(state);
-  return `${c.soft} ${c.text} border-0 border-s-[3px] border-solid ${c.border}`;
+  return `${c.soft} ${c.text}`;
 }
 
 function Legend({ tone, label }: { tone: string; label: string }) {
