@@ -68,7 +68,7 @@ export function AlertRulesTab({ readOnly, owner = false }: { readOnly: boolean; 
     return (
       <div className="flex flex-col gap-4">
         <AlertSoundCard readOnly={readOnly} owner={owner} />
-        <div className="rounded-card border border-border bg-bg-surface p-6 text-center text-body text-text-secondary">{t("settings.alerts.empty")}</div>
+        <div className="surface-card p-6 text-center text-body text-text-secondary">{t("settings.alerts.empty")}</div>
       </div>
     );
   }

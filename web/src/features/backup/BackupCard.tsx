@@ -102,7 +102,7 @@ export function BackupCard({ onImport }: { onImport?: () => void }) {
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-card border border-border bg-bg-surface p-4">
+    <section className="surface-card flex flex-col gap-4 p-6 max-[1599px]:p-5">
       <div className="flex items-baseline gap-3">
         <h2 className="m-0 text-section-title">{t("backup.title")}</h2>
         <span className="text-body text-text-secondary">{t("backup.subtitle")}</span>

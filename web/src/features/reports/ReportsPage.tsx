@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Download, FileText, Printer } from "lucide-react";
+import { ArrowDown, ArrowUp, Banknote, ClipboardList, Download, FileText, Hash, Percent, Printer, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 
@@ -8,6 +8,7 @@ import type { components } from "@api/schema";
 import { api, ApiError, data, download } from "@/api/client";
 import { ErrorBanner, Segmented, Select, TextInput } from "@/components/ui/form";
 import { buttons } from "@/components/ui/Modal";
+import { StatCard } from "@/components/ui/StatCard";
 import { openPrint } from "@/features/print/PrintPage";
 import { useRoomTypes } from "@/features/reservations/StaySection";
 import { formatDayMonth, formatRange, formatTime, formatWhen } from "@/i18n/dates";
@@ -66,6 +67,9 @@ export function formatCell(value: unknown, type: string): string {
   if (type === "datetime" && typeof value === "string") return `${formatDayMonth(value)} · ${formatTime(value)}`;
   return digits(String(value));
 }
+
+/** A report tile's icon follows what it counts; the report's own «danger» tone wins. */
+const tileIcon = (type?: string): LucideIcon => (type === "money" ? Banknote : type === "percent" ? Percent : type === "int" ? Hash : ClipboardList);
 
 const numeric = (c: Column) => c.type === "money" || c.type === "int" || c.type === "percent";
 
@@ -245,7 +249,7 @@ export function ReportsPage() {
         </button>
       </div>
 
-      <nav className="flex flex-col gap-0.5 self-start rounded-card border border-border bg-bg-surface p-2">
+      <nav className="surface-card flex flex-col gap-0.5 self-start p-2">
         {index.data?.map((item) => (
           <NavLink
             key={item.name}
@@ -272,21 +276,25 @@ export function ReportsPage() {
         {error && <ErrorBanner>{error}</ErrorBanner>}
         {report.isError && <ErrorBanner>{(report.error as Error).message}</ErrorBanner>}
         {!r ? (
-          <div className="skeleton h-64 rounded-card" />
+          <div className="skeleton h-64 rounded-card-lg" />
         ) : (
           <>
             {!!meta?.tiles?.length && (
               <div className="grid gap-4 max-[1599px]:gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(meta.tiles.length, 4)}, 1fr)` }}>
-                {meta.tiles.slice(0, 4).map((tile) => (
-                  <div key={tile.label} className="rounded-card border border-border bg-bg-surface p-4 max-[1599px]:px-4 max-[1599px]:py-3">
-                    <div className="text-label text-text-secondary">{tile.label}</div>
-                    <div className={`mt-1 text-headline-number ${tile.tone === "danger" && typeof tile.value === "number" && tile.value !== 0 ? "text-danger" : ""}`}>
-                      {formatCell(tile.value, tile.type ?? "text")}
-                      {tile.type === "money" && <span className="text-[16px] font-semibold text-text-secondary"> {t("money.currency")}</span>}
-                    </div>
-                    {tile.hint && <div className="mt-1 text-label font-normal text-text-secondary">{digits(tile.hint)}</div>}
-                  </div>
-                ))}
+                {meta.tiles.slice(0, 4).map((tile) => {
+                  const alarming = tile.tone === "danger" && typeof tile.value === "number" && tile.value !== 0;
+                  return (
+                    <StatCard
+                      key={tile.label}
+                      icon={alarming ? TriangleAlert : tileIcon(tile.type)}
+                      label={tile.label}
+                      value={formatCell(tile.value, tile.type ?? "text")}
+                      unit={tile.type === "money" ? t("money.currency") : undefined}
+                      hint={tile.hint ? digits(tile.hint) : undefined}
+                      tone={alarming ? "danger" : "default"}
+                    />
+                  );
+                })}
               </div>
             )}
             <ReportTable report={r} totals={meta?.totals ?? {}} />
@@ -325,7 +333,7 @@ function ReportTable({ report, totals }: { report: Report; totals: Record<string
   return (
     // One scroll box for header, rows and totals: a report wider than the window scrolls sideways instead of losing
     // its last columns (review 2026-09-28, small screens).
-    <section className="min-h-0 flex-1 overflow-auto rounded-card border border-border bg-bg-surface">
+    <section className="surface-card min-h-0 flex-1 overflow-auto">
       <div className="w-max min-w-full">
         <div className="sticky top-0 z-10 grid h-10 items-center gap-3 bg-bg-surface-2 px-4 text-label text-text-secondary" style={{ gridTemplateColumns: template }}>
           {cols.map((c) => (

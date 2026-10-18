@@ -1,7 +1,7 @@
 {
-  "_why": "Owner request 2026-10-18: the design-package colours read as too loud at reception. Same hues, less saturation; text-on-soft keeps AA contrast. design-package stays untouched (decision 228, design gap 23). Radii 8/10/12 (owner redesign brief 2026-10-18, decision 229).",
+  "_why": "Owner requests 2026-10-18 (decisions 228, 229, 232): the design-package colours read as loud and the cards as a template. Muted state colours; the «Soft Minimal Card» palette and radii; card shadow. design-package stays untouched.",
   "color": {
-    "primary-soft": "#DDEFEC",
+    "primary-soft": "#E6F2F2",
     "state": {
       "ready": {
         "solid": "#3A8A5E",
@@ -34,14 +34,36 @@
     },
     "success": "#3A8A5E",
     "warning": "#B7832B",
-    "danger": "#B9433A",
+    "danger": "#B42332",
     "info": "#4A6FA5",
     "owner-banner-bg": "#FBEEDD",
-    "owner-banner-text": "#8F5512"
+    "owner-banner-text": "#8F5512",
+    "bg-page": "#F5F8FB",
+    "bg-surface-2": "#F1F5F9",
+    "border": "#E2E8F0",
+    "text-primary": "#102238",
+    "text-secondary": "#64748B",
+    "primary": "#147D85",
+    "primary-hover": "#0F666D"
   },
   "radius": {
     "control": 8,
     "card": 10,
-    "modal": 12
+    "modal": 12,
+    "card-lg": 28,
+    "card-md": 20,
+    "icon": 18
+  },
+  "shadow": {
+    "card-soft": "0 1px 2px rgba(16,34,56,0.04), 0 10px 28px rgba(16,34,56,0.06)"
+  },
+  "focusRing": {
+    "color": "#147D85"
+  },
+  "size": {
+    "roomCard": [
+      220,
+      152
+    ]
   }
 }

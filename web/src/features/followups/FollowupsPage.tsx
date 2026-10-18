@@ -85,7 +85,7 @@ export function FollowupsPage() {
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto max-[1599px]:gap-3">
         {nothingDue && (
-          <section className="flex flex-col items-center gap-2 rounded-card border border-border bg-bg-surface p-8 text-center">
+          <section className="surface-card flex flex-col items-center gap-2 p-8 text-center">
             <CircleCheck className={`h-10 w-10 ${stateColor("ready").text}`} strokeWidth={1.75} aria-hidden />
             <div className="text-section-title">{t("followups.emptyTitle")}</div>
             {b.last_action && (
@@ -141,7 +141,7 @@ function CountChip({ tone, label, n }: { tone: string; label: string; n: number 
 
 function Group({ dot, title, subtitle, children }: { dot: string; title: string; subtitle: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col rounded-card border border-border bg-bg-surface">
+    <section className="surface-card flex flex-col overflow-hidden">
       <div className="flex h-11 items-center gap-3 border-b border-border px-4">
         <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
         <h2 className="m-0 text-section-title">{title}</h2>
@@ -412,7 +412,7 @@ function FollowupsSkeleton() {
         </div>
       </div>
       {[1, 2, 3].map((g) => (
-        <section key={g} className="flex flex-col gap-3 rounded-card border border-border bg-bg-surface p-4">
+        <section key={g} className="surface-card flex flex-col gap-3 p-6 max-[1599px]:p-5">
           <div className="h-4 w-32 rounded bg-bg-surface-2" />
           {[1, 2].map((i) => (
             <div key={i} className="skeleton h-10 w-full rounded" />

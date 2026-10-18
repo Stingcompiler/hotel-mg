@@ -39,7 +39,7 @@ export function SettingsPage() {
         <span className="text-section-title">{t(`settings.tabs.${active}`)}</span>
         {readOnly && <span className="text-label font-normal text-text-secondary">{offline ? t("settings.offline") : t("settings.readOnly")}</span>}
       </div>
-      <nav className="flex flex-col gap-0.5 self-start rounded-card border border-border bg-bg-surface p-2">
+      <nav className="surface-card flex flex-col gap-0.5 self-start p-3 max-[1599px]:p-2">
         {visible.map((k) => (
           <Link
             key={k}

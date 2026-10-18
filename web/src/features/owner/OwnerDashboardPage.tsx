@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, TriangleAlert } from "lucide-react";
+import { BedDouble, Banknote, BellRing, ChevronLeft, HandCoins, TriangleAlert, Wallet, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -8,6 +8,7 @@ import type { components } from "@api/schema";
 import { api, data } from "@/api/client";
 import { NewPcCard } from "@/features/backup/AdoptModal";
 import { Segmented } from "@/components/ui/form";
+import { StatCard, StatCardSkeleton, type StatDelta } from "@/components/ui/StatCard";
 import { stateColor } from "@/design/state";
 import { days, duration } from "@/i18n/counts";
 import { formatDayMonth } from "@/i18n/dates";
@@ -127,11 +128,29 @@ function Notice({ tone, children }: { tone: "info" | "warning"; children: React.
 function Kpis({ d }: { d: Dashboard }) {
   const k = d.kpis;
   const money = (v: number) => formatMoney(v);
-  const tiles: { label: string; value: string; unit?: string; hint: string; danger?: boolean }[] = [
+  // Only what the dashboard returns: the occupancy line of the period, the weekly revenue and collected (oldest first),
+  // and the revenue change against the previous period. A tile without a comparison or a series shows neither.
+  const revenueChange = k.revenue.change_percent;
+  const revenueDelta: StatDelta | undefined =
+    revenueChange === null || revenueChange === 0
+      ? undefined
+      : { text: `${revenueChange > 0 ? "+" : "−"}${pct(Math.abs(revenueChange))}`, trend: revenueChange > 0 ? "up" : "down" };
+  const tiles: {
+    icon: LucideIcon;
+    label: string;
+    value: string;
+    unit?: string;
+    hint: string;
+    danger?: boolean;
+    delta?: StatDelta;
+    series?: number[];
+  }[] = [
     {
+      icon: BedDouble,
       label: t("ownerDash.kOccupancy"),
       value: digits(String(k.occupancy_today.value)),
       unit: "٪",
+      series: d.occupancy.series.map((p) => p.percent),
       hint: t("ownerDash.kOccupancyHint", {
         occ: digits(String(k.occupancy_today.occupied)),
         rooms: digits(String(k.occupancy_today.rooms)),
@@ -139,21 +158,24 @@ function Kpis({ d }: { d: Dashboard }) {
       }),
     },
     {
+      icon: Banknote,
       label: t("ownerDash.kRevenue"),
       value: money(k.revenue.value),
       unit: t("money.currency"),
-      hint:
-        k.revenue.change_percent === null
-          ? t("ownerDash.kNoCompare")
-          : t("ownerDash.kRevenueHint", { sign: k.revenue.change_percent >= 0 ? "+" : "−", p: pct(Math.abs(k.revenue.change_percent)) }),
+      delta: revenueDelta,
+      series: d.weeks.map((w) => w.revenue),
+      hint: revenueChange === null ? t("ownerDash.kNoCompare") : t("ownerDash.kRevenueVs"),
     },
     {
+      icon: Wallet,
       label: t("ownerDash.kCollected"),
       value: money(k.collected.value),
       unit: t("money.currency"),
+      series: d.weeks.map((w) => w.collected),
       hint: t("ownerDash.kCollectedHint", { p: pct(k.collected.of_revenue_percent) }),
     },
     {
+      icon: HandCoins,
       label: t("ownerDash.kDebts"),
       value: money(k.debts.value),
       unit: t("money.currency"),
@@ -166,6 +188,7 @@ function Kpis({ d }: { d: Dashboard }) {
         : "",
     },
     {
+      icon: BellRing,
       label: t("ownerDash.kNeglected"),
       value: digits(String(k.neglected_alerts.value)),
       hint:
@@ -178,14 +201,7 @@ function Kpis({ d }: { d: Dashboard }) {
   return (
     <div className="grid grid-cols-5 gap-4 max-[1599px]:gap-3">
       {tiles.map((tile) => (
-        <div key={tile.label} className="rounded-card border border-border bg-bg-surface p-4">
-          <div className="text-label text-text-secondary">{tile.label}</div>
-          <div className={`mt-1 flex items-baseline gap-1 ${tile.danger ? "text-danger" : ""}`}>
-            <span className="text-headline-number">{tile.value}</span>
-            {tile.unit && <span className={`text-body ${tile.danger ? "" : "text-text-secondary"}`}>{tile.unit}</span>}
-          </div>
-          <div className={`mt-1 min-h-4 text-label font-normal ${tile.danger ? "text-danger" : "text-text-secondary"}`}>{tile.hint}</div>
-        </div>
+        <StatCard key={tile.label} icon={tile.icon} value={tile.value} unit={tile.unit} label={tile.label} hint={tile.hint || undefined} tone={tile.danger ? "danger" : "default"} delta={tile.delta} series={tile.series} />
       ))}
     </div>
   );
@@ -193,7 +209,7 @@ function Kpis({ d }: { d: Dashboard }) {
 
 function Panel({ title, note, children, action }: { title: string; note?: React.ReactNode; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col rounded-card border border-border bg-bg-surface">
+    <section className="surface-card flex flex-col overflow-hidden">
       <div className="flex min-h-12 items-center gap-3 border-b border-border px-4 py-2">
         <h2 className="m-0 text-section-title">{title}</h2>
         {note && <span className="text-label font-normal text-text-secondary">{note}</span>}
@@ -418,12 +434,12 @@ function Skeleton() {
     <>
       <div className="grid grid-cols-5 gap-4">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="skeleton h-[104px] rounded-card" />
+          <StatCardSkeleton key={i} />
         ))}
       </div>
       <div className="grid grid-cols-[3fr_2fr] gap-4">
-        <div className="skeleton h-[300px] rounded-card" />
-        <div className="skeleton h-[300px] rounded-card" />
+        <div className="skeleton h-[300px] rounded-card-lg" />
+        <div className="skeleton h-[300px] rounded-card-lg" />
       </div>
     </>
   );

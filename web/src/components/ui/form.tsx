@@ -20,7 +20,7 @@ export function Section({
   children?: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-card border border-border bg-bg-surface p-4">
+    <section className="surface-card flex flex-col gap-4 p-6 max-[1599px]:p-5">
       <div className="flex items-center gap-3">
         <span
           className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-body font-semibold ${

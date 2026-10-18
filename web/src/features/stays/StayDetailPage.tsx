@@ -103,7 +103,7 @@ export function StayDetailPage() {
         </span>
       </div>
 
-      <section className="flex items-center gap-6 rounded-card border border-border bg-bg-surface px-6 py-4">
+      <section className="surface-card flex items-center gap-6 px-6 py-5">
         <div className="flex items-center gap-4 border-e border-border pe-6">
           <div>
             <div className="text-headline-number">{digits(room?.number ?? r.room_number)}</div>
@@ -183,7 +183,7 @@ export function StayDetailPage() {
         )}
       </div>
 
-      <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
+      <section className="surface-card flex min-h-0 flex-1 flex-col overflow-hidden">
         <Tabs
           items={tabs}
           value={tab}
@@ -477,7 +477,7 @@ function StaySkeleton() {
   return (
     <div className="flex h-full flex-col gap-4 p-6">
       <div className="h-9 w-72 rounded bg-bg-surface-2" />
-      <div className="flex h-24 items-center gap-6 rounded-card border border-border bg-bg-surface px-6">
+      <div className="surface-card flex h-24 items-center gap-6 px-6">
         <div className="skeleton h-16 w-24 rounded" />
         <div className="flex flex-1 flex-col gap-2">
           <div className="skeleton h-4 w-64 rounded" />
@@ -490,7 +490,7 @@ function StaySkeleton() {
           <div key={i} className="h-11 w-36 rounded-control bg-bg-surface-2" />
         ))}
       </div>
-      <div className="flex flex-1 flex-col gap-2 rounded-card border border-border bg-bg-surface p-4">
+      <div className="surface-card flex flex-1 flex-col gap-2 p-6">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div key={i} className="skeleton h-6 w-full rounded" />
         ))}

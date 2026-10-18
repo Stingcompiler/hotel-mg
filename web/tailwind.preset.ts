@@ -123,11 +123,15 @@ const preset: Partial<Config> = {
       "borderRadius": {
         "control": "var(--radius-control)",
         "card": "var(--radius-card)",
-        "modal": "var(--radius-modal)"
+        "modal": "var(--radius-modal)",
+        "card-lg": "var(--radius-card-lg)",
+        "card-md": "var(--radius-card-md)",
+        "icon": "var(--radius-icon)"
       },
       "boxShadow": {
         "card": "var(--shadow-card)",
-        "elevated": "var(--shadow-elevated)"
+        "elevated": "var(--shadow-elevated)",
+        "card-soft": "var(--shadow-card-soft)"
       },
       "spacing": {
         "table-row": "var(--size-table-row)",

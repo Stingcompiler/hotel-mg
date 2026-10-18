@@ -1277,7 +1277,7 @@
     "kOccupancy": "الإشغال اليوم",
     "kOccupancyHint": "{occ} من {rooms} غرفة · متوسط الفترة {avg}",
     "kRevenue": "إيراد الفترة",
-    "kRevenueHint": "{sign}{p} عن الفترة السابقة",
+    "kRevenueVs": "مقارنةً بالفترة السابقة",
     "kNoCompare": "لا بيانات للمقارنة",
     "kCollected": "المحصّل",
     "kCollectedHint": "{p} من الإيراد",
