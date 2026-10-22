@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { BedDouble, Banknote, BellRing, ChevronLeft, HandCoins, TriangleAlert, Wallet, type LucideIcon } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 
 import type { components } from "@api/schema";
 
-import { api, data } from "@/api/client";
+import { api, ApiError, data } from "@/api/client";
+import { useMe } from "@/api/queries";
 import { NewPcCard } from "@/features/backup/AdoptModal";
 import { Segmented } from "@/components/ui/form";
 import { StatCard, StatCardSkeleton, type StatDelta } from "@/components/ui/StatCard";
@@ -28,14 +29,20 @@ const pct = (n: number) => `${digits(String(n))}٪`;
 export function OwnerDashboardPage() {
   const [period, setPeriod] = useState<Period>("month");
   const navigate = useNavigate();
+  const me = useMe().data;
+  // The dashboard is for the owner and the manager; reception reaching /owner by its address goes to the board
+  // (the server refuses it with 403, and the page waited forever — QA 2026-10-22 ج-2).
+  const allowed = me?.role === "owner" || me?.role === "manager";
   const dash = useQuery({
     queryKey: ["reports", "owner-dashboard", period],
     queryFn: () => data(api.GET("/api/v1/reports/owner-dashboard", { params: { query: { period } } })),
     // The owner PC changes only on an import: no reload each time the window gets focus (review 2026-09-29, F-12).
     staleTime: 60_000,
     refetchOnWindowFocus: false,
+    enabled: allowed,
   });
   const d = dash.data;
+  if (me && !allowed) return <Navigate to="/" replace />;
 
   return (
     <div className="stagger flex flex-col gap-4 p-6 max-[1599px]:gap-3">
@@ -57,7 +64,18 @@ export function OwnerDashboardPage() {
         />
       </div>
 
-      {!d ? (
+      {dash.isError ? (
+        <div role="alert" className="surface-card flex items-center justify-between gap-4 p-6 text-body">
+          <span>{dash.error instanceof ApiError ? dash.error.message : t("errors.error")}</span>
+          <button
+            type="button"
+            onClick={() => void dash.refetch()}
+            className="h-9 rounded-control border border-border-strong bg-bg-surface px-4 font-sans text-body font-medium text-text-primary hover:bg-bg-surface-2"
+          >
+            {t("system.retry")}
+          </button>
+        </div>
+      ) : !d ? (
         <Skeleton />
       ) : (
         <>

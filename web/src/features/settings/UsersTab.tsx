@@ -86,7 +86,7 @@ export function UsersTab({ readOnly }: { readOnly: boolean }) {
             <div className="flex items-center gap-2">
               <span className="tracking-widest text-text-secondary">••••••</span>
               {u.default_pin && (
-                <span className="inline-flex h-6 items-center rounded-control bg-warning-soft px-2 text-label text-warning-text">{t("settings.users.defaultPin")}</span>
+                <span className="inline-flex h-6 items-center whitespace-nowrap rounded-control bg-warning-soft px-2 text-label text-warning-text">{t("settings.users.defaultPin")}</span>
               )}
             </div>
             <div className="text-text-secondary">{u.last_login ? formatWhen(u.last_login) : "—"}</div>

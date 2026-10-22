@@ -87,7 +87,7 @@ test("a new password is typed twice and a default PIN is flagged", async () => {
       </MemoryRouter>
     </QueryClientProvider>,
   );
-  expect(await screen.findByText("افتراضي 123456")).toBeInTheDocument();
+  expect(await screen.findByText("رمز افتراضي")).toBeInTheDocument();
   fireEvent.click(screen.getAllByRole("button", { name: "تعديل" })[1]);
   fireEvent.change(screen.getByLabelText(/كلمة مرور جديدة/), { target: { value: "secret-22" } });
   const save = screen.getByRole("button", { name: "حفظ" });
