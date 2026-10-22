@@ -8,7 +8,7 @@ import { api, data } from "@/api/client";
 import { keys } from "@/api/queries";
 import { ErrorBanner, Field, Select, TextInput } from "@/components/ui/form";
 import { Toggle } from "@/components/ui/Toggle";
-import { stateColor } from "@/design/state";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { digits, toWestern } from "@/i18n/digits";
 import { t } from "@/i18n/t";
 
@@ -186,6 +186,6 @@ function StateChip({ room }: { room: Room }) {
   if (!room.in_service) {
     return <span className="inline-flex h-6 items-center rounded-control bg-bg-surface-2 px-2 text-label text-text-secondary">{t("settings.rooms.off")}</span>;
   }
-  const c = stateColor(room.status);
-  return <span className={`inline-flex h-6 items-center rounded-control px-2 text-label ${c.soft} ${c.text}`}>{t(`roomState.${room.status}`)}</span>;
+  // The same pill as the board and the drawer (decision 231; QA 2026-10-22 ج-4).
+  return <StatusPill state={room.status} label={t(`roomState.${room.status}`)} />;
 }
