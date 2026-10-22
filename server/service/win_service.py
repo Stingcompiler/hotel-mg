@@ -17,6 +17,18 @@ SERVICE_NAME = "SkyTowersServer"
 STOP_GRACE_SECONDS = 20
 
 
+def report_started(name: str) -> None:
+    """«Service started» in the Windows event log, as a courtesy only. Writing there can be refused
+    (`RegisterEventSource/ReportEvent`: access denied — the CI runner for #79 and #81, decision 238); the service
+    must start anyway, so the refusal goes to server.log instead. Ported from Diyafa (its decision 231)."""
+    try:
+        servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE, servicemanager.PYS_SERVICE_STARTED, (name, ""))
+    except Exception:  # noqa: BLE001 - pywintypes.error and anything else from the event log
+        import logging
+
+        logging.getLogger(__name__).warning("could not write «service started» to the event log", exc_info=True)
+
+
 class SkyTowersService(win32serviceutil.ServiceFramework):
     _svc_name_ = SERVICE_NAME
     _svc_display_name_ = "Sky Towers Server"
@@ -44,9 +56,7 @@ class SkyTowersService(win32serviceutil.ServiceFramework):
         os._exit(0)
 
     def SvcDoRun(self):  # noqa: N802 (pywin32 API)
-        servicemanager.LogMsg(
-            servicemanager.EVENTLOG_INFORMATION_TYPE, servicemanager.PYS_SERVICE_STARTED, (self._svc_name_, "")
-        )
+        report_started(self._svc_name_)
         from service import run_waitress
 
         try:
