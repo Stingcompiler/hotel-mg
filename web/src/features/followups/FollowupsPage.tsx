@@ -141,7 +141,9 @@ function CountChip({ tone, label, n }: { tone: string; label: string; n: number 
 
 function Group({ dot, title, subtitle, children }: { dot: string; title: string; subtitle: string; children: ReactNode }) {
   return (
-    <section className="surface-card flex flex-col overflow-hidden">
+    // flex-none: inside the scrolling column a group keeps its full height (the column scrolls); shrinking it hid the
+    // last rows behind overflow-hidden (owner report 2026-10-22).
+    <section className="surface-card flex flex-none flex-col overflow-hidden">
       <div className="flex h-11 items-center gap-3 border-b border-border px-4">
         <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
         <h2 className="m-0 text-section-title">{title}</h2>
