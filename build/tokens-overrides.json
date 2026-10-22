@@ -1,5 +1,5 @@
 {
-  "_why": "Owner requests 2026-10-18 (decisions 228, 229, 232): the design-package colours read as loud and the cards as a template. Muted state colours; the «Soft Minimal Card» palette and radii; card shadow. design-package stays untouched.",
+  "_why": "Owner requests 2026-10-18 (decisions 228, 229, 232): the design-package colours read as loud and the cards as a template. Muted state colours; the «Soft Minimal Card» palette and radii; card shadow. design-package stays untouched. Dark theme under «dark» (owner request 2026-10-22, decision 234).",
   "color": {
     "primary-soft": "#E6F2F2",
     "state": {
@@ -44,7 +44,11 @@
     "text-primary": "#102238",
     "text-secondary": "#64748B",
     "primary": "#147D85",
-    "primary-hover": "#0F666D"
+    "primary-hover": "#0F666D",
+    "scrim": "#102238",
+    "brand": "#147D85",
+    "brand-deep": "#0F666D",
+    "brand-text": "#FFFFFF"
   },
   "radius": {
     "control": 8,
@@ -65,5 +69,70 @@
       220,
       152
     ]
+  },
+  "dark": {
+    "_why": "Same names, dark values; every text/background pair the screens use is ≥ 5:1 (disabled 3.5).",
+    "color": {
+      "bg-page": "#0D1520",
+      "bg-surface": "#142030",
+      "bg-surface-2": "#1A293B",
+      "border": "#253549",
+      "border-strong": "#34475E",
+      "text-primary": "#E5ECF4",
+      "text-secondary": "#9DACBE",
+      "text-disabled": "#64748A",
+      "primary": "#3DB2BB",
+      "primary-hover": "#5BC4CC",
+      "primary-soft": "#123238",
+      "primary-text-on": "#06242A",
+      "success": "#4CB27A",
+      "warning": "#D6A246",
+      "danger": "#EF6A60",
+      "info": "#79A5DE",
+      "owner-banner-bg": "#33280F",
+      "owner-banner-text": "#F1D08D",
+      "chart-secondary": "#6B7C90",
+      "scrim": "#000000",
+      "state": {
+        "ready": {
+          "solid": "#4CB27A",
+          "soft": "#13301F",
+          "text-on-soft": "#A9E3C2"
+        },
+        "occupied": {
+          "solid": "#79A5DE",
+          "soft": "#16263C",
+          "text-on-soft": "#BCD3F2"
+        },
+        "cleaning": {
+          "solid": "#D6A246",
+          "soft": "#33280F",
+          "text-on-soft": "#F1D08D"
+        },
+        "maintenance": {
+          "solid": "#8E99A8",
+          "soft": "#222D3A",
+          "text-on-soft": "#CDD5DF"
+        },
+        "overdue": {
+          "solid": "#EF6A60",
+          "soft": "#3A1B1B",
+          "text-on-soft": "#F6B3AD"
+        },
+        "reserved-soon": {
+          "outline": "#A58BDA"
+        }
+      },
+      "brand": "#0F4A50",
+      "brand-deep": "#0A3337",
+      "brand-text": "#E5ECF4"
+    },
+    "shadow": {
+      "elevated": "0 8px 24px rgba(0,0,0,0.5)",
+      "card-soft": "0 1px 2px rgba(0,0,0,0.35), 0 10px 28px rgba(0,0,0,0.3)"
+    },
+    "focusRing": {
+      "color": "#5BC4CC"
+    }
   }
 }

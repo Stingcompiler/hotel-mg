@@ -7,6 +7,7 @@ import { useMe, useSystemStatus } from "@/api/queries";
 import { setDigits } from "@/i18n/digits";
 import { setMoneyDecimals } from "@/i18n/money";
 import { t } from "@/i18n/t";
+import { holdLightTheme } from "@/lib/theme";
 
 import "./print.css";
 
@@ -54,6 +55,7 @@ export function PrintPage() {
   });
 
   const ready = doc.isSuccess && (doc.data.kind !== "report" || !!me);
+  useEffect(() => holdLightTheme(), []); // paper is white, whatever the screen theme (decision 234)
   useEffect(() => {
     if (!doc.data) return;
     const hotel = doc.data.kind === "report" ? doc.data.hotel : doc.data.doc.hotel;

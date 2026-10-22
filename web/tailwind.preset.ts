@@ -24,6 +24,10 @@ const preset: Partial<Config> = {
         "owner-banner-bg": "var(--color-owner-banner-bg)",
         "owner-banner-text": "var(--color-owner-banner-text)",
         "chart-secondary": "var(--color-chart-secondary)",
+        "scrim": "var(--color-scrim)",
+        "brand": "var(--color-brand)",
+        "brand-deep": "var(--color-brand-deep)",
+        "brand-text": "var(--color-brand-text)",
         "state": {
           "ready": {
             "DEFAULT": "var(--color-state-ready)",

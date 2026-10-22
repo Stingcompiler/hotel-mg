@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Bell, ChevronDown, LogOut, Search, UserRound, Volume2, VolumeX } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Monitor, Moon, Search, Sun, UserRound, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -8,6 +8,7 @@ import { useRoomBoard } from "@/features/rooms/RoomBoardPage";
 import { digits, toWestern } from "@/i18n/digits";
 import { t } from "@/i18n/t";
 import { setSoundMuted, soundMuted } from "@/lib/alertSound";
+import { setThemePref, type ThemePref, useThemePref } from "@/lib/theme";
 
 type Props = {
   userName: string;
@@ -236,7 +237,7 @@ function UserMenu({ userName, roleName, onLogout }: { userName: string; roleName
         <ChevronDown className="h-icon-inline w-icon-inline text-text-secondary" strokeWidth={1.75} aria-hidden />
       </button>
       {open && (
-        <div role="menu" className="absolute end-0 top-10 z-30 w-56 overflow-hidden rounded-card border border-border bg-bg-surface p-1 shadow-elevated">
+        <div role="menu" className="absolute end-0 top-10 z-30 w-64 overflow-hidden rounded-card border border-border bg-bg-surface p-1 shadow-elevated">
           <div className="flex items-center gap-3 px-3 py-2">
             <UserRound className="h-icon w-icon flex-none text-text-secondary" strokeWidth={1.75} aria-hidden />
             <div className="min-w-0">
@@ -244,6 +245,8 @@ function UserMenu({ userName, roleName, onLogout }: { userName: string; roleName
               <div className="text-label font-normal text-text-secondary">{roleName}</div>
             </div>
           </div>
+          <div className="my-1 h-px bg-border" />
+          <ThemeChoice />
           <div className="my-1 h-px bg-border" />
           <button
             type="button"
@@ -259,6 +262,42 @@ function UserMenu({ userName, roleName, onLogout }: { userName: string; roleName
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+const THEMES: { value: ThemePref; icon: typeof Sun }[] = [
+  { value: "light", icon: Sun },
+  { value: "dark", icon: Moon },
+  { value: "system", icon: Monitor },
+];
+
+/** «المظهر» in the user menu: light, dark or as Windows, for this PC (decision 234). */
+function ThemeChoice() {
+  const pref = useThemePref();
+  return (
+    <div className="px-3 py-2">
+      <div className="mb-1.5 text-label text-text-secondary">{t("theme.title")}</div>
+      <div role="radiogroup" aria-label={t("theme.title")} className="grid grid-cols-3 gap-1 rounded-control bg-bg-surface-2 p-1">
+        {THEMES.map(({ value, icon: Icon }) => (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={pref === value}
+            title={value === "system" ? t("theme.systemHint") : undefined}
+            onClick={() => setThemePref(value)}
+            className={`flex h-8 items-center justify-center whitespace-nowrap rounded-control border-0 font-sans text-label transition-colors duration-150 ${
+              pref === value ? "bg-bg-surface text-primary shadow-elevated" : "bg-transparent text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            <span className="flex items-center gap-1">
+              <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+              {t(`theme.${value}`)}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

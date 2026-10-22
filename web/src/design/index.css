@@ -22,13 +22,13 @@
 @layer components {
   /* Modal scrims (design rule: 24 % behind drawers, 32 % dialogs, 48 % blocking dialogs). */
   .scrim-24 {
-    background: color-mix(in srgb, var(--color-text-primary) 24%, transparent);
+    background: color-mix(in srgb, var(--color-scrim) 24%, transparent);
   }
   .scrim-32 {
-    background: color-mix(in srgb, var(--color-text-primary) 32%, transparent);
+    background: color-mix(in srgb, var(--color-scrim) 32%, transparent);
   }
   .scrim-48 {
-    background: color-mix(in srgb, var(--color-text-primary) 48%, transparent);
+    background: color-mix(in srgb, var(--color-scrim) 48%, transparent);
   }
   /*
    * «Soft Minimal Card» (owner brief 2026-10-18, decision 232): the one surface of every card — white, a 1 px border,
