@@ -110,7 +110,7 @@ class TestConfirmation:
         payload = {"username": "salma.h", "full_name": "سلمى حسن", "role": "reception", "pin": "4321"}
         res = manager_api.post("/api/v1/users/", payload, format="json")
         assert res.status_code == 403
-        assert res.json()["code"] == "confirmation_required"
+        assert res.json()["code"] == "password_confirmation_required"  # an account action (decision 237)
 
         confirm(manager_api)
         assert manager_api.post("/api/v1/users/", payload, format="json").status_code == 201

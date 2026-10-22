@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Sky Towers API
-  version: '1.14'
+  version: '1.15'
   description: Local API of the Sky Towers hotel management system.
 paths:
   /api/v1/audit/:
@@ -102,7 +102,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/ConfirmRequest'
-        required: true
       security:
       - tokenAuth: []
       - cookieAuth: []
@@ -4223,23 +4222,36 @@ components:
       - name
     ConfirmRequest:
       type: object
+      description: 'The password, or the PIN (decision 237: a PIN confirmation covers
+        day-to-day approvals only).'
       properties:
         password:
           type: string
           minLength: 1
           maxLength: 128
-      required:
-      - password
+        pin:
+          type: string
+          minLength: 1
+          maxLength: 6
     ConfirmToken:
       type: object
       properties:
         confirm_token:
           type: string
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          description: |-
+            pin: day-to-day approvals only.
+
+            * `pin` - pin
+            * `password` - password
         expires_in:
           type: integer
           description: Seconds.
       required:
       - confirm_token
+      - level
       - expires_in
     Counts:
       type: object
@@ -5614,6 +5626,14 @@ components:
       description: |-
         * `line` - line
         * `payment` - payment
+    LevelEnum:
+      enum:
+      - pin
+      - password
+      type: string
+      description: |-
+        * `pin` - pin
+        * `password` - password
     LineCreateKindEnum:
       enum:
       - service

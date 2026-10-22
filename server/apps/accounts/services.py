@@ -255,23 +255,45 @@ def _session_tag(session_key: str) -> str:
     return hashlib.sha256((session_key or "").encode()).hexdigest()[:16]
 
 
-def issue_confirm_token(user: User, password: str, session_key: str = "") -> str:
-    """Re-check the password and return a 5-minute confirmation token (sent as X-Confirm-Token), valid only in the
-    session that asked for it: signing out or in again voids it (review 2026-09-29, C-7)."""
-    raise_for_login(check_password_for_confirmation(user, password))
-    return signing.dumps({"u": str(user.pk), "s": _session_tag(session_key)}, salt=CONFIRM_SALT)
+def check_pin_for_confirmation(user: User, pin: str) -> LoginResult:
+    ok = _hash_first(User.objects.filter(pk=user.pk).first(), lambda u: u.check_pin(pin))
+    with transaction.atomic():
+        return _check_credential(User.objects.filter(pk=user.pk).first(), lambda u: ok, kind=None)
 
 
-def require_confirmation(request) -> None:
-    """Raise 403 ``confirmation_required`` unless the request carries a fresh token for this user."""
+def issue_confirm_token(user: User, password: str = "", session_key: str = "", pin: str = "") -> str:
+    """Re-check the password or the PIN and return a 5-minute confirmation token (sent as X-Confirm-Token), valid
+    only in the session that asked for it: signing out or in again voids it (review 2026-09-29, C-7). The token
+    carries its level (decision 237): a PIN token covers day-to-day approvals only. The well-known default PIN never
+    confirms anything; a wrong PIN counts against the same lock as a wrong password."""
+    if password:
+        raise_for_login(check_password_for_confirmation(user, password))
+        level = rules.CONFIRM_PASSWORD
+    else:
+        if not user.pin_hash:
+            raise ApiError("pin_not_set", 400)
+        if user.default_pin:
+            raise ApiError("default_pin_not_accepted", 403)
+        raise_for_login(check_pin_for_confirmation(user, pin))
+        level = rules.CONFIRM_PIN
+    return signing.dumps({"u": str(user.pk), "s": _session_tag(session_key), "l": level}, salt=CONFIRM_SALT)
+
+
+def require_confirmation(request, need: str = rules.CONFIRM_PIN) -> None:
+    """Raise 403 ``confirmation_required`` unless the request carries a fresh token for this user; an action that
+    guards the accounts (``need=CONFIRM_PASSWORD``) refuses a PIN token with ``password_confirmation_required``."""
+    # Without a valid token the answer already says which kind is needed, so the SPA asks the right question.
+    missing = "password_confirmation_required" if need == rules.CONFIRM_PASSWORD else "confirmation_required"
     raw = request.headers.get("X-Confirm-Token", "")
     try:
         data = signing.loads(raw, salt=CONFIRM_SALT, max_age=rules.CONFIRM_LIFETIME)
     except signing.BadSignature:
-        raise ApiError("confirmation_required", 403) from None
+        raise ApiError(missing, 403) from None
     session_key = getattr(request.auth, "key", "") or ""
     if data.get("u") != str(request.user.pk) or data.get("s") != _session_tag(session_key):
-        raise ApiError("confirmation_required", 403)
+        raise ApiError(missing, 403)
+    if not rules.confirmation_enough(data.get("l", rules.CONFIRM_PASSWORD), need):
+        raise ApiError("password_confirmation_required", 403)
 
 
 # --- User management (manager+) ------------------------------------------------

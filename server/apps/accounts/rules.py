@@ -10,6 +10,11 @@ LOCK_DURATION = timedelta(minutes=5)
 SESSION_LIFETIME = timedelta(hours=12)
 CONFIRM_LIFETIME = timedelta(minutes=5)
 
+# Confirmation levels (owner decision 2026-10-22, decision 237): the PIN confirms day-to-day approvals, the password
+# everything that guards the accounts themselves. A password confirmation is good for both.
+CONFIRM_PIN = "pin"
+CONFIRM_PASSWORD = "password"
+
 MANAGER_ROLES = frozenset({"manager", "owner"})
 
 # The account a new install starts with (owner decision 2026-09-27): no setup screen, the login page shows these
@@ -92,3 +97,8 @@ def recovery_failure(failed: int, locks: int, now: datetime) -> tuple[int, int, 
         return failed, locks, None
     lock = min(RECOVERY_BASE_LOCK * (4**locks), RECOVERY_MAX_LOCK)
     return 0, locks + 1, now + lock
+
+
+def confirmation_enough(have: str, need: str) -> bool:
+    """Whether a confirmation of level ``have`` covers an action that needs ``need`` (decision 237)."""
+    return have == CONFIRM_PASSWORD or (have == CONFIRM_PIN and need == CONFIRM_PIN)

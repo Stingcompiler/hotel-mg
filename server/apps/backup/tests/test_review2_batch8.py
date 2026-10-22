@@ -61,7 +61,7 @@ def test_only_the_owner_changes_who_receives_the_backups(manager_api, make_user,
     owner_api = APIClient()
     owner_api.credentials(HTTP_AUTHORIZATION=f"Token {login_with_password(owner.username, PASSWORD).token}")
     res = owner_api.patch(settings_url, change, format="json")
-    assert res.status_code == 403 and res.json()["code"] == "confirmation_required"
+    assert res.status_code == 403 and res.json()["code"] == "password_confirmation_required"
     confirm(owner_api)
     assert owner_api.patch(settings_url, change, format="json").status_code == 200
 

@@ -95,7 +95,7 @@ class RecoveryCodeView(APIView):
 
     @extend_schema(request=None, responses=RecoveryCodeSerializer)
     def post(self, request, pk):
-        services.require_confirmation(request)
+        services.require_confirmation(request, rules.CONFIRM_PASSWORD)
         code = services.issue_recovery_code(request.user, pk)
         return Response(RecoveryCodeSerializer({"recovery_code": code}).data)
 
@@ -108,9 +108,11 @@ class ConfirmView(APIView):
         data = ConfirmSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         session_key = getattr(request.auth, "key", "")
-        token = services.issue_confirm_token(request.user, data.validated_data["password"], session_key)
+        password, pin = data.validated_data.get("password", ""), data.validated_data.get("pin", "")
+        token = services.issue_confirm_token(request.user, password, session_key, pin=pin)
         expires_in = int(rules.CONFIRM_LIFETIME.total_seconds())
-        return Response(ConfirmTokenSerializer({"confirm_token": token, "expires_in": expires_in}).data)
+        level = rules.CONFIRM_PASSWORD if password else rules.CONFIRM_PIN
+        return Response(ConfirmTokenSerializer({"confirm_token": token, "expires_in": expires_in, "level": level}).data)
 
 
 class LogoutView(APIView):
@@ -139,7 +141,7 @@ class UserListView(APIView):
 
     @extend_schema(request=UserCreateSerializer, responses={201: UserSerializer})
     def post(self, request):
-        services.require_confirmation(request)
+        services.require_confirmation(request, rules.CONFIRM_PASSWORD)
         data = UserCreateSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         user = services.create_user(request.user, **data.validated_data)
@@ -155,7 +157,7 @@ class UserDetailView(APIView):
 
     @extend_schema(request=UserUpdateSerializer, responses=UserSerializer)
     def patch(self, request, pk):
-        services.require_confirmation(request)
+        services.require_confirmation(request, rules.CONFIRM_PASSWORD)
         get_object_or_404(User, pk=pk)
         data = UserUpdateSerializer(data=request.data)
         data.is_valid(raise_exception=True)
@@ -167,7 +169,7 @@ class ResetPinView(APIView):
 
     @extend_schema(request=ResetPinSerializer, responses=UserSerializer)
     def post(self, request, pk):
-        services.require_confirmation(request)
+        services.require_confirmation(request, rules.CONFIRM_PASSWORD)
         get_object_or_404(User, pk=pk)
         data = ResetPinSerializer(data=request.data)
         data.is_valid(raise_exception=True)

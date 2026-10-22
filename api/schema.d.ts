@@ -2144,11 +2144,20 @@ export interface components {
             name: string;
             relation?: string;
         };
+        /** @description The password, or the PIN (decision 237: a PIN confirmation covers day-to-day approvals only). */
         ConfirmRequest: {
-            password: string;
+            password?: string;
+            pin?: string;
         };
         ConfirmToken: {
             confirm_token: string;
+            /**
+             * @description pin: day-to-day approvals only.
+             *
+             *     * `pin` - pin
+             *     * `password` - password
+             */
+            level: components["schemas"]["LevelEnum"];
             /** @description Seconds. */
             expires_in: number;
         };
@@ -2713,6 +2722,12 @@ export interface components {
          * @enum {string}
          */
         LedgerEntryTypeEnum: "line" | "payment";
+        /**
+         * @description * `pin` - pin
+         *     * `password` - password
+         * @enum {string}
+         */
+        LevelEnum: "pin" | "password";
         /**
          * @description * `service` - خدمة
          *     * `discount` - خصم
@@ -4158,7 +4173,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": components["schemas"]["ConfirmRequest"];
                 "application/x-www-form-urlencoded": components["schemas"]["ConfirmRequest"];
