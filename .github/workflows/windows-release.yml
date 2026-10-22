@@ -280,10 +280,14 @@ jobs:
           # otherwise end the step with that code although every check passed.
           exit 0
 
+      # Artifacts are a convenience: a full artifact quota on the account must not fail the build or stop the release
+      # (2026-10-22: «Artifact storage quota has been hit»). Short retention keeps the quota free.
       - name: Keep the end-to-end transcript
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
+          retention-days: 7
           name: e2e-log
           path: |
             ${{ runner.temp }}/e2e.log
@@ -312,7 +316,9 @@ jobs:
           gh pr comment $env:PR --body-file "$env:RUNNER_TEMP\e2e.md"
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        continue-on-error: true
         with:
+          retention-days: 3
           name: skytowers-installer
           path: desktop/src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: error
