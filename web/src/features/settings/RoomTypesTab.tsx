@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 import type { components } from "@api/schema";
 
@@ -99,6 +100,19 @@ export function RoomTypesTab({ readOnly }: { readOnly: boolean }) {
               <Field label={t("settings.types.col_capacity")} className="w-20">
                 <TextInput inputMode="numeric" value={draft.capacity} onChange={(e) => setDraft({ ...draft, capacity: toWestern(e.target.value).replace(/\D/g, "") })} />
               </Field>
+              {/* The rooms of a type are counted, not typed: they are added one by one (number, floor) under «الغرف». */}
+              <Field label={t("settings.types.col_rooms")} className="w-36">
+                <div className="flex h-9 items-center gap-2">
+                  <span className="text-body font-semibold">{digits(String(r?.room_count ?? 0))}</span>
+                  {r ? (
+                    <Link to="/settings/rooms" className="text-label font-medium">
+                      {t("settings.types.manageRooms")}
+                    </Link>
+                  ) : (
+                    <span className="text-label font-normal text-text-secondary">{t("settings.types.roomsAfterSave")}</span>
+                  )}
+                </div>
+              </Field>
               <Field label={t("settings.types.col_nightly")} className="w-48">
                 <MoneyInput value={draft.nightly} onChange={(e) => setDraft({ ...draft, nightly: e.target.value })} />
               </Field>
@@ -116,7 +130,14 @@ export function RoomTypesTab({ readOnly }: { readOnly: boolean }) {
                 <button type="button" disabled={!draft.name.trim() || save.isPending} onClick={() => save.mutate()} className={smallButton("primary")}>
                   {t("settings.save")}
                 </button>
-                <button type="button" onClick={() => setEditing(null)} className={linkButton}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(null);
+                    setError(null); // a message about the cancelled edit must not stay on the table
+                  }}
+                  className={linkButton}
+                >
                   {t("common.cancel")}
                 </button>
               </div>
