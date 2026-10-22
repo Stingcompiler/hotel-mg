@@ -42,7 +42,7 @@ export function useRoomBoard(enabled = true) {
   });
 }
 
-/** 6.2 Room board: KPI tiles, filters, 30 room cards (grid or list), room drawer. */
+/** 6.2 Room board: KPI tiles, filters, the room cards (grid or list, all rooms on one scrolling page), room drawer. */
 export function RoomBoardPage() {
   const navigate = useNavigate();
   const board = useRoomBoard();
@@ -69,6 +69,7 @@ export function RoomBoardPage() {
   const [floor, setFloor] = useState<number | null>(null);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [openStart, setOpenStart] = useState<"maintenance" | undefined>(undefined);
 
   const rooms = board.data?.rooms.filter((r) => r.in_service) ?? [];
   const floors = useMemo(() => [...new Set(rooms.map((r) => r.floor))].sort((a, b) => a - b), [rooms]);
@@ -234,7 +235,7 @@ export function RoomBoardPage() {
         </div>
 
         {!board.data ? (
-          <div className="grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(190px,1fr))] content-start gap-3 overflow-hidden">
+          <div className="grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(var(--size-room-card-w),1fr))] content-start gap-3 overflow-hidden">
             {Array.from({ length: 18 }, (_, i) => (
               <RoomCardSkeleton key={i} />
             ))}
@@ -272,7 +273,8 @@ export function RoomBoardPage() {
             </button>
           </div>
         ) : view === "grid" ? (
-          <div className="stagger grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(190px,1fr))] content-start gap-3 overflow-auto">
+          // The 8 px inset keeps the open card's corner check mark inside the scroll box.
+          <div className="stagger -mx-2 -mt-2 grid min-h-0 flex-1 grid-cols-[repeat(auto-fill,minmax(var(--size-room-card-w),1fr))] content-start gap-3 overflow-auto px-2 pt-2">
             {shown.map((room) => (
               <RoomCard
                 key={room.id}
@@ -280,7 +282,11 @@ export function RoomBoardPage() {
                 boardDate={board.data.date}
                 now={now}
                 selected={room.id === openId}
-                onOpen={() => setOpenId(room.id)}
+                offline={offline}
+                onOpen={(start) => {
+                  setOpenStart(start);
+                  setOpenId(room.id);
+                }}
               />
             ))}
           </div>
@@ -290,7 +296,15 @@ export function RoomBoardPage() {
       </div>
 
       {openRoom && board.data && (
-        <RoomDrawer room={openRoom} boardDate={board.data.date} now={now} offline={offline} onClose={() => setOpenId(null)} />
+        <RoomDrawer
+          key={`${openRoom.id}-${openStart ?? ""}`}
+          room={openRoom}
+          boardDate={board.data.date}
+          now={now}
+          offline={offline}
+          start={openStart}
+          onClose={() => setOpenId(null)}
+        />
       )}
     </div>
   );

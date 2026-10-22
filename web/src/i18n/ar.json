@@ -57,6 +57,7 @@
   "dates": {
     "today": "اليوم",
     "yesterday": "أمس",
+    "tomorrow": "غدًا",
     "at": "{day} {time}",
     "weekdayDate": "{weekday} {date}"
   },
@@ -314,6 +315,29 @@
       "overdue": "متجاوزة"
     },
     "showAll": "إظهار كل الغرف",
+    "capEnd": "نهاية الإقامة",
+    "inDays": "بعد {days}",
+    "capBalance": "المتبقي",
+    "paid": "مسدَّد",
+    "capWaitingCleaning": "بانتظار التنظيف",
+    "capInMaintenance": "في الصيانة",
+    "capArrival": "وصول الحجز",
+    "capNextBooking": "الحجز القادم",
+    "noBooking": "لا حجز قادم",
+    "selected": "الغرفة المفتوحة",
+    "cleanedDone": "الغرفة {n} جاهزة",
+    "more": "إجراءات الغرفة {n}",
+    "action": {
+      "openStay": "تفاصيل الإقامة",
+      "extend": "تمديد",
+      "checkout": "تسجيل خروج",
+      "checkIn": "تسكين",
+      "checkInBooking": "تسكين الحجز",
+      "cleaned": "تأكيد التنظيف",
+      "openRoom": "تفاصيل الغرفة",
+      "openRoomMaintenance": "متابعة الصيانة",
+      "startMaintenance": "بدء صيانة"
+    },
     "colRoom": "الغرفة",
     "colType": "النوع",
     "colState": "الحالة",

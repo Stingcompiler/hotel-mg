@@ -33,6 +33,22 @@ export function stateColor(state: RoomState) {
   return CLASSES[state];
 }
 
+/**
+ * A room card's surface: its state's soft shade, softened further into the card colour so a board of 30 rooms stays
+ * calm (owner request 2026-10-22, decision 235). The same mix works in the dark theme.
+ */
+const TINT: Record<RoomState, string> = {
+  ready: "bg-[color-mix(in_srgb,var(--color-state-ready-soft)_60%,var(--color-bg-surface))]",
+  occupied: "bg-[color-mix(in_srgb,var(--color-state-occupied-soft)_60%,var(--color-bg-surface))]",
+  cleaning: "bg-[color-mix(in_srgb,var(--color-state-cleaning-soft)_60%,var(--color-bg-surface))]",
+  maintenance: "bg-[color-mix(in_srgb,var(--color-state-maintenance-soft)_60%,var(--color-bg-surface))]",
+  overdue: "bg-[color-mix(in_srgb,var(--color-state-overdue-soft)_60%,var(--color-bg-surface))]",
+};
+
+export function stateTint(state: RoomState): string {
+  return TINT[state];
+}
+
 /** «محجوزة قريبًا» is an outline only (tokens: reserved-soon has no soft/solid fill). */
 export const reservedSoon = {
   outline: "outline outline-2 -outline-offset-2 outline-state-reserved-soon",
