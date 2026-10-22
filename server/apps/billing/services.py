@@ -46,6 +46,16 @@ def next_number(name: str) -> int:
     return seq.last
 
 
+def raise_counter(name: str, floor: int) -> None:
+    """Move a counter up to ``floor`` (never down), in the caller's transaction: the next number is ``floor + 1``."""
+    if not transaction.get_connection().in_atomic_block:
+        raise RuntimeError("raise_counter() must run inside a transaction")
+    seq, _ = Sequence.objects.select_for_update().get_or_create(hotel_id=current_hotel_id(), name=name)
+    if seq.last < floor:
+        seq.last = floor
+        seq.save(update_fields=["last"])
+
+
 def open_folio(reservation, actor) -> Folio:
     return Folio.objects.create(reservation=reservation, invoice_no=next_number("invoice"), created_by=actor)
 

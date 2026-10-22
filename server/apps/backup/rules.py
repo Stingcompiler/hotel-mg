@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from collections.abc import Iterable
 from datetime import datetime, timedelta
 
 MANIFEST = "manifest.json"
@@ -21,6 +22,17 @@ def parse_file_name(name: str) -> tuple[str, int] | None:
     if len(parts) != 5 or not parts[2].isdigit():
         return None
     return parts[1], int(parts[2])
+
+
+def backup_counter_floor(current: int, hotel8: str, file_names: Iterable[str], adopted_seq: int | None = None) -> int:
+    """The value the backup counter must hold so the next number is one never issued before for this hotel.
+
+    A restored database carries the counter as it was inside that backup, so without this the next backup could repeat
+    a number the owner PC already imported (QA 2026-10-22, ج-1). The floor is the highest of the counter, every
+    backup file of this hotel in the folder, and the file a PC was just adopted from.
+    """
+    seen = [parsed[1] for name in file_names if (parsed := parse_file_name(name)) and parsed[0] == hotel8]
+    return max([current, adopted_seq or 0, *seen])
 
 
 def sha256_hex(data: bytes) -> str:

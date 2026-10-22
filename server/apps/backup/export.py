@@ -22,7 +22,8 @@ from django.db.migrations.recorder import MigrationRecorder
 from django.utils import timezone
 
 from apps.audit.models import AuditLog
-from apps.billing.services import next_number
+from apps.billing.models import Sequence
+from apps.billing.services import next_number, raise_counter
 from apps.core.hotel import current_hotel_id
 from apps.core.models import SCHEMA_VERSION
 
@@ -130,16 +131,17 @@ def run_backup(actor=None, kind: str = BackupRun.Kind.MANUAL, now: datetime | No
     with tempfile.TemporaryDirectory(dir=tmp_root) as tmp:
         try:
             recipients = _recipients(config)
+            # The number is taken before the snapshot, so the copied database already holds it: a PC restored from
+            # backup N continues at N + 1 (QA 2026-10-22, ج-1). Only this step holds a transaction; compressing,
+            # encrypting and writing the file hold no database lock, so reception keeps working during a backup.
+            with transaction.atomic():
+                seq = _next_backup_seq()
             db_copy = Path(tmp) / rules.DB_FILE
             _snapshot_database(db_copy)
             # Every backup carries every attachment: a restore from the newest file alone must bring back all ID
             # scans and receipts (with incremental copies, days could pass with no full backup retained).
             files = {rules.DB_FILE: db_copy.read_bytes(), **_attachments(None)}
             migrations = [f"{app}.{name}" for app, name in MigrationRecorder(connection).applied_migrations()]
-            # Only the number is taken inside a transaction: compressing, encrypting and writing the file hold no
-            # database lock, so reception keeps working during a backup.
-            with transaction.atomic():
-                seq = next_number("backup")
             hotel_id = current_hotel_id()
             manifest = rules.build_manifest(
                 hotel_id=hotel_id,
@@ -204,6 +206,22 @@ def run_backup(actor=None, kind: str = BackupRun.Kind.MANUAL, now: datetime | No
     if config.second_dir and Path(config.second_dir).exists():
         _retention(Path(config.second_dir), config.keep_count, config.keep_days, hotel8, config.max_total_mb)
     return run
+
+
+def _next_backup_seq() -> int:
+    """The next backup number, never one already issued: past the counter and every file of this hotel in the
+    backups folder (a database restored from a file made before 1.1.21 carries a counter one number behind)."""
+    raise_backup_counter()
+    return next_number("backup")
+
+
+def raise_backup_counter(adopted_seq: int | None = None) -> None:
+    """Inside a transaction: lift the backup counter to the highest number already used for this hotel."""
+    folder = settings.RUNTIME.backups_dir
+    names = [p.name for p in folder.glob("*.age")] if folder.exists() else []
+    hotel8 = str(current_hotel_id()).replace("-", "")[:8]
+    current = Sequence.objects.filter(hotel_id=current_hotel_id(), name="backup").values_list("last", flat=True).first()
+    raise_counter("backup", rules.backup_counter_floor(current or 0, hotel8, names, adopted_seq))
 
 
 def run_if_due(now: datetime | None = None) -> BackupRun | None:

@@ -113,6 +113,15 @@ def finish_pending() -> None:
     if plan is None or not plan.get("applied"):
         return
     pending = pending_import.pending_dir(home)
+    if plan["mode"] == "work":
+        # The adopted database's counter may sit one behind the file it came from (files made before 1.1.21): the
+        # next backup here must not reuse a number the owner PC already imported (QA 2026-10-22, ج-1).
+        from django.db import transaction
+
+        from .export import raise_backup_counter
+
+        with transaction.atomic():
+            raise_backup_counter(plan.get("seq"))
     if plan["mode"] == "view":
         raw = (pending / "backup.age").read_bytes()
         result = merge.import_backup(None, raw, source=ImportRun.Source.FILE, file_name=plan["file_name"])
