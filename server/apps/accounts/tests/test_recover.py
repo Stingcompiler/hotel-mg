@@ -125,7 +125,7 @@ def test_a_confirmation_does_not_outlive_its_session(owner, confirm):
         HTTP_AUTHORIZATION=f"Token {login_with_password('owner', PASSWORD).token}", HTTP_X_CONFIRM_TOKEN=token
     )
     res = fresh.post(f"/api/v1/users/{owner.pk}/recovery-code")
-    assert res.status_code == 403 and res.json()["code"] == "confirmation_required"
+    assert res.status_code == 403 and res.json()["code"] == "password_confirmation_required"
 
 
 def test_email_is_set_when_creating_or_editing_a_user(manager_api, confirm):

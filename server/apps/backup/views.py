@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.models import User
 from apps.accounts.permissions import IsManager
+from apps.accounts.rules import CONFIRM_PASSWORD
 from apps.accounts.services import require_confirmation
 from apps.audit import services as audit
 from apps.core.errors import ApiError
@@ -121,7 +122,7 @@ class BackupSettingsView(APIView):
         if any(k in changes and changes[k] != getattr(current, k) for k in ("owner_recipient", "second_dir")):
             if request.user.role != "owner":
                 raise ApiError("permission_denied", 403, detail="يغيّر المالك وحده مستلمي النسخ ومجلدها الثاني.")
-            require_confirmation(request)
+            require_confirmation(request, CONFIRM_PASSWORD)
         return Response(BackupSettingsSerializer(services.update_settings(request.user, **data.validated_data)).data)
 
 
@@ -175,7 +176,7 @@ def _confirm_unless_first_import(request) -> None:
     """Spec §6.8: importing a backup is a sensitive action (X-Confirm-Token) — except the very first import
     on an empty owner PC, where nobody can sign in yet."""
     if User.objects.exists():
-        require_confirmation(request)
+        require_confirmation(request, CONFIRM_PASSWORD)
 
 
 class OwnerImportView(APIView):

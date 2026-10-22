@@ -279,10 +279,10 @@ def test_import_needs_a_confirmation_token_once_users_exist(hotel, owner_identit
     with override_settings(SKYTOWERS_ROLE="owner"):
         with path.open("rb") as f:
             res = api.post("/api/v1/owner/import/run", {"file": f}, format="multipart")
-        assert res.status_code == 403 and res.json()["code"] == "confirmation_required"
+        assert res.status_code == 403 and res.json()["code"] == "password_confirmation_required"
         assert not ImportRun.objects.exists()
         res = api.post("/api/v1/owner/import/drive", {"name": path.name}, format="json")
-        assert res.status_code == 403 and res.json()["code"] == "confirmation_required"
+        assert res.status_code == 403 and res.json()["code"] == "password_confirmation_required"
 
 
 def test_keep_days_deletes_old_backups_but_never_the_newest(hotel, tmp_path):

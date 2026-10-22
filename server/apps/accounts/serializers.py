@@ -68,11 +68,20 @@ class SessionSerializer(serializers.Serializer):
 
 
 class ConfirmSerializer(serializers.Serializer):
-    password = serializers.CharField(max_length=128, style={"input_type": "password"})
+    """The password, or the PIN (decision 237: a PIN confirmation covers day-to-day approvals only)."""
+
+    password = serializers.CharField(max_length=128, required=False, style={"input_type": "password"})
+    pin = serializers.CharField(max_length=6, required=False, style={"input_type": "password"})
+
+    def validate(self, attrs):
+        if bool(attrs.get("password")) == bool(attrs.get("pin")):
+            raise serializers.ValidationError("أدخل كلمة المرور أو رمز الدخول.")
+        return attrs
 
 
 class ConfirmTokenSerializer(serializers.Serializer):
     confirm_token = serializers.CharField()
+    level = serializers.ChoiceField(choices=["pin", "password"], help_text="pin: day-to-day approvals only.")
     expires_in = serializers.IntegerField(help_text="Seconds.")
 
 
