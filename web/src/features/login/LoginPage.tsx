@@ -148,11 +148,11 @@ function Welcome({
   importedSeq: number | null;
   dueTasks: number;
 }) {
-  const chip = "inline-flex h-7 items-center gap-1.5 rounded-control bg-primary-hover px-2.5 text-label";
+  const chip = "inline-flex h-7 items-center gap-1.5 rounded-control bg-brand-deep px-2.5 text-label";
   return (
-    <aside className="relative flex flex-col justify-between overflow-hidden bg-gradient-to-b from-primary to-primary-hover px-12 py-10 text-primary-text-on max-[1100px]:hidden">
+    <aside className="relative flex flex-col justify-between overflow-hidden bg-gradient-to-b from-brand to-brand-deep px-12 py-10 text-brand-text max-[1100px]:hidden">
       <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-card bg-primary-text-on text-body font-bold text-primary" dir="ltr">
+        <span className="flex h-11 w-11 items-center justify-center rounded-card bg-brand-text text-body font-bold text-brand" dir="ltr">
           {t("app.logo")}
         </span>
         <div className="flex flex-col">
@@ -207,12 +207,12 @@ function Skyline() {
   return (
     <svg viewBox="150 120 760 760" className="h-[240px] w-[240px]" aria-hidden>
       {towers.map(([x0, top, x1]) => (
-        <rect key={x0} x={x0} y={top} width={x1 - x0} height={800 - top} rx={14} className="fill-primary-text-on" />
+        <rect key={x0} x={x0} y={top} width={x1 - x0} height={800 - top} rx={14} className="fill-brand-text" />
       ))}
-      <polygon points="492,252 532,252 512,150" className="fill-primary-text-on" />
-      <rect x={190} y={816} width={644} height={34} rx={17} className="fill-primary-text-on" />
+      <polygon points="492,252 532,252 512,150" className="fill-brand-text" />
+      <rect x={190} y={816} width={644} height={34} rx={17} className="fill-brand-text" />
       {windows.map((w) => (
-        <rect key={`${w.x}-${w.y}`} x={w.x} y={w.y} width={30} height={34} className="fill-primary" />
+        <rect key={`${w.x}-${w.y}`} x={w.x} y={w.y} width={30} height={34} className="fill-brand" />
       ))}
       <polygon points="812,94 846,180 932,214 846,248 812,334 778,248 692,214 778,180" className="fill-warning" />
     </svg>

@@ -33,26 +33,6 @@ const css: string[] = [];
 const colors: Record<string, unknown> = {};
 const stateColors: Record<string, Record<string, string>> = {};
 
-for (const [name, value] of Object.entries(tokens.color as Record<string, unknown>)) {
-  if (name === "state") continue;
-  css.push(`  --color-${name}: ${value};`);
-  colors[name] = `var(--color-${name})`;
-}
-for (const [state, t] of Object.entries(tokens.color.state as Record<string, StateToken>)) {
-  const parts: Record<string, string> = {};
-  const add = (key: string, suffix: string, value?: string) => {
-    if (!value) return;
-    const variable = `--color-state-${state}${suffix}`;
-    css.push(`  ${variable}: ${value};`);
-    parts[key] = `var(${variable})`;
-  };
-  add("DEFAULT", "", t.solid ?? t.outline);
-  add("soft", "-soft", t.soft);
-  add("text", "-text", t["text-on-soft"]);
-  stateColors[state] = parts;
-}
-colors.state = stateColors;
-
 // Feedback soft/text shades: the artboards use the state shades with the same values for semantic
 // feedback (RTL notes, exception 2), but tokens.json names only the solids. Design gap 8.
 const FEEDBACK_FROM_STATE: Record<string, string> = {
@@ -61,12 +41,49 @@ const FEEDBACK_FROM_STATE: Record<string, string> = {
   danger: "overdue",
   info: "occupied",
 };
-for (const [feedback, state] of Object.entries(FEEDBACK_FROM_STATE)) {
-  const t = tokens.color.state[state] as StateToken;
-  css.push(`  --color-${feedback}-soft: ${t.soft};`, `  --color-${feedback}-text: ${t["text-on-soft"]};`);
+
+/** Every colour variable of one theme, in a fixed order: plain colours, room states, feedback shades, focus ring. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function colorVars(tk: any): [string, string][] {
+  const out: [string, string][] = [];
+  for (const [name, value] of Object.entries(tk.color as Record<string, unknown>)) {
+    if (name !== "state") out.push([`--color-${name}`, String(value)]);
+  }
+  for (const [state, t] of Object.entries(tk.color.state as Record<string, StateToken>)) {
+    const solid = t.solid ?? t.outline;
+    if (solid) out.push([`--color-state-${state}`, solid]);
+    if (t.soft) out.push([`--color-state-${state}-soft`, t.soft]);
+    if (t["text-on-soft"]) out.push([`--color-state-${state}-text`, t["text-on-soft"]]);
+  }
+  for (const [feedback, state] of Object.entries(FEEDBACK_FROM_STATE)) {
+    const t = tk.color.state[state] as StateToken;
+    out.push([`--color-${feedback}-soft`, t.soft!], [`--color-${feedback}-text`, t["text-on-soft"]!]);
+  }
+  out.push(["--color-focus-ring", tk.focusRing.color]);
+  return out;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const shadowVars = (tk: any): [string, string][] =>
+  Object.entries(tk.shadow as Record<string, string>).map(([name, value]) => [`--shadow-${name}`, value]);
+
+for (const [name, value] of colorVars(tokens)) css.push(`  ${name}: ${value};`);
+for (const name of Object.keys(tokens.color)) {
+  if (name !== "state") colors[name] = `var(--color-${name})`;
+}
+for (const [state, t] of Object.entries(tokens.color.state as Record<string, StateToken>)) {
+  const parts: Record<string, string> = {};
+  if (t.solid ?? t.outline) parts.DEFAULT = `var(--color-state-${state})`;
+  if (t.soft) parts.soft = `var(--color-state-${state}-soft)`;
+  if (t["text-on-soft"]) parts.text = `var(--color-state-${state}-text)`;
+  stateColors[state] = parts;
+}
+colors.state = stateColors;
+for (const feedback of Object.keys(FEEDBACK_FROM_STATE)) {
   colors[`${feedback}-soft`] = `var(--color-${feedback}-soft)`;
   colors[`${feedback}-text`] = `var(--color-${feedback}-text)`;
 }
+colors["focus-ring"] = "var(--color-focus-ring)";
 
 const typography = tokens.typography;
 css.push(`  --font-family: "${typography.family}", "${typography.fallback}", sans-serif;`);
@@ -84,14 +101,12 @@ for (const [name, px] of Object.entries(tokens.radius as Record<string, number>)
   borderRadius[name] = `var(--radius-${name})`;
 }
 const boxShadow: Record<string, string> = {};
-for (const [name, value] of Object.entries(tokens.shadow as Record<string, string>)) {
-  css.push(`  --shadow-${name}: ${value};`);
-  boxShadow[name] = `var(--shadow-${name})`;
+for (const [name, value] of shadowVars(tokens)) {
+  css.push(`  ${name}: ${value};`);
+  boxShadow[name.replace("--shadow-", "")] = `var(${name})`;
 }
 const ring = tokens.focusRing;
 css.push(`  --focus-ring-width: ${ring.width}px;`, `  --focus-ring-offset: ${ring.offset}px;`);
-css.push(`  --color-focus-ring: ${ring.color};`);
-colors["focus-ring"] = "var(--color-focus-ring)";
 
 const size = tokens.size;
 const spacing: Record<string, string> = {};
@@ -113,7 +128,25 @@ px("icon", tokens.icon.control);
 px("icon-inline", tokens.icon.inline);
 css.push(`  --icon-stroke: ${tokens.icon.stroke};`);
 
-writeFileSync(join(root, "web/src/design/tokens.css"), `/* ${HEADER} */\n:root {\n${css.join("\n")}\n}\n`);
+// Dark theme (owner request 2026-10-22, decision 234): `dark` in the overrides re-colours the same names; the app sets
+// <html data-theme="dark"> (web/src/lib/theme.ts). Only colours, shadows and the focus ring change; sizes, radii and
+// type stay. The block lists only what differs from the light theme.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const darkOver = (tokens as any).dark ?? {};
+const darkTokens = merge(structuredClone(tokens), {
+  color: darkOver.color ?? {},
+  shadow: darkOver.shadow ?? {},
+  focusRing: darkOver.focusRing ?? {},
+});
+const lightVars = new Map([...colorVars(tokens), ...shadowVars(tokens)]);
+const darkCss = [...colorVars(darkTokens), ...shadowVars(darkTokens)]
+  .filter(([name, value]) => lightVars.get(name) !== value)
+  .map(([name, value]) => `  ${name}: ${value};`);
+writeFileSync(
+  join(root, "web/src/design/tokens.css"),
+  `/* ${HEADER} */\n:root {\n  color-scheme: light;\n${css.join("\n")}\n}\n` +
+    `:root[data-theme="dark"] {\n  color-scheme: dark;\n${darkCss.join("\n")}\n}\n`,
+);
 
 const preset = {
   theme: {
