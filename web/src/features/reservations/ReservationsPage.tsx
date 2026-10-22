@@ -97,7 +97,7 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
   const end = start ? addDays(start, span) : undefined;
   const list = useWindow(start, end).data ?? [];
 
-  if (!board || !start || !end) return <div className="skeleton h-96 rounded-card" />;
+  if (!board || !start || !end) return <div className="skeleton h-96 rounded-card-lg" />;
   const days = Array.from({ length: span }, (_, i) => addDays(start, i));
   const floors = [...new Set(board.rooms.map((r) => r.floor))].sort((a, b) => a - b);
   const rooms = board.rooms.filter((r) => r.in_service && (floor === null || r.floor === floor)).sort((a, b) => a.floor - b.floor || a.number.localeCompare(b.number, "en", { numeric: true }));
@@ -184,7 +184,7 @@ function Timeline({ header, onPick }: { header: React.ReactNode; onPick: (id: st
         <NewButton />
       </div>
 
-      <section className="grid min-h-0 flex-1 grid-cols-[120px_1fr] grid-rows-[48px_1fr] overflow-hidden rounded-card border border-border bg-bg-surface">
+      <section className="grid min-h-0 flex-1 grid-cols-[120px_1fr] grid-rows-[48px_1fr] overflow-hidden surface-card">
         <div className="flex items-center border-b border-e border-border bg-bg-surface-2 px-4 text-label text-text-secondary">{t("reservations.room")}</div>
         <div className="grid border-b border-border bg-bg-surface-2" style={{ gridTemplateColumns: `repeat(${span}, 1fr)` }}>
           {days.map((d) => {
@@ -364,7 +364,7 @@ function ListView({ header, focus, onFocus }: { header: React.ReactNode; focus: 
         <NewButton />
       </div>
       {error && <ErrorBanner>{error}</ErrorBanner>}
-      <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
+      <section className="flex min-h-0 flex-1 flex-col overflow-hidden surface-card">
         <div className={`${GRID} h-10 flex-none bg-bg-surface-2 text-label text-text-secondary`}>
           {["colNo", "colRoom", "colGuest", "colArrival", "colDeparture", "colNights", "colKind", "colDeposit", "colStatus"].map((k) => (
             <div key={k} className={k === "colDeposit" ? "text-end" : ""}>

@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ImageUp, Info, Plus, Printer, Undo2 } from "lucide-react";
+import { CalendarDays, ImageUp, Info, Paperclip, Plus, Printer, Receipt, Tags, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import type { components } from "@api/schema";
@@ -10,6 +10,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { session } from "@/api/session";
 import { ErrorBanner, Field, MoneyInput, Segmented, Select, TextInput } from "@/components/ui/form";
 import { buttons, Modal } from "@/components/ui/Modal";
+import { StatCard } from "@/components/ui/StatCard";
 import { openPrint } from "@/features/print/PrintPage";
 import { useRoomBoard } from "@/features/rooms/RoomBoardPage";
 import { formatDayMonth, formatTime } from "@/i18n/dates";
@@ -82,9 +83,10 @@ export function ExpensesPage() {
 
       {summary && (
         <div className="grid grid-cols-4 gap-4 max-[1599px]:gap-3">
-          <Tile label={t("expenses.kShift")} value={money(summary.shift_total)} hint={t("expenses.kShiftHint", { n: digits(String(summary.shift_count)) })} />
-          <Tile label={t("expenses.kMonth")} value={money(summary.month_total)} />
-          <Tile
+          <StatCard icon={Receipt} label={t("expenses.kShift")} value={money(summary.shift_total)} hint={t("expenses.kShiftHint", { n: digits(String(summary.shift_count)) })} />
+          <StatCard icon={CalendarDays} label={t("expenses.kMonth")} value={money(summary.month_total)} />
+          <StatCard
+            icon={Tags}
             label={t("expenses.kTop")}
             value={summary.top_category ? t(`expenseCategory.${summary.top_category}`) : "—"}
             hint={
@@ -96,11 +98,12 @@ export function ExpensesPage() {
                 : undefined
             }
           />
-          <Tile
+          <StatCard
+            icon={Paperclip}
             label={t("expenses.kAwaiting")}
             value={digits(String(summary.awaiting_attachment))}
             hint={t("expenses.kAwaitingHint", { amount: formatMoney(threshold) })}
-            warn={summary.awaiting_attachment > 0}
+            tone={summary.awaiting_attachment > 0 ? "warning" : "default"}
           />
         </div>
       )}
@@ -175,7 +178,7 @@ function QuickExpense({ threshold, onSaved, onNeedsReceipt }: { threshold: numbe
     void once(() => save.mutateAsync().catch(() => undefined));
   };
   return (
-    <section className="flex flex-col gap-2 rounded-card border border-border bg-bg-surface px-4 py-3">
+    <section className="surface-card flex flex-col gap-2 px-6 py-4">
       <div className="flex flex-wrap items-end gap-3">
         <span className="text-label text-text-secondary">{t("expenses.quickTitle")}</span>
         <label className="flex w-48 shrink-0 flex-col gap-1">
@@ -215,16 +218,6 @@ function QuickExpense({ threshold, onSaved, onNeedsReceipt }: { threshold: numbe
   );
 }
 
-function Tile({ label, value, hint, warn = false }: { label: string; value: string; hint?: string; warn?: boolean }) {
-  return (
-    <div className="rounded-card border border-border bg-bg-surface p-4">
-      <div className="text-label text-text-secondary">{label}</div>
-      <div className={`mt-1 text-headline-number ${warn ? "text-warning" : ""}`}>{value}</div>
-      {hint && <div className="mt-1 text-label font-normal text-text-secondary">{hint}</div>}
-    </div>
-  );
-}
-
 // The description keeps at least 160 px; the fixed columns fit their content (an amount up to 100,000,000).
 const GRID = "grid grid-cols-[130px_120px_minmax(160px,1fr)_130px_90px_110px_120px_64px] items-center gap-3 px-4";
 
@@ -253,7 +246,7 @@ function ExpenseTable({
 }) {
   const pager = "h-9 rounded-control border-0 bg-transparent px-2 font-sans text-label text-primary hover:bg-bg-surface-2 disabled:text-text-disabled disabled:hover:bg-transparent";
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
+    <section className="surface-card flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className={`${GRID} h-10 flex-none bg-bg-surface-2 text-label text-text-secondary`}>
         {["colDate", "colCategory", "colText", "colAmount", "colMethod", "colAttachment", "colBy"].map((k) => (
           <div key={k} className={k === "colAmount" ? "text-end" : ""}>

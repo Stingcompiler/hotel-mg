@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, LayoutGrid, List, Plus, SearchX } from "lucide-react";
+import { BedDouble, ChevronDown, LayoutGrid, List, LogIn, LogOut, Plus, SearchX, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -10,6 +10,7 @@ import { formatMoney } from "@/i18n/money";
 import { NewPcCard } from "@/features/backup/AdoptModal";
 import { t } from "@/i18n/t";
 import { useNow } from "@/lib/useNow";
+import { StatCard, StatCardSkeleton } from "@/components/ui/StatCard";
 import { StatusPill } from "@/components/ui/StatusPill";
 
 import { RoomCard, RoomCardSkeleton } from "./RoomCard";
@@ -78,6 +79,7 @@ export function RoomBoardPage() {
 
   const kpis = summary && [
     {
+      icon: BedDouble,
       label: t("board.kpiOccupied"),
       value: digits(String(summary.occupied)),
       suffix: `/${digits(String(summary.rooms))}`,
@@ -86,18 +88,21 @@ export function RoomBoardPage() {
       onClick: () => setFilter(filter === "occupied" ? "all" : "occupied"),
     },
     {
+      icon: LogIn,
       label: t("board.kpiArrivals"),
       value: digits(String(summary.arrivals_today)),
       hint: t("board.kpiArrivalsHint"),
       onClick: () => navigate("/reports/arrivals_departures"),
     },
     {
+      icon: LogOut,
       label: t("board.kpiDepartures"),
       value: digits(String(summary.departures_today)),
       hint: t("board.kpiDeparturesHint"),
       onClick: () => navigate("/reports/arrivals_departures"),
     },
     {
+      icon: TriangleAlert,
       label: t("board.kpiOverdue"),
       value: digits(String(summary.overdue)),
       hint: t("board.kpiOverdueHint"),
@@ -130,29 +135,23 @@ export function RoomBoardPage() {
         <div className="stagger grid grid-cols-4 gap-4 max-[1599px]:gap-3">
           {kpis
             ? kpis.map((k) => (
-                <button
+                <StatCard
                   key={k.label}
-                  type="button"
+                  icon={k.icon}
+                  value={
+                    <>
+                      {k.value}
+                      {k.suffix && <span className="text-body font-semibold text-text-secondary">{k.suffix}</span>}
+                    </>
+                  }
+                  label={k.label}
+                  hint={<span className="max-[1599px]:hidden">{k.hint}</span>}
+                  tone={k.danger ? "danger" : "default"}
+                  active={k.active}
                   onClick={k.onClick}
-                  aria-pressed={k.active ?? undefined}
-                  className={`rounded-card border bg-bg-surface p-4 text-start font-sans text-text-primary transition-colors duration-150 hover:bg-bg-page max-[1599px]:flex max-[1599px]:items-baseline max-[1599px]:justify-between max-[1599px]:gap-2 max-[1599px]:px-4 max-[1599px]:py-3 ${
-                    k.active ? "border-primary outline outline-1 -outline-offset-1 outline-primary" : "border-border"
-                  }`}
-                >
-                  <div className="text-label text-text-secondary">{k.label}</div>
-                  <div className={`mt-1 text-headline-number max-[1599px]:mt-0 ${k.danger ? "text-danger" : ""}`}>
-                    {k.value}
-                    {k.suffix && <span className="text-[16px] font-medium text-text-secondary">{k.suffix}</span>}
-                  </div>
-                  <div className="mt-1 text-label font-normal text-text-secondary max-[1599px]:hidden">{k.hint}</div>
-                </button>
+                />
               ))
-            : [1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex h-[60px] items-center justify-between rounded-card border border-border bg-bg-surface px-4 py-3">
-                  <div className="h-3 w-[72px] rounded bg-bg-surface-2" />
-                  <div className="skeleton h-6 w-12 rounded" />
-                </div>
-              ))}
+            : [1, 2, 3, 4].map((i) => <StatCardSkeleton key={i} />)}
         </div>
 
         <div className="flex h-9 items-center gap-3">
@@ -242,7 +241,7 @@ export function RoomBoardPage() {
           </div>
         ) : board.data.rooms.length === 0 ? (
           // New install: nothing set up yet — point to the settings in the order they are needed.
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-card border border-dashed border-border-strong text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-card-lg border border-dashed border-border-strong text-center">
             <div className="text-section-title">{t("board.firstRunTitle")}</div>
             <div className="max-w-md text-body text-text-secondary">{t("board.firstRunHint")}</div>
             <button type="button" onClick={() => navigate("/settings/roomTypes")} className="h-11 rounded-control border-0 bg-primary px-6 font-sans text-body font-semibold text-primary-text-on hover:bg-primary-hover">
@@ -253,7 +252,7 @@ export function RoomBoardPage() {
             </div>
           </div>
         ) : shown.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-card border border-dashed border-border-strong text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-card-lg border border-dashed border-border-strong text-center">
             <SearchX className="h-10 w-10 text-text-disabled" strokeWidth={1.75} aria-hidden />
             <div className="text-body text-text-secondary">
               {t("board.empty", {
@@ -310,7 +309,7 @@ function RoomTable({
 }) {
   const head = "h-table-row px-3 text-start text-label text-text-secondary";
   return (
-    <div className="min-h-0 flex-1 overflow-auto rounded-card border border-border bg-bg-surface">
+    <div className="surface-card min-h-0 flex-1 overflow-auto">
       <table className="w-full border-collapse text-table-cell">
         <thead className="sticky top-0 bg-bg-surface-2">
           <tr>

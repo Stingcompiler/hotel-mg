@@ -18,7 +18,7 @@ export function apiErrorText(error: unknown): string {
 /** Settings card (6.11): 48 px header with title, optional note and actions, then the body. */
 export function Card({ title, note, actions, children, className = "" }: { title: string; note?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`flex flex-col overflow-hidden rounded-card border border-border bg-bg-surface ${className}`}>
+    <section className={`surface-card flex flex-col overflow-hidden ${className}`}>
       <div className="flex min-h-12 flex-none items-center gap-3 border-b border-border px-4 py-2">
         <h2 className="m-0 text-section-title">{title}</h2>
         {note && <span className="text-body text-text-secondary">{note}</span>}

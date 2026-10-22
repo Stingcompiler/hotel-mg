@@ -46,7 +46,7 @@ export function BackupImportPage() {
       <div className="text-label font-normal text-text-secondary">{t("ownerBackup.note")}</div>
 
       <div className="grid grid-cols-[2fr_1fr] items-start gap-4 max-[1599px]:gap-3">
-        <section className="flex flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
+        <section className="flex flex-col overflow-hidden surface-card">
           <div className="flex min-h-12 items-center gap-3 border-b border-border px-4">
             <h2 className="m-0 text-section-title">{t("ownerBackup.log")}</h2>
             {runs.data && <span className="text-label font-normal text-text-secondary">{t("ownerBackup.logCount", { n: digits(String(runs.data.count)) })}</span>}
@@ -74,7 +74,7 @@ export function BackupImportPage() {
         </section>
 
         <div className="flex flex-col gap-4">
-          <section className="flex flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
+          <section className="flex flex-col overflow-hidden surface-card">
             <div className="flex min-h-12 items-center border-b border-border px-4">
               <h2 className="m-0 text-section-title">{t("ownerBackup.driveFiles")}</h2>
             </div>
@@ -100,7 +100,7 @@ export function BackupImportPage() {
             ))}
           </section>
 
-          <section className="flex flex-col gap-3 rounded-card border border-border bg-bg-surface p-4">
+          <section className="surface-card flex flex-col gap-3 p-6 max-[1599px]:p-5">
             <h2 className="m-0 text-section-title">{t("ownerBackup.state")}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>

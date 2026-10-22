@@ -104,7 +104,7 @@ export function GuestsPage() {
         )}
       </div>
 
-      <section className="flex min-h-0 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
+      <section className="flex min-h-0 flex-col overflow-hidden surface-card">
         <div className={`${GRID} h-10 flex-none bg-bg-surface-2 text-label text-text-secondary`}>
           {["colName", "colPhone", "colNationality", "colStays", "colLast", "colDebt"].map((k) => (
             <div key={k} className={k === "colDebt" ? "text-end" : k === "colNationality" || k === "colStays" ? wide : ""}>
@@ -157,7 +157,7 @@ export function GuestsPage() {
         </div>
       </section>
 
-      <aside className="flex min-h-0 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
+      <aside className="flex min-h-0 flex-col overflow-hidden surface-card">
         {selected ? (
           <GuestProfile id={selected} offline={offline} canWrite={canWrite} onEdit={(guest, note) => setForm({ guest, note })} />
         ) : (
@@ -186,7 +186,7 @@ function GuestProfile({ id, offline, canWrite, onEdit }: { id: string; offline: 
   const [tab, setTab] = useState<"stays" | "companions" | "id">("stays");
   const guest = useQuery({ queryKey: ["guests", id], queryFn: () => data(api.GET("/api/v1/guests/{id}", { params: { path: { id } } })) }).data;
   const history = useQuery({ queryKey: ["guests", id, "history"], queryFn: () => data(api.GET("/api/v1/guests/{id}/history", { params: { path: { id } } })) }).data;
-  if (!guest || !history) return <div className="skeleton m-4 h-40 rounded-card" />;
+  if (!guest || !history) return <div className="skeleton m-4 h-40 rounded-card-lg" />;
 
   const stayed = history.filter((h) => h.status === "checked_in" || h.status === "checked_out");
   const debt = stayed.reduce((s, h) => s + Math.max(h.balance, 0), 0);

@@ -30,6 +30,22 @@
   .scrim-48 {
     background: color-mix(in srgb, var(--color-text-primary) 48%, transparent);
   }
+  /*
+   * «Soft Minimal Card» (owner brief 2026-10-18, decision 232): the one surface of every card — white, a 1 px border,
+   * a large radius and a soft shadow. Under 1600 px the radius steps down (28 → 20) with the padding the card sets.
+   * Dropdowns, toasts, dialogs and in-line notices are not cards and keep their own radius.
+   */
+  .surface-card {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card-lg);
+    box-shadow: var(--shadow-card-soft);
+  }
+  @media (max-width: 1599px) {
+    .surface-card {
+      border-radius: var(--radius-card-md);
+    }
+  }
   /* Loading shimmer (6.2 D). */
   .skeleton {
     background: linear-gradient(

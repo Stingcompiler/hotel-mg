@@ -196,7 +196,7 @@ export function NewPcCard({ onSetup }: { onSetup?: () => void }) {
   const [open, setOpen] = useState(false);
   if (!status?.can_adopt) return null;
   return (
-    <div className="flex items-center gap-4 rounded-card border border-primary bg-primary-soft p-4">
+    <div className="surface-card flex items-center gap-4 border-primary bg-primary-soft p-6 max-[1599px]:p-5">
       <DatabaseBackup className="h-8 w-8 flex-none text-primary" strokeWidth={1.5} aria-hidden />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="text-body font-semibold">{t("adopt.cardTitle")}</div>

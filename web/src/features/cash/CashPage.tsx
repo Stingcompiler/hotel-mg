@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, LockOpen, Printer, Receipt, TriangleAlert } from "lucide-react";
+import { History, Lock, LockOpen, Printer, Receipt, Scale, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 
 import type { components } from "@api/schema";
@@ -8,6 +8,7 @@ import { api, ApiError, data } from "@/api/client";
 import { keys, useCurrentShift, useSystemStatus } from "@/api/queries";
 import { ErrorBanner, groupThousands, Segmented, Select } from "@/components/ui/form";
 import { buttons, Modal } from "@/components/ui/Modal";
+import { StatCard } from "@/components/ui/StatCard";
 import { stateColor } from "@/design/state";
 import { openPrint } from "@/features/print/PrintPage";
 import { elapsed } from "@/i18n/counts";
@@ -57,7 +58,7 @@ export function CashPage() {
 
 function CurrentTab() {
   const current = useCurrentShift().data;
-  if (!current) return <div className="skeleton h-64 rounded-card" />;
+  if (!current) return <div className="skeleton h-64 rounded-card-lg" />;
   return current.shift ? <OpenShift current={current} /> : <NoShift current={current} />;
 }
 
@@ -128,7 +129,7 @@ function OpenShift({ current }: { current: Current }) {
   const sub = "flex justify-between py-1.5 ps-5 text-text-secondary";
   return (
     <>
-      <section className="grid grid-cols-[1fr_1px_1fr] rounded-card border border-border bg-bg-surface">
+      <section className="surface-card grid grid-cols-[1fr_1px_1fr]">
         <div className="flex flex-col gap-3 px-6 py-4">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="m-0 text-section-title">{t("cash.current")}</h2>
@@ -329,7 +330,7 @@ function Movements({ current }: { current: Current }) {
   // At least ~8 rows: with the close form (handover, currencies) the page is taller than a laptop screen, so the page
   // scrolls instead of squeezing the movements to one row (owner feedback 2026-10-02).
   return (
-    <section className="flex min-h-[420px] flex-1 flex-col overflow-hidden rounded-card border border-border bg-bg-surface">
+    <section className="surface-card flex min-h-[420px] flex-1 flex-col overflow-hidden">
       <div className="flex h-12 flex-none items-center gap-3 border-b border-border px-4">
         <h2 className="m-0 text-section-title">{t("cash.moves")}</h2>
         <span className="text-body text-text-secondary">{t("cash.movesCount", { n: digits(String(current.movements.length)) })}</span>
@@ -411,7 +412,7 @@ function NoShift({ current }: { current: Current }) {
         <TriangleAlert className="h-icon w-icon flex-none" strokeWidth={1.75} aria-hidden />
         {t("cash.noShift")}
       </div>
-      <section className="flex items-end gap-4 rounded-card border border-border bg-bg-surface p-6">
+      <section className="surface-card flex items-end gap-4 p-6">
         <div className="flex flex-1 flex-col gap-1">
           <h2 className="m-0 text-section-title">{t("cash.openNew")}</h2>
           <div className="text-body text-text-secondary">
@@ -462,7 +463,7 @@ function NoShift({ current }: { current: Current }) {
         </label>
       )}
       {error && <ErrorBanner>{error}</ErrorBanner>}
-      <section className="flex flex-1 flex-col items-center justify-center gap-3 rounded-card border border-border bg-bg-surface">
+      <section className="surface-card flex flex-1 flex-col items-center justify-center gap-3">
         <Receipt className="h-10 w-10 text-text-disabled" strokeWidth={1.75} aria-hidden />
         <div className="text-body text-text-secondary">{t("cash.noMoves")}</div>
       </section>
@@ -537,13 +538,14 @@ function HistoryTab() {
       </div>
       {history && (
         <div className="grid grid-cols-3 gap-3">
-          <Kpi label={t("cash.kShifts")} value={digits(String(history.count))} />
-          <Kpi label={t("cash.kWithDiff")} value={digits(String(history.with_difference))} danger={history.with_difference > 0} />
-          <Kpi label={t("cash.kNet")} value={signed(history.net_difference)} danger={history.net_difference !== 0} currency />
+          <StatCard icon={History} label={t("cash.kShifts")} value={digits(String(history.count))} />
+          <StatCard icon={TriangleAlert} label={t("cash.kWithDiff")} value={digits(String(history.with_difference))} tone={history.with_difference > 0 ? "danger" : "default"} />
+          {/* A signed amount keeps its sign in front: the number is laid out left to right. */}
+          <StatCard icon={Scale} label={t("cash.kNet")} value={<span dir="ltr">{signed(history.net_difference)}</span>} unit={t("money.currency")} tone={history.net_difference !== 0 ? "danger" : "default"} />
         </div>
       )}
       {/* Ten columns: wider than a 1366 px window, so the table scrolls sideways instead of squeezing the names. */}
-      <section className="min-h-0 flex-1 overflow-auto rounded-card border border-border bg-bg-surface">
+      <section className="surface-card min-h-0 flex-1 overflow-auto">
         <div className="w-max min-w-full">
           <div className={`${GRID} sticky top-0 z-10 h-10 bg-bg-surface-2 text-label text-text-secondary`}>
             {["hDate", "hTime", "hUser", "hOpening", "hReceipts", "hExpenses", "hCounted", "hDiff", "hReason"].map((k) => (
@@ -596,14 +598,3 @@ function HistoryTab() {
   );
 }
 
-function Kpi({ label, value, danger = false, currency = false }: { label: string; value: string; danger?: boolean; currency?: boolean }) {
-  // Signed values keep their sign in front: the number is laid out left to right.
-  return (
-    <div className="flex items-baseline justify-between rounded-card border border-border bg-bg-surface px-4 py-3">
-      <div className="text-label text-text-secondary">{label}</div>
-      <div className={`text-headline-number ${danger ? "text-danger" : ""}`}>
-        <span dir="ltr">{value}</span> {currency && <span className="text-body font-semibold">{t("money.currency")}</span>}
-      </div>
-    </div>
-  );
-}

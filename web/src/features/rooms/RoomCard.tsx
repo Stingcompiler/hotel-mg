@@ -8,8 +8,9 @@ import { type BoardRoom, cardLines, reservedSoon, TONE_CLASS } from "./roomText"
 type Props = { room: BoardRoom; boardDate: string; now: Date; selected: boolean; onOpen: () => void };
 
 /**
- * Room card (6.2, 132 px high, width = grid column, min 190): number and type, the state as a soft pill with a dot,
- * then who is in the room and when that changes. No coloured side stripe (owner request 2026-10-18, decision 231).
+ * Room card (6.2, 152 px high, width = grid column, min 190): number and type, the state as a soft pill with a dot,
+ * then who is in the room and when that changes. The «Soft Minimal Card» surface (decision 232); no coloured side
+ * stripe (decision 231).
  */
 export function RoomCard({ room, boardDate, now, selected, onOpen }: Props) {
   const lines = cardLines(room, boardDate, now);
@@ -22,7 +23,7 @@ export function RoomCard({ room, boardDate, now, selected, onOpen }: Props) {
     <button
       type="button"
       onClick={onOpen}
-      className={`flex h-room-card-h flex-col rounded-card border bg-bg-surface p-3.5 text-start font-sans text-text-primary transition-colors duration-150 ${outline}`}
+      className={`surface-card flex h-room-card-h flex-col p-6 text-start font-sans text-text-primary transition-colors duration-150 max-[1599px]:p-5 ${outline}`}
     >
       <span className="flex w-full items-start justify-between gap-2">
         <span className="flex min-w-0 flex-col">
@@ -44,7 +45,7 @@ export function RoomCard({ room, boardDate, now, selected, onOpen }: Props) {
 /** 6.2 D: loading skeleton card. */
 export function RoomCardSkeleton() {
   return (
-    <div className="flex h-room-card-h flex-col gap-2.5 rounded-card border border-border bg-bg-surface p-3.5">
+    <div className="surface-card flex h-room-card-h flex-col gap-2.5 p-6 max-[1599px]:p-5">
       <div className="flex justify-between">
         <div className="skeleton h-6 w-12 rounded" />
         <div className="h-6 w-16 rounded-full bg-bg-surface-2" />
