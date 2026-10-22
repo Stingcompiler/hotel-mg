@@ -16,7 +16,15 @@ import { StatusPill } from "@/components/ui/StatusPill";
 
 import type { BoardRoom } from "./roomText";
 
-type Props = { room: BoardRoom; boardDate: string; now: Date; offline: boolean; onClose: () => void };
+type Props = {
+  room: BoardRoom;
+  boardDate: string;
+  now: Date;
+  offline: boolean;
+  /** Opened from the card's «بدء صيانة»: the maintenance-reason form is open at once. */
+  start?: "maintenance";
+  onClose: () => void;
+};
 
 const primary =
   "flex h-11 items-center justify-center gap-2 rounded-control border-0 bg-primary font-sans text-body font-semibold text-primary-text-on hover:bg-primary-hover disabled:bg-bg-surface-2 disabled:text-text-disabled";
@@ -24,7 +32,7 @@ const secondary =
   "flex h-11 items-center justify-center gap-2 rounded-control border border-border-strong bg-bg-surface font-sans text-body font-semibold text-text-primary hover:bg-bg-surface-2 disabled:text-text-disabled";
 
 /** 6.2 B: 480 px drawer sliding from the end (left) side over a 24 % scrim. */
-export function RoomDrawer({ room, boardDate, offline, onClose }: Props) {
+export function RoomDrawer({ room, boardDate, offline, start, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const stay = room.stay;
 
@@ -83,7 +91,7 @@ export function RoomDrawer({ room, boardDate, offline, onClose }: Props) {
             {(stay.balance ?? 0) > 0 && <div className="text-label font-normal text-text-secondary">{t("roomDrawer.debtNote")}</div>}
           </div>
         ) : (
-          <StatusActions room={room} offline={offline} />
+          <StatusActions room={room} offline={offline} askReason={start === "maintenance"} />
         )}
 
         <History roomId={room.id} />
@@ -165,10 +173,10 @@ function actionLabel(from: string, to: string): string {
 }
 
 /** Buttons for the moves staff may make from the board (server-provided `manual_targets`, spec §6.3). */
-function StatusActions({ room, offline }: { room: BoardRoom; offline: boolean }) {
+function StatusActions({ room, offline, askReason }: { room: BoardRoom; offline: boolean; askReason: boolean }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [asking, setAsking] = useState(false);
+  const [asking, setAsking] = useState(askReason);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
 
